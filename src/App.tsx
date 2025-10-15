@@ -18,6 +18,7 @@ function App() {
         <Route index element={<OverviewPage />} />
         <Route path="dramas" element={<AllDramas />} />
         <Route path="dramas/:id" element={<DramaDetails />} />
+        <Route path="movies/:id" element={<DramaDetails />} />
         <Route path="movies" element={<AllMovies />} />
         <Route path="subscriptions" element={<SubscriptionPage />} />
         <Route path="users" element={<UsersPage />} />

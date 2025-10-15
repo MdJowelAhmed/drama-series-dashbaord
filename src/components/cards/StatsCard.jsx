@@ -8,7 +8,7 @@ const StatsCard = ({ title, value, icon: Icon, iconBgColor, iconColor, trend }) 
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-slate-600">{title}</p>
-            <h3 className="text-3xl font-bold mt-2">{value}</h3>
+            <h3 className="text-3xl text-accent-foreground font-bold mt-2">{value}</h3>
             {trend && (
               <p className={cn(
                 "text-sm mt-2",

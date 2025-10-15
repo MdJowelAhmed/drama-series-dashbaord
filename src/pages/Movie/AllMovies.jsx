@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Plus, Search, Trash2, Edit } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState } from "react";
+import { Plus, Search, Eye, Trash2, Edit } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,109 +12,99 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "react-router-dom";
 
 // Dummy Data
 const initialMovies = [
   {
     id: 1,
-    title: "Inception",
-    description: "A thief who steals corporate secrets through dream-sharing technology",
-    genre: "Sci-Fi Thriller",
-    duration: 148,
-    thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-01-15T10:30:00Z"
+    title: "The Crown",
+    description: "A historical drama about the reign of Queen Elizabeth II",
+    genre: "Historical Drama",
+    status: "Completed",
+    thumbnail_url:
+      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
+    created_at: "2024-01-15T10:30:00Z",
   },
   {
     id: 2,
-    title: "The Shawshank Redemption",
-    description: "Two imprisoned men bond over years, finding redemption through acts of decency",
-    genre: "Drama",
-    duration: 142,
-    thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-02-20T14:15:00Z"
+    title: "Breaking Bad",
+    description: "A chemistry teacher turned methamphetamine manufacturer",
+    genre: "Crime Thriller",
+    status: "Completed",
+    thumbnail_url:
+      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
+    created_at: "2024-02-20T14:15:00Z",
   },
   {
     id: 3,
-    title: "The Dark Knight",
-    description: "Batman faces the Joker in a battle for Gotham's soul",
-    genre: "Action",
-    duration: 152,
-    thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-03-10T09:45:00Z"
+    title: "Stranger Things",
+    description: "Supernatural events in a small town during the 1980s",
+    genre: "Sci-Fi Horror",
+    status: "Ongoing",
+    thumbnail_url:
+      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
+    created_at: "2024-03-10T09:45:00Z",
   },
   {
     id: 4,
-    title: "Forrest Gump",
-    description: "The presidencies of Kennedy and Johnson unfold through the perspective of an Alabama man",
-    genre: "Drama",
-    duration: 142,
-    thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-04-05T16:20:00Z"
+    title: "Money Heist",
+    description: "A group of criminals plan and execute elaborate heists",
+    genre: "Action Thriller",
+    status: "Completed",
+    thumbnail_url:
+      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
+    created_at: "2024-04-05T16:20:00Z",
   },
   {
     id: 5,
-    title: "Interstellar",
-    description: "A team of explorers travel through a wormhole in space",
-    genre: "Sci-Fi Adventure",
-    duration: 169,
-    thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-05-12T11:00:00Z"
+    title: "The Witcher",
+    description: "A monster hunter navigates a world of magic and danger",
+    genre: "Fantasy Adventure",
+    status: "Ongoing",
+    thumbnail_url:
+      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
+    created_at: "2024-05-12T11:00:00Z",
   },
   {
     id: 6,
-    title: "Parasite",
-    description: "Greed and class discrimination threaten the newly formed symbiotic relationship",
-    genre: "Thriller",
-    duration: 132,
-    thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-06-18T13:30:00Z"
+    title: "Dark",
+    description: "Time travel and family secrets in a German town",
+    genre: "Sci-Fi Mystery",
+    status: "Completed",
+    thumbnail_url:
+      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
+    created_at: "2024-06-18T13:30:00Z",
   },
-  {
-    id: 7,
-    title: "The Matrix",
-    description: "A computer hacker learns about the true nature of his reality",
-    genre: "Sci-Fi Action",
-    duration: 136,
-    thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-07-22T10:15:00Z"
-  },
-  {
-    id: 8,
-    title: "Pulp Fiction",
-    description: "The lives of two mob hitmen, a boxer, and a pair of diner bandits intertwine",
-    genre: "Crime",
-    duration: 154,
-    thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-08-30T15:45:00Z"
-  }
 ];
 
 const AllMovies = () => {
   const [movies, setMovies] = useState(initialMovies);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  
+  const [selectedDrama, setSelectedDrama] = useState(null);
+  const navigate = useNavigate();
+
   // Form states
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    genre: '',
-    duration: '',
-    thumbnail_url: ''
+    title: "",
+    description: "",
+    genre: "",
+    status: "Ongoing",
+    thumbnail_url: "",
   });
 
   const filteredMovies = movies.filter((movie) =>
@@ -122,63 +112,53 @@ const AllMovies = () => {
   );
 
   const handleDelete = () => {
-    setMovies(movies.filter(m => m.id !== selectedMovie.id));
+    setMovies(movies.filter((m) => m.id !== selectedDrama.id));
     setDeleteDialogOpen(false);
-    setSelectedMovie(null);
+    setSelectedDrama(null);
   };
 
   const handleCreate = () => {
-    const newMovie = {
-      id: Math.max(...movies.map(m => m.id), 0) + 1,
+    const newDrama = {
+      id: Math.max(...dramas.map((d) => d.id), 0) + 1,
       ...formData,
-      duration: parseInt(formData.duration) || 0,
       created_at: new Date().toISOString(),
-      thumbnail_url: formData.thumbnail_url || 'https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800'
+      thumbnail_url:
+        formData.thumbnail_url ||
+        "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
     };
-    setMovies([...movies, newMovie]);
+    setDramas([...dramas, newDrama]);
     setCreateModalOpen(false);
     resetForm();
   };
 
   const handleEdit = () => {
-    setMovies(movies.map(m => 
-      m.id === selectedMovie.id 
-        ? { ...m, ...formData, duration: parseInt(formData.duration) || 0 }
-        : m
-    ));
-    setCreateModalOpen(false);
-    setSelectedMovie(null);
-    setIsEditing(false);
+    setDramas(
+      dramas.map((d) => (d.id === selectedDrama.id ? { ...d, ...formData } : d))
+    );
+    setEditModalOpen(false);
+    setSelectedDrama(null);
     resetForm();
   };
 
-  const openEditModal = (movie) => {
-    setSelectedMovie(movie);
-    setIsEditing(true);
+  const openEditModal = (drama) => {
+    setSelectedDrama(drama);
     setFormData({
-      title: movie.title,
-      description: movie.description,
-      genre: movie.genre,
-      duration: movie.duration.toString(),
-      thumbnail_url: movie.thumbnail_url
+      title: drama.title,
+      description: drama.description,
+      genre: drama.genre,
+      status: drama.status,
+      thumbnail_url: drama.thumbnail_url,
     });
-    setCreateModalOpen(true);
-  };
-
-  const openCreateModal = () => {
-    setIsEditing(false);
-    setSelectedMovie(null);
-    resetForm();
-    setCreateModalOpen(true);
+    setEditModalOpen(true);
   };
 
   const resetForm = () => {
     setFormData({
-      title: '',
-      description: '',
-      genre: '',
-      duration: '',
-      thumbnail_url: ''
+      title: "",
+      description: "",
+      genre: "",
+      status: "Ongoing",
+      thumbnail_url: "",
     });
   };
 
@@ -187,7 +167,7 @@ const AllMovies = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({...formData, thumbnail_url: reader.result});
+        setFormData({ ...formData, thumbnail_url: reader.result });
       };
       reader.readAsDataURL(file);
     }
@@ -202,24 +182,24 @@ const AllMovies = () => {
     e.preventDefault();
     e.stopPropagation();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file && file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({...formData, thumbnail_url: reader.result});
+        setFormData({ ...formData, thumbnail_url: reader.result });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const MovieForm = () => (
+  const DramaForm = () => (
     <div className="space-y-4">
       <div>
         <Label htmlFor="title">Title</Label>
         <Input
           id="title"
           value={formData.title}
-          onChange={(e) => setFormData({...formData, title: e.target.value})}
-          placeholder="Enter movie title"
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          placeholder="Enter drama title"
         />
       </div>
       <div>
@@ -227,31 +207,33 @@ const AllMovies = () => {
         <Textarea
           id="description"
           value={formData.description}
-          onChange={(e) => setFormData({...formData, description: e.target.value})}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
           placeholder="Enter description"
           rows={3}
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="genre">Genre</Label>
-          <Input
-            id="genre"
-            value={formData.genre}
-            onChange={(e) => setFormData({...formData, genre: e.target.value})}
-            placeholder="e.g., Action, Drama"
-          />
-        </div>
-        <div>
-          <Label htmlFor="duration">Duration (minutes)</Label>
-          <Input
-            id="duration"
-            type="number"
-            value={formData.duration}
-            onChange={(e) => setFormData({...formData, duration: e.target.value})}
-            placeholder="120"
-          />
-        </div>
+      <div>
+        <Label htmlFor="genre">Genre</Label>
+        <Input
+          id="genre"
+          value={formData.genre}
+          onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+          placeholder="e.g., Action, Drama, Comedy"
+        />
+      </div>
+      <div>
+        <Label htmlFor="status">Status</Label>
+        <select
+          id="status"
+          value={formData.status}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md"
+        >
+          <option value="Ongoing">Ongoing</option>
+          <option value="Completed">Completed</option>
+        </select>
       </div>
       <div>
         <Label>Thumbnail Image</Label>
@@ -271,7 +253,7 @@ const AllMovies = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setFormData({...formData, thumbnail_url: ''})}
+                onClick={() => setFormData({ ...formData, thumbnail_url: "" })}
               >
                 Remove Image
               </Button>
@@ -282,10 +264,13 @@ const AllMovies = () => {
                 <Plus className="h-6 w-6 text-slate-400" />
               </div>
               <div className="text-sm text-slate-600">
-                <label htmlFor="file-upload" className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">
+                <label
+                  htmlFor="file-upload"
+                  className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium"
+                >
                   Click to upload
-                </label>
-                {' '}or drag and drop
+                </label>{" "}
+                or drag and drop
               </div>
               <p className="text-xs text-slate-500">PNG, JPG, GIF up to 10MB</p>
               <input
@@ -304,15 +289,24 @@ const AllMovies = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
-      <div className=" mx-auto space-y-6">
+      <div className="mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Movie Management</h1>
-            <p className="text-slate-600 mt-1">Manage all your movies</p>
+            <h1 className="text-3xl font-bold text-slate-900">
+              Drama Management
+            </h1>
+            <p className="text-slate-600 mt-1">
+              Manage all your dramas and series
+            </p>
           </div>
-          <Button onClick={openCreateModal}>
+          <Button
+            onClick={() => {
+              resetForm();
+              setCreateModalOpen(true);
+            }}
+          >
             <Plus className="h-4 w-4 mr-2" />
-            Add New Movie
+            Add New Drama
           </Button>
         </div>
 
@@ -320,7 +314,7 @@ const AllMovies = () => {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search movies..."
+              placeholder="Search dramas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -335,77 +329,99 @@ const AllMovies = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredMovies.map((movie) => (
-              <Card key={movie.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="relative h-48 overflow-hidden">
+              <Card
+                key={movie.id}
+                className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
+              >
+                <div className="relative h-42 overflow-hidden">
                   <img
                     src={movie.thumbnail_url}
                     alt={movie.title}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 right-2">
-                    <Badge className="bg-green-600">Movie</Badge>
-                  </div>
-                  <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
-                    {Math.floor(movie.duration / 60)}h {movie.duration % 60}m
+                    <Badge className="bg-white/30 text-white">
+                      {movie.status}
+                    </Badge>
                   </div>
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg mb-2 truncate">{movie.title}</h3>
+                <CardContent className="p-4 flex-1">
+                  <h3 className="font-semibold text-black text-lg mb-2 truncate">
+                    {movie.title}
+                  </h3>
                   <p className="text-sm text-slate-600 mb-3 line-clamp-2">
-                    {movie.description || 'No description'}
+                    {movie.description || "No description"}
                   </p>
-                  <div className="flex items-center justify-between text-sm text-slate-600 mb-4">
-                    <span>{movie.genre || 'Movie'}</span>
-                    <span>{new Date(movie.created_at).toLocaleDateString()}</span>
+                  <div className="flex items-center justify-between text-sm text-slate-600">
+                    <span>{movie.genre || "movie"}</span>
+                    <span>
+                      {new Date(movie.created_at).toLocaleDateString()}
+                    </span>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => openEditModal(movie)}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
+                </CardContent>
+                <div className="flex justify-between gap-10 p-4">
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => navigate(`/movies/${movie.id}`)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <div className="flex gap-5">
+                    <Button size="sm" onClick={() => openEditModal(movie)}>
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedMovie(movie);
+                        setSelectedmovie(movie);
                         setDeleteDialogOpen(true);
                       }}
                     >
-                      <Trash2 className="h-4 w-4 text-red-600" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </CardContent>
+                </div>
               </Card>
             ))}
           </div>
         )}
 
-        {/* Create/Edit Modal */}
+        {/* Create Modal */}
         <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>{isEditing ? 'Edit Movie' : 'Create New Movie'}</DialogTitle>
+              <DialogTitle>Create New movie</DialogTitle>
             </DialogHeader>
-            <MovieForm />
+            <DramaForm />
             <DialogFooter>
-              <Button variant="outline" onClick={() => {
-                setCreateModalOpen(false);
-                setIsEditing(false);
-                setSelectedMovie(null);
-                resetForm();
-              }}>
+              <Button
+                variant="outline"
+                onClick={() => setCreateModalOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button 
-                onClick={isEditing ? handleEdit : handleCreate} 
-                disabled={!formData.title || !formData.duration}
-              >
-                {isEditing ? 'Save Changes' : 'Create Movie'}
+              <Button onClick={handleCreate} disabled={!formData.title}>
+                Create Drama
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Modal */}
+        <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Drama</DialogTitle>
+            </DialogHeader>
+            <DramaForm />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEdit} disabled={!formData.title}>
+                Save Changes
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -417,8 +433,8 @@ const AllMovies = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete "{selectedMovie?.title}".
-                This action cannot be undone.
+                This will permanently delete "{selectedDrama?.title}" and all
+                its series and videos. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
