@@ -20,7 +20,7 @@ const TopContentChart = ({ data }) => {
                 borderRadius: '8px',
               }}
             />
-            <Bar dataKey="views" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="views" fill="#BF3838" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

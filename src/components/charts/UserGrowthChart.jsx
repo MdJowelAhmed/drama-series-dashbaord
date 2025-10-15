@@ -23,9 +23,9 @@ const UserGrowthChart = ({ data }) => {
             <Line
               type="monotone"
               dataKey="users"
-              stroke="#3b82f6"
+              stroke="#BF3838"
               strokeWidth={3}
-              dot={{ fill: '#3b82f6', r: 4 }}
+              dot={{ fill: '#BF3838', r: 4 }}
               activeDot={{ r: 6 }}
             />
           </LineChart>
