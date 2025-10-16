@@ -191,8 +191,8 @@ const AllDramas = () => {
     }
   };
 
-  const DramaForm = () => (
-    <div className="space-y-4">
+const DramaForm = () => (
+    <div className="space-y-4 p-6 rounded-xl shadow-sm max-h-[60vh] overflow-y-auto">
       <div>
         <Label htmlFor="title">Title</Label>
         <Input
@@ -240,6 +240,7 @@ const AllDramas = () => {
         <div
           onDragOver={handleDragOver}
           onDrop={handleDrop}
+          onClick={() => document.getElementById("file-upload").click()}
           className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer"
         >
           {formData.thumbnail_url ? (
@@ -253,23 +254,23 @@ const AllDramas = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setFormData({ ...formData, thumbnail_url: "" })}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFormData({ ...formData, thumbnail_url: "" });
+                }}
               >
                 Remove Image
               </Button>
             </div>
           ) : (
             <div className="space-y-2">
-              <div className="mx-auto w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+              <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center">
                 <Plus className="h-6 w-6 text-slate-400" />
               </div>
               <div className="text-sm text-slate-600">
-                <label
-                  htmlFor="file-upload"
-                  className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium"
-                >
+                <span className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">
                   Click to upload
-                </label>{" "}
+                </span>{" "}
                 or drag and drop
               </div>
               <p className="text-xs text-slate-500">PNG, JPG, GIF up to 10MB</p>
@@ -288,14 +289,14 @@ const AllDramas = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen">
       <div className="mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
+            <h1 className="text-3xl font-bold text-accent">
               Drama Management
             </h1>
-            <p className="text-slate-600 mt-1">
+            <p className="text-accent mt-1">
               Manage all your dramas and series
             </p>
           </div>
@@ -304,6 +305,7 @@ const AllDramas = () => {
               resetForm();
               setCreateModalOpen(true);
             }}
+            className="bg-primary py-6 text-accent shadow hover:bg-primary-foreground"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add New Drama
@@ -331,9 +333,9 @@ const AllDramas = () => {
             {filteredDramas.map((drama) => (
               <Card
                 key={drama.id}
-                className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
+                className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col"
               >
-                <div className="relative h-42 overflow-hidden">
+                <div className="relative h-42  overflow-hidden">
                   <img
                     src={drama.thumbnail_url}
                     alt={drama.title}
@@ -346,13 +348,13 @@ const AllDramas = () => {
                   </div>
                 </div>
                 <CardContent className="p-4 flex-1">
-                  <h3 className="font-semibold text-black text-lg mb-2 truncate">
+                  <h3 className="font-semibold text-accent text-lg mb-2 truncate">
                     {drama.title}
                   </h3>
-                  <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                  <p className="text-sm text-accent mb-3 line-clamp-2">
                     {drama.description || "No description"}
                   </p>
-                  <div className="flex items-center justify-between text-sm text-slate-600">
+                  <div className="flex items-center justify-between text-sm text-accent">
                     <span>{drama.genre || "Drama"}</span>
                     <span>
                       {new Date(drama.created_at).toLocaleDateString()}
@@ -362,18 +364,19 @@ const AllDramas = () => {
                 <div className="flex justify-between gap-10 p-4">
                   <Button
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 py-5"
                     onClick={() => navigate(`/dramas/${drama.id}`)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     View
                   </Button>
                   <div className="flex gap-5">
-                    <Button size="sm" onClick={() => openEditModal(drama)}>
+                    <Button size="sm" className="flex-1 py-5" onClick={() => openEditModal(drama)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
+                      className="flex-1 py-5"
                       onClick={() => {
                         setSelectedDrama(drama);
                         setDeleteDialogOpen(true);

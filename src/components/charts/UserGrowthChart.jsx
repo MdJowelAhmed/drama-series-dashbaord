@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const UserGrowthChart = ({ data }) => {
   return (
-    <Card>
+    <Card className='bg-secondary'>
       <CardHeader>
         <CardTitle>User Growth</CardTitle>
       </CardHeader>
@@ -11,8 +11,8 @@ const UserGrowthChart = ({ data }) => {
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="month" stroke="#64748b" />
-            <YAxis stroke="#64748b" />
+            <XAxis dataKey="month" stroke="#fff" />
+            <YAxis stroke="#fff" />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#fff',

@@ -51,7 +51,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 min-h-screen bg-slate-900 text-white flex flex-col shrink-0">
+    <div className="w-72 min-h-screen bg-black/30 backdrop-blur-sm text-white flex flex-col shrink-0">
       <div className="p-6 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <Film className="h-8 w-8 text-primary" />

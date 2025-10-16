@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Video, Edit2, Upload, X, Play, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Video, Edit2, Upload, X, Play, Clock, Calendar, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const DUMMY_DRAMA = {
@@ -437,12 +437,12 @@ const DramaDetails = () => {
   return (
     <div className="min-h-screen p-6">
       <div className=" mx-auto space-y-8">
-        <Button className="flex items-center gap-2  font-medium hover:gap-3 transition-all group">
+        <Button className="flex items-center gap-2 py-6 font-medium hover:gap-3 transition-all group">
           <ArrowLeft className="h-5 w-5 group-hover:scale-110 transition-transform" />
           Back to Dramas
         </Button>
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-sm overflow-hidden border border-white/20">
+        <div className="bg-secondary rounded-3xl shadow-sm  border border-white/20">
           <div className="flex flex-col lg:flex-row gap-8 p-8">
             <div className="relative group">
               <img
@@ -455,14 +455,14 @@ const DramaDetails = () => {
             <div className="flex-1 space-y-6">
               <div>
                 <div className="flex items-center gap-3 mb-3 flex-wrap">
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold  text-accent">
                     {drama.title}
                   </h1>
-                  <span className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm rounded-full font-semibold shadow-lg">
+                  <span className="px-4 py-1.5  text-accent text-sm rounded-full font-semibold shadow-lg">
                     {drama.status}
                   </span>
                 </div>
-                <p className="text-slate-600 text-lg leading-relaxed">{drama.description}</p>
+                <p className="text-white/70 text-lg leading-relaxed">{drama.description}</p>
               </div>
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -484,7 +484,7 @@ const DramaDetails = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 text-slate-600">
+              <div className="flex items-center gap-3 text-accent">
                 <Calendar className="h-5 w-5" />
                 <span className="font-medium">Released: {new Date(drama.release_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
               </div>
@@ -492,11 +492,11 @@ const DramaDetails = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Series & Videos</h2>
+        <div className="flex items-center justify-between ">
+          <h2 className="text-3xl font-bold text-accent">Series & Videos</h2>
           <Button
             onClick={handleCreateSeries}
-            className="flex items-center gap-2  text-white px-6 py-3 rounded-md hover:shadow-xl hover:scale-105 transition-all font-semibold"
+            className="flex items-center gap-2 py-6 text-white px-6 rounded-md hover:shadow-xl hover:scale-105 transition-all font-semibold"
           >
             <Plus className="h-5 w-5" />
             Add Series
@@ -504,7 +504,7 @@ const DramaDetails = () => {
         </div>
 
         {series.length === 0 ? (
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-16 text-center border border-white/20">
+          <div className="bg-secondary backdrop-blur-sm rounded-3xl shadow-xl p-16 text-center border border-white/20">
             <div className="text-slate-400 mb-4">
               <Video className="h-20 w-20 mx-auto" />
             </div>
@@ -513,36 +513,43 @@ const DramaDetails = () => {
         ) : (
           <div className="space-y-8">
             {series.map((s) => (
-              <div key={s.id} className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden border border-white/20 hover:shadow-2xl transition-all">
-                <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-slate-200">
+              <div key={s.id} className="bg-secondary  rounded-3xl shadow-xl overflow-hidden border border-white/20 hover:shadow-2xl transition-all">
+                <div className="p-6 bg-secondary border-b border-slate-200">
                   <div className="flex items-center justify-between flex-wrap gap-4">
-                    <h3 className="text-2xl font-bold text-slate-900">
-                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Series {s.series_number}:</span> {s.title}
+                    <h3 className="text-2xl font-bold text-accent">
+                      <span className="bg- text-accent">Series {s.series_number}:</span> {s.title}
                     </h3>
                     <div className="flex gap-3">
-                      <button
+                      <Button
                         onClick={() => handleEditSeries(s)}
-                        className="flex items-center gap-2 px-4 py-2 border-2 border-slate-200 rounded-xl hover:bg-white hover:shadow-lg transition-all font-medium"
+                        className="py-6"
                       >
                         <Edit2 className="h-4 w-4" />
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        // onClick={() => handleUploadVideo(s.id)}
+                        className="py-6"
+                      >
+                        <Eye className="h-4 w-4" />
+                       Details
+                      </Button>
+                      <Button
                         onClick={() => handleUploadVideo(s.id)}
-                        className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl hover:shadow-lg hover:scale-105 transition-all font-medium"
+                        className="py-6"
                       >
                         <Video className="h-4 w-4" />
                         Upload Video
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => {
                           setItemToDelete({ type: 'series', id: s.id, name: s.title });
                           setDeleteDialogOpen(true);
                         }}
-                        className="p-2 border-2 border-red-200 rounded-xl hover:bg-red-50 hover:scale-110 transition-all"
+                        className="py-6"
                       >
-                        <Trash2 className="h-5 w-5 text-red-600" />
-                      </button>
+                        <Trash2 className="h-5 w-5 text-white" />
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -553,7 +560,7 @@ const DramaDetails = () => {
                       <p className="text-slate-500 font-medium">No videos uploaded yet</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                       {s.videos.map((video) => (
                         <div key={video.id} className="group relative bg-gradient-to-br from-slate-50 to-blue-50 border-2 border-slate-200 rounded-2xl overflow-hidden hover:shadow-xl hover:scale-105 transition-all">
                           <div className="relative">

@@ -182,5 +182,6 @@ export const dummyOverviewStats = {
     { name: "The Last Kingdom", views: 125000 },
     { name: "Lost in Time", views: 180000 },
     { name: "Eternal Love", views: 98000 },
+    // { name: "KGF Chapter 1", views: 198000 },
   ],
 };

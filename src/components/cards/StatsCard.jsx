@@ -3,16 +3,16 @@ import { cn } from '@/lib/utils';
 
 const StatsCard = ({ title, value, icon: Icon, iconBgColor, iconColor, trend }) => {
   return (
-    <Card>
+    <Card className='bg-[#FEFEFE14]'>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-600">{title}</p>
-            <h3 className="text-3xl text-accent-foreground font-bold mt-2">{value}</h3>
+            <p className="text-sm font-medium text-accent">{title}</p>
+            <h3 className="text-3xl text-accent font-bold mt-2">{value}</h3>
             {trend && (
               <p className={cn(
                 "text-sm mt-2",
-                trend > 0 ? "text-green-600" : "text-red-600"
+                trend > 0 ? "text-accent" : "text-red-600"
               )}>
                 {trend > 0 ? '+' : ''}{trend}% from last month
               </p>
