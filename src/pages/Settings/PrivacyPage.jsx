@@ -54,12 +54,12 @@ const PrivacyPage = () => {
         <p className="text-accent mt-1">Manage your privacy policy content</p>
       </div>
 
-      <Card className="bg-secondary">
+      <Card className="bg-secondary ">
         <CardHeader>
           <CardTitle>Content Editor</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-white rounded-lg">
+          <div className="bg-white text-black rounded-lg">
             <ReactQuill
               theme="snow"
               value={content}
