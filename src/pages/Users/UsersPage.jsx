@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Eye, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([
@@ -96,12 +97,12 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="min-h-screen0 ">
       <div className=" mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">User Management</h1>
-            <p className="text-slate-600 mt-1">Manage all registered users</p>
+            <h1 className="text-3xl font-bold text-accent">User Management</h1>
+            <p className="text-accent mt-1">Manage all registered users</p>
           </div>
         </div>
 
@@ -118,18 +119,18 @@ const UserManagement = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-secondary rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase tracking-wider">Name</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase tracking-wider">Email</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase tracking-wider">Phone</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase tracking-wider">Subscription</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase tracking-wider">Status</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-slate-600 uppercase tracking-wider">Joined</th>
-                  <th className="text-right px-6 py-3 text-xs font-medium text-slate-600 uppercase tracking-wider">Actions</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Name</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Email</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Phone</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Subscription</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Status</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Joined</th>
+                  <th className="text-right px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -140,12 +141,12 @@ const UserManagement = () => {
                     </td>
                   </tr>
                 ) : filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={user.id} className=" transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-slate-900">{user.full_name}</div>
+                      <div className="font-medium text-accent">{user.full_name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-700">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-700">{user.phone || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.phone || 'N/A'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         user.subscription_package 
@@ -169,34 +170,34 @@ const UserManagement = () => {
                             }`}
                           />
                         </button>
-                        <span className="text-sm text-slate-700">
+                        <span className="text-sm text-accent">
                           {user.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-accent">
                       {formatDate(user.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex justify-end gap-2">
-                        <button
+                        <Button
                           onClick={() => {
                             setSelectedUser(user);
                             setDetailsDialogOpen(true);
                           }}
-                          className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                          className="p-2 text-accent  rounded-lg transition-colors"
                         >
                           <Eye className="h-4 w-4" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => {
                             setSelectedUser(user);
                             setDeleteDialogOpen(true);
                           }}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-accent rounded-lg transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

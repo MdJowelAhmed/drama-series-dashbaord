@@ -1,17 +1,18 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { useState } from 'react';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+// import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { useState } from "react";
+import { Label } from "@/components/ui/label";
 
 const profileSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
 });
 
 const ProfilePage = () => {
@@ -24,27 +25,27 @@ const ProfilePage = () => {
   } = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: 'Admin User',
-      email: 'admin@cine.com',
-      phone: '+8801712345678',
+      name: "Admin User",
+      email: "admin@cine.com",
+      phone: "+8801712345678",
     },
   });
 
   const onSubmit = async (data) => {
     setLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success('Profile updated successfully!');
+    toast.success("Profile updated successfully!");
     setLoading(false);
   };
 
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">Profile Settings</h1>
-        <p className="text-slate-600 mt-1">Manage your account information</p>
+        <h1 className="text-3xl font-bold text-accent">Profile Settings</h1>
+        <p className="text-accent mt-1">Manage your account information</p>
       </div>
 
-      <Card>
+      <Card className="bg-secondary ">
         <CardHeader>
           <CardTitle>Personal Information</CardTitle>
         </CardHeader>
@@ -54,11 +55,13 @@ const ProfilePage = () => {
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
-                {...register('name')}
+                {...register("name")}
                 placeholder="Enter your name"
               />
               {errors.name && (
-                <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
@@ -67,11 +70,13 @@ const ProfilePage = () => {
               <Input
                 id="email"
                 type="email"
-                {...register('email')}
+                {...register("email")}
                 placeholder="Enter your email"
               />
               {errors.email && (
-                <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -79,17 +84,24 @@ const ProfilePage = () => {
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
-                {...register('phone')}
+                {...register("phone")}
                 placeholder="Enter your phone number"
               />
               {errors.phone && (
-                <p className="text-sm text-red-600 mt-1">{errors.phone.message}</p>
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.phone.message}
+                </p>
               )}
             </div>
-
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Updating...' : 'Update Profile'}
-            </Button>
+            <div className="flex justify-center">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="rounded-md w-1/2 py-6"
+              >
+                {loading ? "Updating..." : "Update Profile"}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

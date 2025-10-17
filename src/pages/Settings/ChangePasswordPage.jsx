@@ -1,21 +1,24 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { useState } from 'react';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+// import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { useState } from "react";
+import { Label } from "@/components/ui/label";
 
-const passwordSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string().min(1, 'Please confirm your password'),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
+const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 const ChangePasswordPage = () => {
   const [loading, setLoading] = useState(false);
@@ -32,7 +35,7 @@ const ChangePasswordPage = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success('Password changed successfully!');
+    toast.success("Password changed successfully!");
     reset();
     setLoading(false);
   };
@@ -40,11 +43,11 @@ const ChangePasswordPage = () => {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">Change Password</h1>
-        <p className="text-slate-600 mt-1">Update your account password</p>
+        <h1 className="text-3xl font-bold text-accent">Change Password</h1>
+        <p className="text-accent mt-1">Update your account password</p>
       </div>
 
-      <Card>
+      <Card className="bg-secondary">
         <CardHeader>
           <CardTitle>Password Settings</CardTitle>
         </CardHeader>
@@ -55,7 +58,7 @@ const ChangePasswordPage = () => {
               <Input
                 id="currentPassword"
                 type="password"
-                {...register('currentPassword')}
+                {...register("currentPassword")}
                 placeholder="Enter current password"
               />
               {errors.currentPassword && (
@@ -70,7 +73,7 @@ const ChangePasswordPage = () => {
               <Input
                 id="newPassword"
                 type="password"
-                {...register('newPassword')}
+                {...register("newPassword")}
                 placeholder="Enter new password"
               />
               {errors.newPassword && (
@@ -85,7 +88,7 @@ const ChangePasswordPage = () => {
               <Input
                 id="confirmPassword"
                 type="password"
-                {...register('confirmPassword')}
+                {...register("confirmPassword")}
                 placeholder="Confirm new password"
               />
               {errors.confirmPassword && (
@@ -95,9 +98,12 @@ const ChangePasswordPage = () => {
               )}
             </div>
 
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Updating...' : 'Change Password'}
-            </Button>
+            <div className="flex justify-center">
+              {" "}
+              <Button type="submit" disabled={loading} className="py-6 w-1/2">
+                {loading ? "Updating..." : "Change Password"}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

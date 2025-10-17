@@ -21,9 +21,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
+// import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
+import { Label } from "@/components/ui/label";
 
 // Dummy Data
 const initialMovies = [

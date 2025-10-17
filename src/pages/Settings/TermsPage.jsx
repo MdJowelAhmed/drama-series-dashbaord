@@ -47,26 +47,26 @@ const TermsPage = () => {
   return (
     <div className="">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">Terms & Conditions</h1>
-        <p className="text-slate-600 mt-1">Manage your terms and conditions content</p>
+        <h1 className="text-3xl font-bold text-accent">Terms & Conditions</h1>
+        <p className="text-accent mt-1">Manage your terms and conditions content</p>
       </div>
 
-      <Card>
+      <Card className="bg-secondary">
         <CardHeader>
           <CardTitle>Content Editor</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-white rounded-lg">
+          <div className="bg-white text-black rounded-lg">
             <ReactQuill
               theme="snow"
               value={content}
               onChange={setContent}
               modules={modules}
-              className="min-h-[400px]"
+              className="min-h-[400px] rounded-2xl"
             />
           </div>
 
-          <Button onClick={handleSave} disabled={loading}>
+          <Button onClick={handleSave} disabled={loading} className="py-6 w-1/5">
             {loading ? 'Saving...' : 'Save Changes'}
           </Button>
         </CardContent>

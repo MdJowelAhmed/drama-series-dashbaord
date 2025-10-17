@@ -26,11 +26,11 @@ const Sidebar = () => {
       path: '/dramas',
       icon: Film,
     },
-    {
-      name: 'Movie Management',
-      path: '/movies',
-      icon: Video,
-    },
+    // {
+    //   name: 'Movie Management',
+    //   path: '/movies',
+    //   icon: Video,
+    // },
     {
       name: 'Subscription Package',
       path: '/subscriptions',

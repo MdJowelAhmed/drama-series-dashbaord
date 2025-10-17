@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Video, Edit2, Upload, X, Play, Clock, Calendar, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Video, Edit2, Upload, X, Play, Clock, Calendar, Eye, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import VideoUploadModal from '@/components/modals/VideoUploadModal';
+import VideoDetailsModal from '@/components/modals/VideoDetailsModal';
 
 const DUMMY_DRAMA = {
   id: 1,
@@ -13,6 +16,29 @@ const DUMMY_DRAMA = {
   rating: 8.5,
   total_views: "2.4M"
 };
+
+const VIDEO_TYPES = [
+  "Science Fiction",
+  "Romantic",
+  "War",
+  "History",
+  "Action",
+  "Comedy",
+  "Drama",
+  "Thriller",
+  "Horror",
+  "Mystery",
+  "Fantasy",
+  "Adventure",
+  "Crime",
+  "Biography",
+  "Documentary",
+  "Animation",
+  "Musical",
+  "Western",
+  "Superhero",
+  "Noir"
+];
 
 const INITIAL_SERIES = [
   {
@@ -30,7 +56,11 @@ const INITIAL_SERIES = [
         video_url: "https://example.com/video1.mp4",
         thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400",
         created_at: "2024-01-20",
-        views: "450K"
+        views: "450K",
+        type: "Action",
+        tags: ["pilot", "introduction", "heroes"],
+        color: "#3b82f6",
+        content: "The beginning of an epic journey where heroes are born and destinies are forged."
       },
       {
         id: 2,
@@ -41,7 +71,11 @@ const INITIAL_SERIES = [
         video_url: "https://example.com/video2.mp4",
         thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400",
         created_at: "2024-01-27",
-        views: "380K"
+        views: "380K",
+        type: "Adventure",
+        tags: ["adventure", "quest", "journey"],
+        color: "#10b981",
+        content: "A mysterious call to adventure leads our heroes into unknown territories."
       },
       {
         id: 3,
@@ -52,7 +86,11 @@ const INITIAL_SERIES = [
         video_url: "https://example.com/video3.mp4",
         thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400",
         created_at: "2024-02-03",
-        views: "420K"
+        views: "420K",
+        type: "War",
+        tags: ["battle", "combat", "victory"],
+        color: "#ef4444",
+        content: "The first major confrontation that tests the strength and courage of our warriors."
       }
     ]
   },
@@ -71,11 +109,19 @@ const INITIAL_SERIES = [
         video_url: "https://example.com/video4.mp4",
         thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400",
         created_at: "2024-02-10",
-        views: "290K"
+        views: "290K",
+        type: "Drama",
+        tags: ["alliance", "friendship", "unity"],
+        color: "#8b5cf6",
+        content: "New friendships are formed as unlikely allies join forces for a greater cause."
       }
     ]
   }
 ];
+
+// VideoUploadModal component has been moved to a separate file
+
+// VideoDetailsModal component has been moved to a separate file
 
 const SeriesModal = ({ series, onClose, onSave }) => {
   const [title, setTitle] = useState(series?.title || '');
@@ -129,198 +175,6 @@ const SeriesModal = ({ series, onClose, onSave }) => {
   );
 };
 
-const VideoUploadModal = ({ onClose, onSave }) => {
-  const [title, setTitle] = useState('');
-  const [duration, setDuration] = useState('');
-  const [videoFile, setVideoFile] = useState(null);
-  const [thumbnailFile, setThumbnailFile] = useState(null);
-  const [dragActive, setDragActive] = useState({ video: false, thumbnail: false });
-
-  const handleDrag = (e, type) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(prev => ({ ...prev, [type]: true }));
-    } else if (e.type === "dragleave") {
-      setDragActive(prev => ({ ...prev, [type]: false }));
-    }
-  };
-
-  const handleDrop = (e, type) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(prev => ({ ...prev, [type]: false }));
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (type === 'video') {
-        setVideoFile(file);
-      } else {
-        setThumbnailFile(file);
-      }
-    }
-  };
-
-  const handleFileChange = (e, type) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (type === 'video') {
-        setVideoFile(file);
-      } else {
-        setThumbnailFile(file);
-      }
-    }
-  };
-
-  const handleSave = () => {
-    if (!title.trim() || !duration) return;
-    
-    onSave({
-      title,
-      duration: parseInt(duration) * 60,
-      video_url: videoFile ? `https://example.com/${videoFile.name}` : 'https://example.com/video.mp4',
-      thumbnail_url: thumbnailFile ? URL.createObjectURL(thumbnailFile) : 'https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400',
-      views: '0'
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Upload Video</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-all">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        
-        <div className="space-y-5">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Episode Title
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
-              placeholder="Enter episode title"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Duration (minutes)
-            </label>
-            <input
-              type="number"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
-              placeholder="Enter duration"
-              min="1"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Video File
-            </label>
-            <div
-              onDragEnter={(e) => handleDrag(e, 'video')}
-              onDragLeave={(e) => handleDrag(e, 'video')}
-              onDragOver={(e) => handleDrag(e, 'video')}
-              onDrop={(e) => handleDrop(e, 'video')}
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                dragActive.video ? 'border-blue-500 bg-blue-50 scale-105' : 'border-slate-300 hover:border-slate-400'
-              }`}
-            >
-              <Upload className="h-12 w-12 mx-auto text-slate-400 mb-3" />
-              <p className="text-sm text-slate-600 mb-3 font-medium">
-                {videoFile ? videoFile.name : 'Drag and drop video file here, or click to browse'}
-              </p>
-              <input
-                type="file"
-                onChange={(e) => handleFileChange(e, 'video')}
-                accept="video/*"
-                className="hidden"
-                id="video-upload"
-              />
-              <label
-                htmlFor="video-upload"
-                className="inline-block px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl cursor-pointer hover:shadow-lg hover:scale-105 font-medium transition-all"
-              >
-                Choose Video
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Thumbnail Image
-            </label>
-            <div
-              onDragEnter={(e) => handleDrag(e, 'thumbnail')}
-              onDragLeave={(e) => handleDrag(e, 'thumbnail')}
-              onDragOver={(e) => handleDrag(e, 'thumbnail')}
-              onDrop={(e) => handleDrop(e, 'thumbnail')}
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                dragActive.thumbnail ? 'border-blue-500 bg-blue-50 scale-105' : 'border-slate-300 hover:border-slate-400'
-              }`}
-            >
-              {thumbnailFile ? (
-                <div className="space-y-3">
-                  <img
-                    src={URL.createObjectURL(thumbnailFile)}
-                    alt="Thumbnail preview"
-                    className="h-40 mx-auto rounded-xl object-cover shadow-lg"
-                  />
-                  <p className="text-sm text-slate-600 font-medium">{thumbnailFile.name}</p>
-                </div>
-              ) : (
-                <>
-                  <Upload className="h-12 w-12 mx-auto text-slate-400 mb-3" />
-                  <p className="text-sm text-slate-600 mb-3 font-medium">
-                    Drag and drop thumbnail here, or click to browse
-                  </p>
-                </>
-              )}
-              <input
-                type="file"
-                onChange={(e) => handleFileChange(e, 'thumbnail')}
-                accept="image/*"
-                className="hidden"
-                id="thumbnail-upload"
-              />
-              <label
-                htmlFor="thumbnail-upload"
-                className="inline-block px-6 py-2.5 bg-slate-700 text-white rounded-xl cursor-pointer hover:bg-slate-800 hover:scale-105 font-medium transition-all mt-2"
-              >
-                Choose Thumbnail
-              </label>
-            </div>
-          </div>
-
-          <div className="flex gap-3 justify-end pt-4">
-            <button
-              onClick={onClose}
-              className="px-6 py-2.5 border-2 border-slate-200 rounded-xl hover:bg-slate-50 font-medium transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:scale-105 font-medium transition-all"
-            >
-              Upload
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const DeleteDialog = ({ item, onClose, onConfirm }) => {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -353,9 +207,12 @@ const DramaDetails = () => {
   const [series, setSeries] = useState(INITIAL_SERIES);
   const [seriesModalOpen, setSeriesModalOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [videoDetailsModalOpen, setVideoDetailsModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingSeries, setEditingSeries] = useState(null);
   const [selectedSeriesId, setSelectedSeriesId] = useState(null);
+  const [editingVideo, setEditingVideo] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const handleCreateSeries = () => {
@@ -395,23 +252,41 @@ const DramaDetails = () => {
 
   const handleUploadVideo = (seriesId) => {
     setSelectedSeriesId(seriesId);
+    setEditingVideo(null);
+    setVideoModalOpen(true);
+  };
+
+  const handleEditVideo = (video, seriesId) => {
+    setSelectedSeriesId(seriesId);
+    setEditingVideo(video);
     setVideoModalOpen(true);
   };
 
   const handleSaveVideo = (videoData) => {
     setSeries(prev => prev.map(s => {
       if (s.id === selectedSeriesId) {
-        const newVideo = {
-          id: Date.now(),
-          series_id: selectedSeriesId,
-          episode_number: (s.videos?.length || 0) + 1,
-          ...videoData,
-          created_at: new Date().toISOString()
-        };
-        return {
-          ...s,
-          videos: [...(s.videos || []), newVideo]
-        };
+        if (editingVideo) {
+          return {
+            ...s,
+            videos: s.videos.map(v => 
+              v.id === editingVideo.id 
+                ? { ...v, ...videoData }
+                : v
+            )
+          };
+        } else {
+          const newVideo = {
+            id: Date.now(),
+            series_id: selectedSeriesId,
+            episode_number: (s.videos?.length || 0) + 1,
+            ...videoData,
+            created_at: new Date().toISOString()
+          };
+          return {
+            ...s,
+            videos: [...(s.videos || []), newVideo]
+          };
+        }
       }
       return s;
     }));
@@ -426,6 +301,11 @@ const DramaDetails = () => {
     setDeleteDialogOpen(false);
   };
 
+  const handleViewDetails = (video) => {
+    setSelectedVideo(video);
+    setVideoDetailsModalOpen(true);
+  };
+
   const handleDelete = () => {
     if (itemToDelete.type === 'series') {
       handleDeleteSeries(itemToDelete.id);
@@ -436,13 +316,13 @@ const DramaDetails = () => {
 
   return (
     <div className="min-h-screen p-6">
-      <div className=" mx-auto space-y-8">
+      <div className="mx-auto space-y-8">
         <Button className="flex items-center gap-2 py-6 font-medium hover:gap-3 transition-all group">
           <ArrowLeft className="h-5 w-5 group-hover:scale-110 transition-transform" />
           Back to Dramas
         </Button>
 
-        <div className="bg-secondary rounded-3xl shadow-sm  border border-white/20">
+        <div className="bg-secondary rounded-3xl shadow-sm border border-white/20">
           <div className="flex flex-col lg:flex-row gap-8 p-8">
             <div className="relative group">
               <img
@@ -455,10 +335,10 @@ const DramaDetails = () => {
             <div className="flex-1 space-y-6">
               <div>
                 <div className="flex items-center gap-3 mb-3 flex-wrap">
-                  <h1 className="text-4xl font-bold  text-accent">
+                  <h1 className="text-4xl font-bold text-accent">
                     {drama.title}
                   </h1>
-                  <span className="px-4 py-1.5  text-accent text-sm rounded-full font-semibold shadow-lg">
+                  <span className="px-4 py-1.5 text-accent text-sm rounded-full font-semibold shadow-lg">
                     {drama.status}
                   </span>
                 </div>
@@ -492,7 +372,7 @@ const DramaDetails = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between ">
+        <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold text-accent">Series & Videos</h2>
           <Button
             onClick={handleCreateSeries}
@@ -513,11 +393,11 @@ const DramaDetails = () => {
         ) : (
           <div className="space-y-8">
             {series.map((s) => (
-              <div key={s.id} className="bg-secondary  rounded-3xl shadow-xl overflow-hidden border border-white/20 hover:shadow-2xl transition-all">
+              <div key={s.id} className="bg-secondary rounded-3xl shadow-xl overflow-hidden border border-white/20 hover:shadow-2xl transition-all">
                 <div className="p-6 bg-secondary border-b border-slate-200">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <h3 className="text-2xl font-bold text-accent">
-                      <span className="bg- text-accent">Series {s.series_number}:</span> {s.title}
+                      <span className="text-accent">Series {s.series_number}:</span> {s.title}
                     </h3>
                     <div className="flex gap-3">
                       <Button
@@ -526,13 +406,6 @@ const DramaDetails = () => {
                       >
                         <Edit2 className="h-4 w-4" />
                         Edit
-                      </Button>
-                      <Button
-                        // onClick={() => handleUploadVideo(s.id)}
-                        className="py-6"
-                      >
-                        <Eye className="h-4 w-4" />
-                       Details
                       </Button>
                       <Button
                         onClick={() => handleUploadVideo(s.id)}
@@ -576,6 +449,10 @@ const DramaDetails = () => {
                               <Clock className="h-3 w-3" />
                               {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
                             </div>
+                            <div 
+                              className="absolute top-3 left-3 w-6 h-6 rounded-full shadow-lg"
+                              style={{ backgroundColor: video.color }}
+                            />
                           </div>
                           <div className="p-4">
                             <div className="flex items-start justify-between mb-2">
@@ -586,6 +463,7 @@ const DramaDetails = () => {
                                 <h4 className="font-bold text-slate-900 mb-1 line-clamp-2">
                                   {video.title}
                                 </h4>
+                                <p className="text-xs text-slate-600 mb-1">{video.type}</p>
                                 <p className="text-sm text-slate-600 flex items-center gap-2 mb-1">
                                   <Play className="h-3 w-3" />
                                   {video.views} views
@@ -595,15 +473,31 @@ const DramaDetails = () => {
                                   {new Date(video.created_at).toLocaleDateString()}
                                 </p>
                               </div>
-                              <button
+                            </div>
+                            <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200">
+                              <Button
+                                onClick={() => handleViewDetails(video)}
+                                className="py-"
+                              >
+                                <Eye className="h-3 w-3" />
+                                Details
+                              </Button>
+                              <Button
+                                onClick={() => handleEditVideo(video, s.id)}
+                                className=""
+                              >
+                                <Edit2 className="h-3 w-3" />
+                                Edit
+                              </Button>
+                              <Button
                                 onClick={() => {
                                   setItemToDelete({ type: 'video', id: video.id, name: video.title });
                                   setDeleteDialogOpen(true);
                                 }}
-                                className="p-2 hover:bg-red-100 rounded-lg transition-all hover:scale-110"
+                                className="-all"
                               >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </button>
+                                <Trash2 className="h-4 w-4 text-white" />
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -626,8 +520,16 @@ const DramaDetails = () => {
 
         {videoModalOpen && (
           <VideoUploadModal
+            video={editingVideo}
             onClose={() => setVideoModalOpen(false)}
             onSave={handleSaveVideo}
+          />
+        )}
+
+        {videoDetailsModalOpen && selectedVideo && (
+          <VideoDetailsModal
+            video={selectedVideo}
+            onClose={() => setVideoDetailsModalOpen(false)}
           />
         )}
 
@@ -635,7 +537,7 @@ const DramaDetails = () => {
           <DeleteDialog
             item={itemToDelete}
             onClose={() => setDeleteDialogOpen(false)}
-                       onConfirm={handleDelete}
+            onConfirm={handleDelete}
           />
         )}
 
