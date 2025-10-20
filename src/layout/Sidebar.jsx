@@ -54,8 +54,9 @@ const Sidebar = () => {
     <div className="w-72 min-h-screen bg-black/30 backdrop-blur-sm text-white flex flex-col shrink-0">
       <div className="p-6 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <Film className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold">CineAdmin</h1>
+          {/* <Film className="h-8 w-8 text-primary" /> */}
+          <img src="/assets/logo.png" alt="logo" className="h- w-16" />
+          <h1 className="text-2xl font-bold">Creepy Shorts</h1>
         </div>
       </div>
 
