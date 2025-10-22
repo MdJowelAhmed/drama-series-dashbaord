@@ -6,7 +6,8 @@ import {
   CreditCard,
   Users,
   Settings,
-  ChevronDown
+  ChevronDown,
+  ReceiptPoundSterling
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,11 @@ const Sidebar = () => {
     //   path: '/movies',
     //   icon: Video,
     // },
+    {
+      name: 'Report Analytics',
+      path: '/reports',
+      icon: ReceiptPoundSterling,
+    },
     {
       name: 'Subscription Package',
       path: '/subscriptions',

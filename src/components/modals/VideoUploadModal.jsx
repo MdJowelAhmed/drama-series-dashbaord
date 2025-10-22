@@ -182,7 +182,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-semibold text-accent mb-2">
                 Type *
@@ -222,9 +222,9 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
                 />
               </div>
             </div>
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-semibold text-accent mb-2">
               Content Name
             </label>
@@ -235,9 +235,9 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-md focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
               placeholder="Enter content name"
             />
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-semibold text-accent mb-2">
               Tags
             </label>
@@ -279,7 +279,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
                 ))}
               </div>
             )}
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-sm font-semibold text-accent mb-2">

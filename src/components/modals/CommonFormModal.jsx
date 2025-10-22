@@ -112,7 +112,7 @@ const [formData, setFormData] = useState({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center z-50 p-4">
       <div className="bg-[#FFFFFF3B] rounded-2xl p-6 w-full max-w-4xl shadow-2xl transform transition-all">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-accent">{title}</h3>
@@ -138,7 +138,7 @@ const [formData, setFormData] = useState({
               />
             </div>
 
-            {showGenre && (
+           
               <div>
                 <Label htmlFor="genre">Genre</Label>
                 <Input
@@ -150,17 +150,17 @@ const [formData, setFormData] = useState({
                   placeholder="e.g., Action, Drama, Comedy"
                 />
               </div>
-            )}
+            
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text- mb-2">
+              <label className="block text-sm font-semibold text- mb-1">
                 Type *
               </label>
 
               <Select value={type} onValueChange={setType}>
-                <SelectTrigger className="w-full px-4 py-[22px] border-2 border-slate-200 rounded-md focus:ring-4 focus:ring-accent-foreground focus:border-blue-500 outline-none transition-all  text-white">
+                <SelectTrigger className="w-full px-4 py-[22px] border border-white/40 rounded-md focus:ring-4 focus:ring-accent-foreground focus:border-blue-500 outline-none transition-all  text-white">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -227,7 +227,7 @@ const [formData, setFormData] = useState({
                 rows={3}
               />
             </div>
-            {showVideoFields && (
+   
               <div>
                 <Label htmlFor="contentName">Content Name</Label>
                 <Input
@@ -242,7 +242,7 @@ const [formData, setFormData] = useState({
                   placeholder="Enter content name"
                 />
               </div>
-            )}
+       
             <div>
               <Label>Accent Color</Label>
               <div className="flex items-center gap-3">

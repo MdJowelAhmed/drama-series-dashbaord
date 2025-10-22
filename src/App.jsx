@@ -10,6 +10,7 @@ import ProfilePage from './pages/Settings/ProfilePage';
 import ChangePasswordPage from './pages/Settings/ChangePasswordPage';
 import TermsPage from './pages/Settings/TermsPage';
 import PrivacyPage from './pages/Settings/PrivacyPage';
+import DramaManagementDashboard from './pages/report/report';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="movies/:id" element={<DramaDetails />} />
         <Route path="movies" element={<AllMovies />} />
         <Route path="subscriptions" element={<SubscriptionPage />} />
+        <Route path="reports" element={<DramaManagementDashboard />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings/profile" element={<ProfilePage />} />
         <Route path="settings/password" element={<ChangePasswordPage />} />
