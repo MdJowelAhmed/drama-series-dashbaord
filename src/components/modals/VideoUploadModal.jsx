@@ -16,7 +16,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { Textarea } from "../ui/textarea";
 
 const VIDEO_TYPES = [
@@ -133,7 +139,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white/70 rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-[#FFFFFF3B] rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-accent">
             {video ? "Edit Video" : "Upload Video"}
@@ -149,7 +155,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
         <div className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <Label className="block text-sm font-semibold text-slate-700 mb-2">
+              <Label className="block text-sm font-semibold text-accent mb-2">
                 Episode Title *
               </Label>
               <Input
@@ -162,7 +168,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-accent mb-2">
                 Duration (minutes) *
               </label>
               <Input
@@ -178,12 +184,12 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-accent mb-2">
                 Type *
               </label>
 
               <Select value={type} onValueChange={setType}>
-                <SelectTrigger className="w-full px-4 py-[22px] border-2 border-slate-200 rounded-md focus:ring-4 focus:ring-accent-foreground focus:border-blue-500 outline-none transition-all bg-white/70 text-black">
+                <SelectTrigger className="w-full px-4 py-[22px] border-2 border-slate-200 rounded-md focus:ring-4 focus:ring-accent-foreground focus:border-blue-500 outline-none transition-all bg-transparent text-white">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -197,7 +203,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-accent mb-2">
                 Color
               </label>
               <div className="flex gap-3 items-center">
@@ -219,7 +225,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-accent mb-2">
               Content Name
             </label>
             <Input
@@ -232,7 +238,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-accent mb-2">
               Tags
             </label>
             <div className="flex gap-2 mb-3">
@@ -276,7 +282,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-accent mb-2">
               Description
             </label>
             <Textarea
@@ -290,90 +296,92 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
 
           {!video && (
             <>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Video File
-                </label>
-                <div
-                  onDragEnter={(e) => handleDrag(e, "video")}
-                  onDragLeave={(e) => handleDrag(e, "video")}
-                  onDragOver={(e) => handleDrag(e, "video")}
-                  onDrop={(e) => handleDrop(e, "video")}
-                  className={`border-2 border-dashed rounded-md p-8 text-center transition-all ${
-                    dragActive.video
-                      ? "border-blue-500 bg-blue-50 scale-105"
-                      : "border-slate-300 hover:border-slate-400"
-                  }`}
-                >
-                  <Upload className="h-12 w-12 mx-auto text-slate-400 mb-3" />
-                  <p className="text-sm text-slate-600 mb-3 font-medium">
-                    {videoFile
-                      ? videoFile.name
-                      : "Drag and drop video file here, or click to browse"}
-                  </p>
-                  <Input
-                    type="file"
-                    onChange={(e) => handleFileChange(e, "video")}
-                    accept="video/*"
-                    className="hidden"
-                    id="video-upload"
-                  />
-                  <label
-                    htmlFor="video-upload"
-                    className="inline-block px-6 py-2.5 bg-primary text-white rounded-md cursor-pointer hover:shadow-lg hover:scale-105 font-medium transition-all"
-                  >
-                    Choose Video
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {" "}
+                <div>
+                  <label className="block text-sm font-semibold text-accent mb-2">
+                    Video File
                   </label>
+                  <div
+                    onDragEnter={(e) => handleDrag(e, "video")}
+                    onDragLeave={(e) => handleDrag(e, "video")}
+                    onDragOver={(e) => handleDrag(e, "video")}
+                    onDrop={(e) => handleDrop(e, "video")}
+                    className={`border-2 border-dashed rounded-md p-8 text-center transition-all ${
+                      dragActive.video
+                        ? "border-blue-500 bg-blue-50 scale-105"
+                        : "border-slate-300 hover:border-slate-400"
+                    }`}
+                  >
+                    <Upload className="h-12 w-12 mx-auto text-accent mb-3" />
+                    <p className="text-sm text-accent mb-3 font-medium">
+                      {videoFile
+                        ? videoFile.name
+                        : "Drag and drop video file here, or click to browse"}
+                    </p>
+                    <Input
+                      type="file"
+                      onChange={(e) => handleFileChange(e, "video")}
+                      accept="video/*"
+                      className="hidden"
+                      id="video-upload"
+                    />
+                    <label
+                      htmlFor="video-upload"
+                      className="inline-block px-6 py-2.5 bg-primary text-white rounded-md cursor-pointer hover:shadow-lg hover:scale-105 font-medium transition-all"
+                    >
+                      Choose Video
+                    </label>
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Thumbnail Image
-                </label>
-                <div
-                  onDragEnter={(e) => handleDrag(e, "thumbnail")}
-                  onDragLeave={(e) => handleDrag(e, "thumbnail")}
-                  onDragOver={(e) => handleDrag(e, "thumbnail")}
-                  onDrop={(e) => handleDrop(e, "thumbnail")}
-                  className={`border-2 border-dashed rounded-md p-8 text-center transition-all ${
-                    dragActive.thumbnail
-                      ? "border-blue-500 bg-blue-50 scale-105"
-                      : "border-slate-300 hover:border-slate-400"
-                  }`}
-                >
-                  {thumbnailFile ? (
-                    <div className="space-y-3">
-                      <img
-                        src={URL.createObjectURL(thumbnailFile)}
-                        alt="Thumbnail preview"
-                        className="h-40 mx-auto rounded-md object-cover shadow-lg"
-                      />
-                      <p className="text-sm text-slate-600 font-medium">
-                        {thumbnailFile.name}
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="h-12 w-12 mx-auto text-slate-400 mb-3" />
-                      <p className="text-sm text-slate-600 mb-3 font-medium">
-                        Drag and drop thumbnail here, or click to browse
-                      </p>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    onChange={(e) => handleFileChange(e, "thumbnail")}
-                    accept="image/*"
-                    className="hidden"
-                    id="thumbnail-upload"
-                  />
-                  <label
-                    htmlFor="thumbnail-upload"
-                    className="inline-block px-6 py-2.5 bg-primary text-white rounded-md cursor-pointer hover:bg-slate-800 hover:scale-105 font-medium transition-all mt-2"
-                  >
-                    Choose Thumbnail
+                <div>
+                  <label className="block text-sm font-semibold text-accent mb-2">
+                    Thumbnail Image
                   </label>
+                  <div
+                    onDragEnter={(e) => handleDrag(e, "thumbnail")}
+                    onDragLeave={(e) => handleDrag(e, "thumbnail")}
+                    onDragOver={(e) => handleDrag(e, "thumbnail")}
+                    onDrop={(e) => handleDrop(e, "thumbnail")}
+                    className={`border-2 border-dashed rounded-md p-8 text-center transition-all ${
+                      dragActive.thumbnail
+                        ? "border-blue-500 bg-blue-50 scale-105"
+                        : "border-slate-300 hover:border-slate-400"
+                    }`}
+                  >
+                    {thumbnailFile ? (
+                      <div className="space-y-3">
+                        <img
+                          src={URL.createObjectURL(thumbnailFile)}
+                          alt="Thumbnail preview"
+                          className="h-40 mx-auto rounded-md object-cover shadow-lg"
+                        />
+                        <p className="text-sm text-accent font-medium">
+                          {thumbnailFile.name}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-12 w-12 mx-auto text-slate-400 mb-3" />
+                        <p className="text-sm text-accent mb-3 font-medium">
+                          Drag and drop thumbnail here, or click to browse
+                        </p>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      onChange={(e) => handleFileChange(e, "thumbnail")}
+                      accept="image/*"
+                      className="hidden"
+                      id="thumbnail-upload"
+                    />
+                    <label
+                      htmlFor="thumbnail-upload"
+                      className="inline-block px-6 py-2.5 bg-primary text-white rounded-md cursor-pointer hover:bg-primary hover:scale-105 font-medium transition-all mt-2"
+                    >
+                      Choose Thumbnail
+                    </label>
+                  </div>
                 </div>
               </div>
             </>

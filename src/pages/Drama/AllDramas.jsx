@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
+import CommonFormModal from "@/components/modals/CommonFormModal";
 
 // Dummy Data
 const initialDramas = [
@@ -418,26 +419,35 @@ const DramaForm = () => (
           </div>
         )}
 
-        {/* Create Modal */}
-        <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Drama</DialogTitle>
-            </DialogHeader>
-            <DramaForm />
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setCreateModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={!formData.title}>
-                Create Drama
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Create Drama Modal */}
+        {createModalOpen && (
+          <CommonFormModal
+            title="Create New Drama"
+            data={null}
+            onClose={() => setCreateModalOpen(false)}
+            onSave={handleCreate}
+            showStatus={true}
+            showGenre={true}
+          />
+        )}
+
+        {/* Edit Drama Modal */}
+        {editModalOpen && (
+          <CommonFormModal
+            title="Edit Drama"
+            data={{
+              ...selectedDrama,
+              thumbnail: selectedDrama.thumbnail_url
+            }}
+            onClose={() => {
+              setEditModalOpen(false);
+              setSelectedDrama(null);
+            }}
+            onSave={handleEdit}
+            showStatus={true}
+            showGenre={true}
+          />
+        )}
 
         {/* Edit Modal */}
         <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
