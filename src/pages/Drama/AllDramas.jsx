@@ -450,7 +450,7 @@ const DramaForm = () => (
         )}
 
         {/* Edit Modal */}
-        <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        {/* <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Edit Drama</DialogTitle>
@@ -465,7 +465,7 @@ const DramaForm = () => (
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog> */}
 
         {/* Delete Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
