@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Video, Edit2, Upload, X, Play, Clock, Calendar, Eye, Tag } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Video, Edit2, X, Play, Clock, Calendar, Eye, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import VideoUploadModal from '@/components/modals/VideoUploadModal';
 import VideoDetailsModal from '@/components/modals/VideoDetailsModal';
+import CommonFormModal from '@/components/modals/CommonFormModal';
 
 const DUMMY_DRAMA = {
   id: 1,
@@ -16,29 +16,6 @@ const DUMMY_DRAMA = {
   rating: 8.5,
   total_views: "2.4M"
 };
-
-const VIDEO_TYPES = [
-  "Science Fiction",
-  "Romantic",
-  "War",
-  "History",
-  "Action",
-  "Comedy",
-  "Drama",
-  "Thriller",
-  "Horror",
-  "Mystery",
-  "Fantasy",
-  "Adventure",
-  "Crime",
-  "Biography",
-  "Documentary",
-  "Animation",
-  "Musical",
-  "Western",
-  "Superhero",
-  "Noir"
-];
 
 const INITIAL_SERIES = [
   {
@@ -119,156 +96,6 @@ const INITIAL_SERIES = [
   }
 ];
 
-// VideoUploadModal component has been moved to a separate file
-
-// VideoDetailsModal component has been moved to a separate file
-
-const SeriesModal = ({ series, onClose, onSave }) => {
-  const [title, setTitle] = useState(series?.title || '');
-  const [description, setDescription] = useState(series?.description || '');
-  const [thumbnail, setThumbnail] = useState(series?.thumbnail_url || '');
-  const [color, setColor] = useState(series?.color || '#3b82f6');
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setThumbnail(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSave = () => {
-    if (!title.trim()) return;
-    onSave({
-      title,
-      description,
-      thumbnail_url: thumbnail,
-      color
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl transform transition-all">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {series ? 'Edit Series' : 'Create New Series'}
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-all">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Series Title
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
-              placeholder="Enter series title"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
-              placeholder="Optional series description"
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Thumbnail
-            </label>
-            <div
-              onClick={() => document.getElementById('series-file-upload')?.click()}
-              className="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center hover:border-blue-500 transition-colors cursor-pointer"
-            >
-              {thumbnail ? (
-                <div className="space-y-3">
-                  <img src={thumbnail} alt="Preview" className="mx-auto h-40 w-full object-cover rounded-lg" />
-                  <div className="flex justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setThumbnail(''); }}
-                      className="px-4 py-2 border rounded-lg"
-                    >
-                      Remove
-                    </button>
-                    <label className="px-4 py-2 border rounded-lg bg-slate-50 cursor-pointer">
-                      Replace
-                      <input id="series-file-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                    </label>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-sm text-slate-500">Click to upload thumbnail or drag & drop</p>
-                  <input id="series-file-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Accent Color</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-12 h-10 p-0 border-0 bg-transparent cursor-pointer"
-                aria-label="Choose series color"
-              />
-              <input
-                type="text"
-                value={color.toUpperCase()}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  // allow typing without '#'
-                  const normalized = v.startsWith('#') ? v : `#${v}`;
-                  setColor(normalized);
-                }}
-                className="px-3 py-2 border rounded-md w-28"
-              />
-              <div className="w-8 h-8 rounded-full shadow-sm" style={{ backgroundColor: color }} />
-              <p className="text-xs text-slate-500">Preview & HEX</p>
-            </div>
-          </div>
-
-          <div className="flex gap-3 justify-end pt-2">
-            <button
-              onClick={onClose}
-              className="px-6 py-2.5 border-2 border-slate-200 rounded-xl hover:bg-slate-50 font-medium transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:scale-105 font-medium transition-all"
-            >
-              {series ? 'Update' : 'Create'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const DeleteDialog = ({ item, onClose, onConfirm }) => {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -323,7 +150,7 @@ const DramaDetails = () => {
     if (editingSeries) {
       setSeries(prev => prev.map(s => 
         s.id === editingSeries.id 
-          ? { ...s, ...seriesData }
+          ? { ...s, ...seriesData, thumbnail_url: seriesData.thumbnail }
           : s
       ));
     } else {
@@ -331,7 +158,12 @@ const DramaDetails = () => {
         id: Date.now(),
         drama_id: drama.id,
         series_number: series.length + 1,
-        ...seriesData,
+        title: seriesData.title,
+        description: seriesData.description,
+        thumbnail_url: seriesData.thumbnail,
+        color: seriesData.color,
+        type: seriesData.type,
+        tags: seriesData.tags,
         videos: []
       };
       setSeries(prev => [...prev, newSeries]);
@@ -409,12 +241,12 @@ const DramaDetails = () => {
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="mx-auto space-y-8">
-        <Button className="flex items-center gap-2 py-6 font-medium hover:gap-3 transition-all group">
+    <div className="min-h-screen ">
+      <div className="mx-auto space-y-6">
+        {/* <Button className="flex items-center gap-2 py-6 font-medium hover:gap-3 transition-all group">
           <ArrowLeft className="h-5 w-5 group-hover:scale-110 transition-transform" />
           Back to Dramas
-        </Button>
+        </Button> */}
 
         <div className="bg-secondary rounded-3xl shadow-sm border border-white/20">
           <div className="flex flex-col lg:flex-row gap-8 p-8">
@@ -439,7 +271,7 @@ const DramaDetails = () => {
                 <p className="text-white/70 text-lg leading-relaxed">{drama.description}</p>
               </div>
               
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                 <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-5 rounded-2xl border border-blue-100/50 hover:shadow-lg transition-all hover:scale-105">
                   <p className="text-sm text-slate-600 font-medium mb-1">Total Series</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{series.length}</p>
@@ -527,7 +359,7 @@ const DramaDetails = () => {
                       <p className="text-slate-500 font-medium">No videos uploaded yet</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-6">
                       {s.videos.map((video) => (
                         <div key={video.id} className="group relative bg-gradient-to-br from-slate-50 to-blue-50 border-2 border-slate-200 rounded-2xl overflow-hidden hover:shadow-xl hover:scale-105 transition-all">
                           <div className="relative">
@@ -605,8 +437,9 @@ const DramaDetails = () => {
         )}
 
         {seriesModalOpen && (
-          <SeriesModal
-            series={editingSeries}
+          <CommonFormModal
+            title={editingSeries ? 'Edit Series' : 'Create New Series'}
+            data={editingSeries}
             onClose={() => setSeriesModalOpen(false)}
             onSave={handleSaveSeries}
           />
