@@ -106,6 +106,7 @@ const AllDramas = () => {
     genre: "",
     status: "Ongoing",
     thumbnail_url: "",
+    color: "#3b82f6"
   });
 
   const filteredDramas = dramas.filter((drama) =>
@@ -236,6 +237,7 @@ const DramaForm = () => (
           <option value="Completed">Completed</option>
         </select>
       </div>
+
       <div>
         <Label>Thumbnail Image</Label>
         <div
@@ -284,6 +286,30 @@ const DramaForm = () => (
               />
             </div>
           )}
+        </div>
+      </div>
+
+      <div>
+        <Label>Accent Color</Label>
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={formData.color}
+            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+            className="w-12 h-10 p-0 border-0 bg-transparent cursor-pointer"
+          />
+          <input
+            type="text"
+            value={formData.color?.toUpperCase()}
+            onChange={(e) => {
+              const v = e.target.value;
+              const normalized = v.startsWith('#') ? v : `#${v}`;
+              setFormData({ ...formData, color: normalized });
+            }}
+            className="px-3 py-2 border rounded-md w-28"
+          />
+          <div className="w-8 h-8 rounded-full shadow-sm" style={{ backgroundColor: formData.color }} />
+          <p className="text-xs text-slate-500">Preview & HEX</p>
         </div>
       </div>
     </div>

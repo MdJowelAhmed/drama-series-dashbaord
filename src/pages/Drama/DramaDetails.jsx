@@ -125,15 +125,34 @@ const INITIAL_SERIES = [
 
 const SeriesModal = ({ series, onClose, onSave }) => {
   const [title, setTitle] = useState(series?.title || '');
+  const [description, setDescription] = useState(series?.description || '');
+  const [thumbnail, setThumbnail] = useState(series?.thumbnail_url || '');
+  const [color, setColor] = useState(series?.color || '#3b82f6');
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnail(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = () => {
     if (!title.trim()) return;
-    onSave({ title });
+    onSave({
+      title,
+      description,
+      thumbnail_url: thumbnail,
+      color
+    });
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl transform transition-all">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             {series ? 'Edit Series' : 'Create New Series'}
@@ -142,6 +161,7 @@ const SeriesModal = ({ series, onClose, onSave }) => {
             <X className="h-5 w-5" />
           </button>
         </div>
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -155,6 +175,80 @@ const SeriesModal = ({ series, onClose, onSave }) => {
               placeholder="Enter series title"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
+              placeholder="Optional series description"
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Thumbnail
+            </label>
+            <div
+              onClick={() => document.getElementById('series-file-upload')?.click()}
+              className="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center hover:border-blue-500 transition-colors cursor-pointer"
+            >
+              {thumbnail ? (
+                <div className="space-y-3">
+                  <img src={thumbnail} alt="Preview" className="mx-auto h-40 w-full object-cover rounded-lg" />
+                  <div className="flex justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setThumbnail(''); }}
+                      className="px-4 py-2 border rounded-lg"
+                    >
+                      Remove
+                    </button>
+                    <label className="px-4 py-2 border rounded-lg bg-slate-50 cursor-pointer">
+                      Replace
+                      <input id="series-file-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm text-slate-500">Click to upload thumbnail or drag & drop</p>
+                  <input id="series-file-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Accent Color</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="w-12 h-10 p-0 border-0 bg-transparent cursor-pointer"
+                aria-label="Choose series color"
+              />
+              <input
+                type="text"
+                value={color.toUpperCase()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  // allow typing without '#'
+                  const normalized = v.startsWith('#') ? v : `#${v}`;
+                  setColor(normalized);
+                }}
+                className="px-3 py-2 border rounded-md w-28"
+              />
+              <div className="w-8 h-8 rounded-full shadow-sm" style={{ backgroundColor: color }} />
+              <p className="text-xs text-slate-500">Preview & HEX</p>
+            </div>
+          </div>
+
           <div className="flex gap-3 justify-end pt-2">
             <button
               onClick={onClose}
