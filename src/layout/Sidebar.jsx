@@ -52,6 +52,11 @@ const Sidebar = () => {
       path: '/users',
       icon: Users,
     },
+    {
+      name: 'Controller Management',
+      path: '/controllers',
+      icon: Users,
+    },
   ];
 
   const settingsItems = [

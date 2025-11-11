@@ -13,6 +13,7 @@ import PrivacyPage from './pages/Settings/PrivacyPage';
 import DramaManagementDashboard from './pages/report/report';
 import TrailerManagement from './pages/trailers/TrailerManagement';
 import CategoryManager from './pages/category/CategoryManagement';
+import ControllerManagement from './pages/controller/ControllerManagement';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="subscriptions" element={<SubscriptionPage />} />
         <Route path="reports" element={<DramaManagementDashboard />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="controllers" element={<ControllerManagement />} />
         <Route path="settings/profile" element={<ProfilePage />} />
         <Route path="settings/password" element={<ChangePasswordPage />} />
         <Route path="settings/terms" element={<TermsPage />} />
