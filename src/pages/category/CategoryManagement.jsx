@@ -99,9 +99,9 @@ export default function CategoryManager() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map((category) => (
-            <Card key={category.id} className="hover:shadow-lg transition-shadow">
+            <Card key={category.id} className="hover:shadow-lg transition-shadow backdrop-blur-md bg-white/30">
               <CardHeader>
                 <CardTitle className="flex justify-between items-start">
                   <span>{category.name}</span>
@@ -136,7 +136,7 @@ export default function CategoryManager() {
           </div>
         )}
 
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen} className="">
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>

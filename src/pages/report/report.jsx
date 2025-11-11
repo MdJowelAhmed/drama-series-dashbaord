@@ -378,7 +378,7 @@ const DramaManagementDashboard = () => {
           </Card>
 
           {/* Metrics Cards */}
-          <Card className="mb-6 backdrop-blur-md bg-secondary p-6 rounded-lg">
+          <Card className="mb-6 backdrop-blur-md  p-6 rounded-lg">
             <h4 className="text-lg text-white font-semibold mb-3">
               Production Statistics
             </h4>
