@@ -130,17 +130,17 @@ export default function UserManagement() {
             <h1 className="text-4xl font-bold t mb-2">User Management</h1>
             <p className="">Manage team members and their roles</p>
           </div>
-          <Button onClick={openCreateModal} className="gap-2">
+          <Button onClick={openCreateModal} className="gap-2 py-6">
             <Plus className="w-4 h-4" />
             Add User
           </Button>
         </div>
 
-        <div className="bg-secondary rounded-lg shadow-md overflow-hidden">
+        <div className="bg-secondary rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 ">
+              <thead className="bg-slate-50 border-b border-slate-200 ">
+                <tr >
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Name</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Email</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Phone</th>
