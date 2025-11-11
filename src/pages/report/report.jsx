@@ -12,27 +12,27 @@ import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 
 const dramaProductionData = [
-  { month: "Jan", auditions: 45, rehearsals: 60, performances: 25 },
-  { month: "Feb", auditions: 55, rehearsals: 70, performances: 30 },
-  { month: "Mar", auditions: 40, rehearsals: 55, performances: 35 },
-  { month: "Apr", auditions: 60, rehearsals: 75, performances: 40 },
-  { month: "May", auditions: 50, rehearsals: 65, performances: 45 },
-  { month: "Jun", auditions: 35, rehearsals: 50, performances: 30 },
-  { month: "Jul", auditions: 70, rehearsals: 85, performances: 50 },
-  { month: "Aug", auditions: 65, rehearsals: 80, performances: 55 },
-  { month: "Sep", auditions: 75, rehearsals: 90, performances: 60 },
-  { month: "Oct", auditions: 80, rehearsals: 95, performances: 65 },
-  { month: "Nov", auditions: 55, rehearsals: 70, performances: 40 },
-  { month: "Dec", auditions: 40, rehearsals: 60, performances: 35 },
+  { month: "Jan", audience: 45, subscription: 60, view: 25 },
+  { month: "Feb", audience: 55, subscription: 70, view: 30 },
+  { month: "Mar", audience: 40, subscription: 55, view: 35 },
+  { month: "Apr", audience: 60, subscription: 75, view: 40 },
+  { month: "May", audience: 50, subscription: 65, view: 45 },
+  { month: "Jun", audience: 35, subscription: 50, view: 30 },
+  { month: "Jul", audience: 70, subscription: 85, view: 50 },
+  { month: "Aug", audience: 65, subscription: 80, view: 55 },
+  { month: "Sep", audience: 75, subscription: 90, view: 60 },
+  { month: "Oct", audience: 80, subscription: 95, view: 65 },
+  { month: "Nov", audience: 55, subscription: 70, view: 40 },
+  { month: "Dec", audience: 40, subscription: 60, view: 35 },
 ];
 
 const monthOptions = [...new Set(dramaProductionData.map((d) => d.month))];
-const categoryOptions = ["All", "Auditions", "Rehearsals", "Performances"];
+const categoryOptions = ["All", "audience", "subscription", "view"];
 
 const maxValues = {
-  auditions: Math.max(...dramaProductionData.map((d) => d.auditions)),
-  rehearsals: Math.max(...dramaProductionData.map((d) => d.rehearsals)),
-  performances: Math.max(...dramaProductionData.map((d) => d.performances)),
+  audience: Math.max(...dramaProductionData.map((d) => d.audience)),
+  subscription: Math.max(...dramaProductionData.map((d) => d.subscription)),
+  view: Math.max(...dramaProductionData.map((d) => d.view)),
 };
 
 const Custom3DBarWithWatermark = ({
@@ -157,9 +157,9 @@ const DramaManagementDashboard = () => {
     doc.setFontSize(10);
     let yPos = 50;
     doc.text("Month", 14, yPos);
-    doc.text("Auditions", 50, yPos);
-    doc.text("Rehearsals", 90, yPos);
-    doc.text("Performances", 130, yPos);
+    doc.text("audience", 50, yPos);
+    doc.text("subscription", 90, yPos);
+    doc.text("view", 130, yPos);
     
     // Add line
     doc.line(14, yPos + 2, 195, yPos + 2);
@@ -168,9 +168,9 @@ const DramaManagementDashboard = () => {
     // Add data
     filteredData.forEach((row) => {
       doc.text(row.month, 14, yPos);
-      doc.text(row.auditions.toString(), 50, yPos);
-      doc.text(row.rehearsals.toString(), 90, yPos);
-      doc.text(row.performances.toString(), 130, yPos);
+      doc.text(row.audience.toString(), 50, yPos);
+      doc.text(row.subscription.toString(), 90, yPos);
+      doc.text(row.view.toString(), 130, yPos);
       yPos += 8;
       
       if (yPos > 270) {
@@ -200,9 +200,9 @@ const DramaManagementDashboard = () => {
     // Prepare data for Excel
     const excelData = filteredData.map((row) => ({
       Month: row.month,
-      Auditions: row.auditions,
-      Rehearsals: row.rehearsals,
-      Performances: row.performances,
+      audience: row.audience,
+      subscription: row.subscription,
+      view: row.view,
     }));
     
     // Add statistics as separate sheet data
@@ -229,7 +229,7 @@ const DramaManagementDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-8">
+    <div className="min-h-screen">
       <div className="mx-auto">
         <h1 className="text-4xl font-bold text-white mb-8">
           Drama Production Management
@@ -304,9 +304,9 @@ const DramaManagementDashboard = () => {
           </div>
 
           {/* Chart */}
-          <Card className="bg-white/10 backdrop-blur-md rounded-lg mb-6 p-6">
+          <Card className="bg-secondary rounded-lg mb-6 p-6">
             <div className="mb-4">
-              <h4 className="text-lg font-semibold text-white">
+              <h4 className="text-lg font-semibold text-accent">
                 Production Pipeline
               </h4>
               <div className="border-b-2 border-white/30 mb-4" />
@@ -331,43 +331,43 @@ const DramaManagementDashboard = () => {
                   <Legend />
 
                   {(selectedCategory === "All" ||
-                    selectedCategory === "Auditions") && (
+                    selectedCategory === "audience") && (
                     <Bar
-                      dataKey="auditions"
+                      dataKey="audience"
                       fill="#981C2C"
-                      name="Auditions"
+                      name="audience"
                       shape={(props) => (
                         <Custom3DBarWithWatermark
                           {...props}
-                          dataKey="auditions"
+                          dataKey="audience"
                         />
                       )}
                     />
                   )}
                   {(selectedCategory === "All" ||
-                    selectedCategory === "Rehearsals") && (
+                    selectedCategory === "subscription") && (
                     <Bar
-                      dataKey="rehearsals"
+                      dataKey="subscription"
                       fill="#3b82f6"
-                      name="Rehearsals"
+                      name="subscription"
                       shape={(props) => (
                         <Custom3DBarWithWatermark
                           {...props}
-                          dataKey="rehearsals"
+                          dataKey="subscription"
                         />
                       )}
                     />
                   )}
                   {(selectedCategory === "All" ||
-                    selectedCategory === "Performances") && (
+                    selectedCategory === "view") && (
                     <Bar
-                      dataKey="performances"
+                      dataKey="view"
                       fill="#10b981"
-                      name="Performances"
+                      name="view"
                       shape={(props) => (
                         <Custom3DBarWithWatermark
                           {...props}
-                          dataKey="performances"
+                          dataKey="view"
                         />
                       )}
                     />
@@ -378,14 +378,14 @@ const DramaManagementDashboard = () => {
           </Card>
 
           {/* Metrics Cards */}
-          <Card className="mb-6 backdrop-blur-md bg-white/10 p-6 rounded-lg">
+          <Card className="mb-6 backdrop-blur-md bg-secondary p-6 rounded-lg">
             <h4 className="text-lg text-white font-semibold mb-3">
               Production Statistics
             </h4>
             <div className="grid grid-cols-4 gap-4">
               <MetricsCards
                 value="24"
-                label="Active Productions"
+                label="Active Movie"
                 icons={<ChevronUp className="w-4 h-4 text-green-500" />}
                 percentage="18"
               />
@@ -397,13 +397,13 @@ const DramaManagementDashboard = () => {
               />
               <MetricsCards
                 value="8"
-                label="Completed Shows"
+                label="Total Trailer"
                 icons={<ChevronDown className="w-4 h-4 text-red-500" />}
                 percentage="5"
               />
               <MetricsCards
                 value="94.5%"
-                label="Attendance Rate"
+                label="Total View"
                 icons={<ChevronUp className="w-4 h-4 text-green-500" />}
                 percentage="8"
               />

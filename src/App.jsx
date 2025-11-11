@@ -12,6 +12,7 @@ import TermsPage from './pages/Settings/TermsPage';
 import PrivacyPage from './pages/Settings/PrivacyPage';
 import DramaManagementDashboard from './pages/report/report';
 import TrailerManagement from './pages/trailers/TrailerManagement';
+import CategoryManager from './pages/category/CategoryManagement';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="movies/:id" element={<DramaDetails />} />
         <Route path="movies" element={<AllMovies />} />
         <Route path="trailers" element={<TrailerManagement />} />
+        <Route path="categories" element={<CategoryManager />} />
         <Route path="subscriptions" element={<SubscriptionPage />} />
         <Route path="reports" element={<DramaManagementDashboard />} />
         <Route path="users" element={<UsersPage />} />

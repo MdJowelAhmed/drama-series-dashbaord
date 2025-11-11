@@ -38,6 +38,11 @@ const Sidebar = () => {
       icon: ReceiptPoundSterling,
     },
     {
+      name: 'Category Management',
+      path: '/categories',
+      icon: ReceiptPoundSterling,
+    },
+    {
       name: 'Subscription Package',
       path: '/subscriptions',
       icon: CreditCard,
