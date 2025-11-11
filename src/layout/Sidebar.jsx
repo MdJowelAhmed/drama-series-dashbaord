@@ -27,11 +27,11 @@ const Sidebar = () => {
       path: '/dramas',
       icon: Film,
     },
-    // {
-    //   name: 'Movie Management',
-    //   path: '/movies',
-    //   icon: Video,
-    // },
+    {
+      name: 'Trailer Management',
+      path: '/trailers',
+      icon: Video,
+    },
     {
       name: 'Report Analytics',
       path: '/reports',

@@ -11,6 +11,7 @@ import ChangePasswordPage from './pages/Settings/ChangePasswordPage';
 import TermsPage from './pages/Settings/TermsPage';
 import PrivacyPage from './pages/Settings/PrivacyPage';
 import DramaManagementDashboard from './pages/report/report';
+import TrailerManagement from './pages/trailers/TrailerManagement';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="dramas/:id" element={<DramaDetails />} />
         <Route path="movies/:id" element={<DramaDetails />} />
         <Route path="movies" element={<AllMovies />} />
+        <Route path="trailers" element={<TrailerManagement />} />
         <Route path="subscriptions" element={<SubscriptionPage />} />
         <Route path="reports" element={<DramaManagementDashboard />} />
         <Route path="users" element={<UsersPage />} />
