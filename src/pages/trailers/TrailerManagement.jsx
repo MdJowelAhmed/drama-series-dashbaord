@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Plus, Trash2, Video, Edit2, Play, Clock, Eye, Film, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import VideoDetailsModal from '@/components/modals/VideoDetailsModal';
 
 const INITIAL_TRAILERS = [
   {
     id: 1,
     title: "The Last Kingdom - Official Trailer",
     duration: 180,
-    video_url: "https://www.freepik.com/free-video/aerial-wide-green-plantation-field-sunny-day_3384827#fromView=subhome",
+    video_url: "https://player.cloudinary.com/embed/?cloud_name=dztlololv&public_id=tnltcigkupvd7ehcwfuu&profile=cld-default",
     thumbnail_url: "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400",
     created_at: "2024-01-10",
     views: "1.2M",
@@ -136,7 +137,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center z-50 p-4">
       <div className="bg-[#FFFFFF3B] rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-accent">
@@ -576,8 +577,12 @@ const TrailerManagement = () => {
         )}
 
         {detailsModalOpen && selectedTrailer && (
-          <TrailerDetailsModal
-            trailer={selectedTrailer}
+        //   <TrailerDetailsModal
+        //     trailer={selectedTrailer}
+        //     onClose={() => setDetailsModalOpen(false)}
+        //   />
+         <VideoDetailsModal
+            video={selectedTrailer}
             onClose={() => setDetailsModalOpen(false)}
           />
         )}

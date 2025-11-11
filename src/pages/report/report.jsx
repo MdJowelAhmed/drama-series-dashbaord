@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, FileDown } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -8,6 +8,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 
 const dramaProductionData = [
   { month: "Jan", auditions: 45, rehearsals: 60, performances: 25 },
@@ -139,69 +141,175 @@ const DramaManagementDashboard = () => {
     });
   }, [fromMonth, toMonth]);
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text("Drama Production Management Report", 14, 20);
+    
+    // Add filter info
+    doc.setFontSize(11);
+    doc.text(`Period: ${fromMonth} - ${toMonth}`, 14, 30);
+    doc.text(`Category: ${selectedCategory}`, 14, 37);
+    
+    // Add table headers
+    doc.setFontSize(10);
+    let yPos = 50;
+    doc.text("Month", 14, yPos);
+    doc.text("Auditions", 50, yPos);
+    doc.text("Rehearsals", 90, yPos);
+    doc.text("Performances", 130, yPos);
+    
+    // Add line
+    doc.line(14, yPos + 2, 195, yPos + 2);
+    yPos += 10;
+    
+    // Add data
+    filteredData.forEach((row) => {
+      doc.text(row.month, 14, yPos);
+      doc.text(row.auditions.toString(), 50, yPos);
+      doc.text(row.rehearsals.toString(), 90, yPos);
+      doc.text(row.performances.toString(), 130, yPos);
+      yPos += 8;
+      
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+    });
+    
+    // Add statistics
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.text("Production Statistics", 14, yPos);
+    yPos += 10;
+    doc.setFontSize(10);
+    doc.text("Active Productions: 24 (18% increase)", 14, yPos);
+    yPos += 7;
+    doc.text("Cast Members: 156 (22% increase)", 14, yPos);
+    yPos += 7;
+    doc.text("Completed Shows: 8 (5% decrease)", 14, yPos);
+    yPos += 7;
+    doc.text("Attendance Rate: 94.5% (8% increase)", 14, yPos);
+    
+    doc.save("drama-production-report.pdf");
+  };
+
+  const exportToExcel = () => {
+    // Prepare data for Excel
+    const excelData = filteredData.map((row) => ({
+      Month: row.month,
+      Auditions: row.auditions,
+      Rehearsals: row.rehearsals,
+      Performances: row.performances,
+    }));
+    
+    // Add statistics as separate sheet data
+    const statsData = [
+      { Metric: "Active Productions", Value: 24, Change: "↑18%" },
+      { Metric: "Cast Members", Value: 156, Change: "↑22%" },
+      { Metric: "Completed Shows", Value: 8, Change: "↓5%" },
+      { Metric: "Attendance Rate", Value: "94.5%", Change: "↑8%" },
+    ];
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Add production data sheet
+    const ws1 = XLSX.utils.json_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(wb, ws1, "Production Data");
+    
+    // Add statistics sheet
+    const ws2 = XLSX.utils.json_to_sheet(statsData);
+    XLSX.utils.book_append_sheet(wb, ws2, "Statistics");
+    
+    // Save file
+    XLSX.writeFile(wb, "drama-production-report.xlsx");
+  };
+
   return (
-    <div className="min-h-screen ">
-      <div className=" mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-8">
+      <div className="mx-auto">
         <h1 className="text-4xl font-bold text-white mb-8">
           Drama Production Management
         </h1>
 
         <div className="rounded-lg mb-6">
           {/* Filter Controls */}
-          <div className="flex gap-4 mb-4 flex-wrap items-center justify-end">
-            <div className="flex items-center gap-2">
-              <label className="font-semibold text-white">From:</label>
-              <select
-                value={fromMonth}
-                onChange={(e) => setFromMonth(e.target.value)}
-                className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
+          <div className="flex gap-4 mb-4 flex-wrap items-center justify-between">
+            <div className="flex gap-2">
+              <button
+                onClick={exportToPDF}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
               >
-                {monthOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                <FileDown className="w-4 h-4" />
+                Export PDF
+              </button>
+              <button
+                onClick={exportToExcel}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+              >
+                <FileDown className="w-4 h-4" />
+                Export Excel
+              </button>
             </div>
+            
+            <div className="flex gap-4 flex-wrap items-center">
+              <div className="flex items-center gap-2">
+                <label className="font-semibold text-white">From:</label>
+                <select
+                  value={fromMonth}
+                  onChange={(e) => setFromMonth(e.target.value)}
+                  className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
+                >
+                  {monthOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="flex items-center gap-2">
-              <label className="font-semibold text-white">To:</label>
-              <select
-                value={toMonth}
-                onChange={(e) => setToMonth(e.target.value)}
-                className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
-              >
-                {monthOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="flex items-center gap-2">
+                <label className="font-semibold text-white">To:</label>
+                <select
+                  value={toMonth}
+                  onChange={(e) => setToMonth(e.target.value)}
+                  className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
+                >
+                  {monthOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="flex items-center gap-2">
-              <label className="font-semibold text-white">Category:</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
-              >
-                {categoryOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <label className="font-semibold text-white">Category:</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
+                >
+                  {categoryOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Chart */}
-          <Card className="bg-secondary rounded-lg mb-6 p-6">
+          <Card className="bg-white/10 backdrop-blur-md rounded-lg mb-6 p-6">
             <div className="mb-4">
-              <h4 className="text-lg font-semibold text-accent">
+              <h4 className="text-lg font-semibold text-white">
                 Production Pipeline
               </h4>
-              <div className="border-b-2 border-white mb-4" />
+              <div className="border-b-2 border-white/30 mb-4" />
             </div>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -209,7 +317,6 @@ const DramaManagementDashboard = () => {
                   data={filteredData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
-                  {/* White text for X and Y axis */}
                   <XAxis
                     dataKey="month"
                     axisLine={false}
@@ -271,7 +378,7 @@ const DramaManagementDashboard = () => {
           </Card>
 
           {/* Metrics Cards */}
-          <Card className="mb-6 backdrop-blur-md bg-secondary p-6 rounded-lg">
+          <Card className="mb-6 backdrop-blur-md bg-white/10 p-6 rounded-lg">
             <h4 className="text-lg text-white font-semibold mb-3">
               Production Statistics
             </h4>
