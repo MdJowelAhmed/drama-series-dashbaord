@@ -190,10 +190,10 @@ const DramaDetails = () => {
                   <p className="text-sm text-slate-600 font-medium mb-1">Total Videos</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{videos.length}</p>
                 </div>
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-2xl border border-green-100/50 hover:shadow-lg transition-all hover:scale-105">
+                {/* <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-2xl border border-green-100/50 hover:shadow-lg transition-all hover:scale-105">
                   <p className="text-sm text-slate-600 font-medium mb-1">Rating</p>
                   <p className="text-3xl font-bold text-green-600">⭐ {drama.rating}</p>
-                </div>
+                </div> */}
                 <div className="bg-gradient-to-br from-orange-50 to-red-50 p-5 rounded-2xl border border-orange-100/50 hover:shadow-lg transition-all hover:scale-105">
                   <p className="text-sm text-slate-600 font-medium mb-1">Total Views</p>
                   <p className="text-3xl font-bold text-orange-600">{drama.total_views}</p>
@@ -216,10 +216,10 @@ const DramaDetails = () => {
           <h2 className="text-3xl font-bold text-accent">Videos</h2>
           <Button
             onClick={handleUploadVideo}
-            className="flex items-center gap-2 py-6 text-white px-6 rounded-md hover:shadow-xl hover:scale-105 transition-all font-semibold"
+            className="flex items-center gap-2 py-6 text-white px-6 rounded-md  transition-all font-semibold"
           >
             <Plus className="h-5 w-5" />
-            Upload Video
+            Upload Episode
           </Button>
         </div>
 
