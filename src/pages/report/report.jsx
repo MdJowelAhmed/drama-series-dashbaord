@@ -334,7 +334,7 @@ const DramaManagementDashboard = () => {
                     selectedCategory === "audience") && (
                     <Bar
                       dataKey="audience"
-                      fill="#981C2C"
+                      fill="#CA8A04"
                       name="audience"
                       shape={(props) => (
                         <Custom3DBarWithWatermark
@@ -389,12 +389,12 @@ const DramaManagementDashboard = () => {
                 icons={<ChevronUp className="w-4 h-4 text-green-500" />}
                 percentage="18"
               />
-              <MetricsCards
+              {/* <MetricsCards
                 value="156"
                 label="Cast Members"
                 icons={<ChevronUp className="w-4 h-4 text-green-500" />}
                 percentage="22"
-              />
+              /> */}
               <MetricsCards
                 value="8"
                 label="Total Trailer"

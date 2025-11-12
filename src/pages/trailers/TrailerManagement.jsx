@@ -175,7 +175,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
+            {/* <div>
               <label className="block text-sm font-semibold text-accent mb-2">Type *</label>
               <select
                 value={type}
@@ -190,7 +190,7 @@ const VideoUploadModal = ({ video, onClose, onSave }) => {
                 <option value="Character Spotlight">Character Spotlight</option>
                 <option value="Announcement">Announcement</option>
               </select>
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-sm font-semibold text-accent mb-2">Color</label>
