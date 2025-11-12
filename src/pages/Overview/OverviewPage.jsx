@@ -1,4 +1,4 @@
-import { Film, Video, Users, CreditCard } from 'lucide-react';
+import { Film, Video, Users, CreditCard, DollarSign } from 'lucide-react';
 import StatsCard from '@/components/cards/StatsCard';
 import UserGrowthChart from '@/components/charts/UserGrowthChart';
 import TopContentChart from '@/components/charts/TopContentChart';
@@ -6,14 +6,7 @@ import { dummyOverviewStats } from '@/utils/dummyData';
 
 const OverviewPage = () => {
   const stats = [
-    {
-      title: 'Total Dramas',
-      value: dummyOverviewStats.totalDramas,
-      icon: Film,
-      iconBgColor: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-      trend: 12,
-    },
+   
     {
       title: 'Total Movies',
       value: dummyOverviewStats.totalMovies,
@@ -37,6 +30,14 @@ const OverviewPage = () => {
       iconBgColor: 'bg-cyan-100',
       iconColor: 'text-cyan-600',
       trend: 10,
+    },
+     {
+      title: 'Total Revenue',
+      value: dummyOverviewStats.totalDramas,
+      icon: DollarSign,
+      iconBgColor: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      trend: 12,
     },
   ];
 
