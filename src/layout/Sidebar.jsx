@@ -62,7 +62,7 @@ const Sidebar = () => {
   const settingsItems = [
     { name: "Profile", path: "/settings/profile" },
     { name: "Change Password", path: "/settings/password" },
-    { name: "Terms & Conditions", path: "/settings/terms" },
+    { name: "User Agreement", path: "/settings/agreement" },
     { name: "Privacy Policy", path: "/settings/privacy" },
   ];
 
@@ -72,7 +72,7 @@ const Sidebar = () => {
         <div className="flex items-center gap-2">
           {/* <Film className="h-8 w-8 text-primary" /> */}
           <img src="/assets/logo.png" alt="logo" className="h- w-16" />
-          <h1 className="text-2xl font-bold">Creepy Shorts</h1>
+          {/* <h1 className="text-2xl font-bold">Creepy Shorts</h1> */}
         </div>
       </div>
 

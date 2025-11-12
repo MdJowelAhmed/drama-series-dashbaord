@@ -32,7 +32,7 @@ function App() {
         <Route path="controllers" element={<ControllerManagement />} />
         <Route path="settings/profile" element={<ProfilePage />} />
         <Route path="settings/password" element={<ChangePasswordPage />} />
-        <Route path="settings/terms" element={<TermsPage />} />
+        <Route path="settings/agreement" element={<TermsPage />} />
         <Route path="settings/privacy" element={<PrivacyPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
