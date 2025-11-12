@@ -241,7 +241,7 @@ const DramaManagementDashboard = () => {
             <div className="flex gap-2">
               <button
                 onClick={exportToPDF}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                className="flex items-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
               >
                 <FileDown className="w-4 h-4" />
                 Export PDF

@@ -93,7 +93,7 @@ export default function CategoryManager() {
             <h1 className="text-4xl font-bold  mb-2">Category Manager</h1>
             <p className="">Manage your product categories</p>
           </div>
-          <Button onClick={openCreateModal} className="gap-2">
+          <Button onClick={openCreateModal} className="gap-2 py-6 rounded-sm">
             <Plus className="w-4 h-4" />
             Add Category
           </Button>
