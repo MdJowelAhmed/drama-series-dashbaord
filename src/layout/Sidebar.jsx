@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Film,
@@ -7,10 +7,10 @@ import {
   Users,
   Settings,
   ChevronDown,
-  ReceiptPoundSterling
-} from 'lucide-react';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
+  ReceiptPoundSterling,
+} from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 const Sidebar = () => {
   const location = useLocation();
@@ -18,52 +18,52 @@ const Sidebar = () => {
 
   const navItems = [
     {
-      name: 'Overview',
-      path: '/',
+      name: "Overview",
+      path: "/",
       icon: LayoutDashboard,
     },
     {
-      name: 'Drama Management',
-      path: '/dramas',
+      name: "Drama Management",
+      path: "/dramas",
       icon: Film,
     },
     {
-      name: 'Trailer Management',
-      path: '/trailers',
+      name: "Trailer Management",
+      path: "/trailers",
       icon: Video,
     },
     {
-      name: 'Report Analytics',
-      path: '/reports',
+      name: "Report Analytics",
+      path: "/reports",
       icon: ReceiptPoundSterling,
     },
     {
-      name: 'Category Management',
-      path: '/categories',
+      name: "Category Management",
+      path: "/categories",
       icon: ReceiptPoundSterling,
     },
     {
-      name: 'Subscription Package',
-      path: '/subscriptions',
+      name: "Subscription Package",
+      path: "/subscriptions",
       icon: CreditCard,
     },
     {
-      name: 'User Management',
-      path: '/users',
+      name: "User Management",
+      path: "/users",
       icon: Users,
     },
     {
-      name: 'Controller Management',
-      path: '/controllers',
+      name: "Controller Management",
+      path: "/controllers",
       icon: Users,
     },
   ];
 
   const settingsItems = [
-    { name: 'Profile', path: '/settings/profile' },
-    { name: 'Change Password', path: '/settings/password' },
-    { name: 'Terms & Conditions', path: '/settings/terms' },
-    { name: 'Privacy Policy', path: '/settings/privacy' },
+    { name: "Profile", path: "/settings/profile" },
+    { name: "Change Password", path: "/settings/password" },
+    { name: "Terms & Conditions", path: "/settings/terms" },
+    { name: "Privacy Policy", path: "/settings/privacy" },
   ];
 
   return (
@@ -88,8 +88,8 @@ const Sidebar = () => {
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
                 isActive
-                  ? "bg-primary text-white"
-                  : "text-slate-300 hover:bg-slate-800"
+                  ? "bg-primary text-white hover:text-white" // <-- added hover:text-white
+                  : "text-slate-300 hover:bg-slate-800 hover:text-slate-200" // <-- specify hover:text color
               )}
             >
               <Icon className="h-5 w-5" />
@@ -103,7 +103,7 @@ const Sidebar = () => {
             onClick={() => setSettingsOpen(!settingsOpen)}
             className={cn(
               "w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors text-slate-300 hover:bg-slate-800",
-              location.pathname.startsWith('/settings') && "bg-slate-800"
+              location.pathname.startsWith("/settings") && "bg-slate-800"
             )}
           >
             <div className="flex items-center gap-3">
