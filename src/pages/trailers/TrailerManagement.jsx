@@ -469,33 +469,13 @@ const TrailerManagement = () => {
           </div>
           <Button
             onClick={handleUploadTrailer}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl hover:shadow-xl hover:scale-105 transition-all font-semibold"
+            className="flex items-center gap-2 px-6 py-6 rounded-sm  transition-all font-semibold"
           >
             <Plus className="h-5 w-5" />
             Upload Trailer
           </Button>
         </div>
 
-        <div className="bg-secondary rounded-3xl shadow-xl p-8 border border-white/20">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl">
-              <p className="text-sm text-white/80 font-medium mb-2">Total Trailers</p>
-              <p className="text-4xl font-bold text-accent">{trailers.length}</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl">
-              <p className="text-sm text-white/80 font-medium mb-2">Total Views</p>
-              <p className="text-4xl font-bold text-accent">
-                {trailers.reduce((acc, t) => acc + parseFloat(t.views.replace(/[MK]/g, '')), 0).toFixed(1)}M
-              </p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl">
-              <p className="text-sm text-white/80 font-medium mb-2">Latest Upload</p>
-              <p className="text-lg font-bold text-accent">
-                {trailers.length > 0 ? new Date(Math.max(...trailers.map(t => new Date(t.created_at)))).toLocaleDateString() : 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
 
         {trailers.length === 0 ? (
           <div className="bg-secondary rounded-3xl shadow-xl p-16 text-center border border-white/20">
