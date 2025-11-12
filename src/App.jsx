@@ -20,9 +20,9 @@ function App() {
     <Routes>
       <Route path="/" element={<LayoutWrapper />}>
         <Route index element={<OverviewPage />} />
-        <Route path="dramas" element={<AllDramas />} />
-        <Route path="dramas/:id" element={<DramaDetails />} />
+        <Route path="movies" element={<AllDramas />} />
         <Route path="movies/:id" element={<DramaDetails />} />
+        {/* <Route path="movies/:id" element={<DramaDetails />} /> */}
         <Route path="movies" element={<AllMovies />} />
         <Route path="trailers" element={<TrailerManagement />} />
         <Route path="categories" element={<CategoryManager />} />

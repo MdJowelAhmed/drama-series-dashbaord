@@ -23,8 +23,8 @@ const Sidebar = () => {
       icon: LayoutDashboard,
     },
     {
-      name: "Drama Management",
-      path: "/dramas",
+      name: "Movies Management",
+      path: "/movies",
       icon: Film,
     },
     {

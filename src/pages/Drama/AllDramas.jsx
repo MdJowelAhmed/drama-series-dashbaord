@@ -322,10 +322,10 @@ const DramaForm = () => (
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-accent">
-              Drama Management
+              Movie Management
             </h1>
             <p className="text-accent mt-1">
-              Manage all your dramas and series
+              Manage all your movies and series
             </p>
           </div>
           <Button
@@ -336,7 +336,7 @@ const DramaForm = () => (
             className="bg-primary py-6 text-accent shadow hover:bg-primary-foreground"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add New Drama
+            Add New Movie
           </Button>
         </div>
 
@@ -344,7 +344,7 @@ const DramaForm = () => (
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search dramas..."
+              placeholder="Search movies..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -354,7 +354,7 @@ const DramaForm = () => (
 
         {filteredDramas.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-600">No dramas found</p>
+            <p className="text-slate-600">No movies found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -393,7 +393,7 @@ const DramaForm = () => (
                   <Button
                     size="sm"
                     className="flex-1 py-5"
-                    onClick={() => navigate(`/dramas/${drama.id}`)}
+                    onClick={() => navigate(`/movies/${drama.id}`)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     View
@@ -422,7 +422,7 @@ const DramaForm = () => (
         {/* Create Drama Modal */}
         {createModalOpen && (
           <CommonFormModal
-            title="Create New Drama"
+            title="Create New Movies"
             data={null}
             onClose={() => setCreateModalOpen(false)}
             onSave={handleCreate}
@@ -434,7 +434,7 @@ const DramaForm = () => (
         {/* Edit Drama Modal */}
         {editModalOpen && (
           <CommonFormModal
-            title="Edit Drama"
+            title="Edit Movie"
             data={{
               ...selectedDrama,
               thumbnail: selectedDrama.thumbnail_url
