@@ -124,7 +124,7 @@ export default function CategoryManager() {
                     </Button>
                   </div>
                 </CardTitle>
-                <p className=''>{category.description}</p>
+                {/* <p className=''>{category.description}</p> */}
               </CardHeader>
             </Card>
           ))}
@@ -159,7 +159,7 @@ export default function CategoryManager() {
                   onChange={handleChange}
                 />
               </div>
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Input
                   id="description"
@@ -168,7 +168,7 @@ export default function CategoryManager() {
                   value={formData.description}
                   onChange={handleChange}
                 />
-              </div>
+              </div> */}
             </div>
             <DialogFooter>
               <Button
