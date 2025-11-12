@@ -112,7 +112,7 @@ export default function CategoryManager() {
                       onClick={() => openEditModal(category)}
                       className="h-8 w-8"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-6 h-6" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -120,7 +120,7 @@ export default function CategoryManager() {
                       onClick={() => handleDelete(category.id)}
                       className="h-8 w-8 text-red-600 hover:text-red-700"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-6 h-6" />
                     </Button>
                   </div>
                 </CardTitle>
