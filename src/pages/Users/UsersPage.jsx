@@ -148,7 +148,7 @@ const UserManagement = () => {
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Subscription</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Watch Time</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Total Download</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Money Spent</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Money Spend</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Status</th>
                   {/* <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Joined</th> */}
                   <th className="text-right px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Actions</th>
