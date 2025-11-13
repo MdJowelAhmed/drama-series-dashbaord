@@ -11,6 +11,9 @@ const UserManagement = () => {
       phone: '01712345678',
       subscription_package: 'Premium Plan',
       subscription_end: '2025-12-10',
+      watch_time: '1200 hours',
+      total_download:"12",
+      money_spent:"200",
       is_active: true,
       created_at: '2024-01-15'
     },
@@ -21,6 +24,9 @@ const UserManagement = () => {
       phone: '01823456789',
       subscription_package: 'Basic Plan',
       subscription_end: '2025-11-20',
+      watch_time: '800 hours',
+      total_download:"8",
+      money_spent:"100",
       is_active: true,
       created_at: '2024-03-22'
     },
@@ -31,6 +37,9 @@ const UserManagement = () => {
       phone: '01934567890',
       subscription_package: null,
       subscription_end: null,
+      watch_time: '0 hours',
+      total_download:"0",
+      money_spent:"0",
       is_active: false,
       created_at: '2024-05-10'
     },
@@ -41,6 +50,9 @@ const UserManagement = () => {
       phone: '01645678901',
       subscription_package: 'Enterprise Plan',
       subscription_end: '2026-01-15',
+      watch_time: '1600 hours',
+      total_download:"16",
+      money_spent:"300",
       is_active: true,
       created_at: '2024-02-08'
     },
@@ -51,6 +63,9 @@ const UserManagement = () => {
       phone: '01756789012',
       subscription_package: 'Premium Plan',
       subscription_end: '2025-10-30',
+      watch_time: '1400 hours',
+      total_download:"14",
+      money_spent:"250",
       is_active: true,
       created_at: '2024-06-12'
     },
@@ -61,6 +76,9 @@ const UserManagement = () => {
       phone: null,
       subscription_package: null,
       subscription_end: null,
+      watch_time: '0 hours',
+      total_download:"0",
+      money_spent:"0",
       is_active: false,
       created_at: '2024-08-20'
     }
@@ -128,8 +146,11 @@ const UserManagement = () => {
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Email</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Phone</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Subscription</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Watch Time</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Total Download</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Money Spent</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Status</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Joined</th>
+                  {/* <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Joined</th> */}
                   <th className="text-right px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -156,6 +177,9 @@ const UserManagement = () => {
                         {user.subscription_package || 'None'}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.watch_time}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.total_download}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.money_spent}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <button
@@ -175,9 +199,9 @@ const UserManagement = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-accent">
+                    {/* <td className="px-6 py-4 whitespace-nowrap text-accent">
                       {formatDate(user.created_at)}
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex justify-end gap-2">
                         <Button

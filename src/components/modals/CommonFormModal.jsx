@@ -229,7 +229,7 @@ const [formData, setFormData] = useState({
             </div>
    
               <div>
-                <Label htmlFor="contentName">Content Name</Label>
+                <Label htmlFor="contentName">Top Banner </Label>
                 <Input
                   id="contentName"
                   value={formData.contentName}
@@ -239,7 +239,7 @@ const [formData, setFormData] = useState({
                       contentName: e.target.value,
                     }))
                   }
-                  placeholder="Enter content name"
+                  placeholder="Enter top banner "
                 />
               </div>
        
