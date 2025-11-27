@@ -8,7 +8,7 @@ export const AuthLayout = () => {
     >
       <div className="absolute inset-0 bg-black/40"></div>
 
-      <div className="relative z-10 w-full max-w-md mx-auto px-6">
+      <div className="relative z-10 w-full max-w-2xl mx-auto px-6">
         <Outlet />
       </div>
     </div>

@@ -23,7 +23,7 @@ const LoginPage = ({ onForgotPassword, onSignUp }) => {
   return (
   
       <div className="flex justify-center px-4">
-        <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+        <Card className="w-full max-w-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
           <div className="p-8">
             {/* Logo/Title */}
             <div className="text-center mb-8">
