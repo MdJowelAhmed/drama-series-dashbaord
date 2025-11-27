@@ -40,6 +40,11 @@ const Sidebar = () => {
       icon: Video,
     },
     {
+      name: "Ad Management",
+      path: "/ad-management",
+      icon: Video,
+    },
+    {
       name: "Report Analytics",
       path: "/reports",
       icon: ReceiptPoundSterling,

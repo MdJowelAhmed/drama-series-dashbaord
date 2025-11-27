@@ -23,7 +23,7 @@ const ForgotPasswordPage = () => {
     return (
      
         <div className="flex justify-center px-4">
-          <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+          <Card className="w-full max-w-xl bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
             <div className="p-8 text-center">
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-8 h-8 text-green-400" />
@@ -48,7 +48,7 @@ const ForgotPasswordPage = () => {
   return (
     
       <div className="flex justify-center px-4">
-        <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+        <Card className="w-full max-w-xl bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
           <div className="p-8">
             {/* <button
               onClick={onBackToLogin}
@@ -64,7 +64,7 @@ const ForgotPasswordPage = () => {
               </p>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-10">
               <div>
                 <label className="block text-sm font-medium text-gray-200 mb-2">
                   Email Address
@@ -85,7 +85,7 @@ const ForgotPasswordPage = () => {
               <Button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 rounded-lg"
+                className="w-full py-6   text-white font-semibold  rounded-lg"
               >
                 {loading ? "Sending..." : "Send Reset Link"}
               </Button>

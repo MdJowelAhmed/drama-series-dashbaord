@@ -14,9 +14,11 @@ import DramaManagementDashboard from './pages/report/report';
 import TrailerManagement from './pages/trailers/TrailerManagement';
 import CategoryManager from './pages/category/CategoryManagement';
 import ControllerManagement from './pages/controller/ControllerManagement';
-import LoginPage from './pages/authentication/login';
+
 import { AuthLayout } from './layout/AuthLayout';
 import ForgotPasswordPage from './pages/authentication/ForgotPassword';
+import LoginPage from './pages/authentication/Login';
+import AdManagement from './pages/ad-management/AdManagement';
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
         {/* <Route path="movies/:id" element={<DramaDetails />} /> */}
         <Route path="movies" element={<AllMovies />} />
         <Route path="trailers" element={<TrailerManagement />} />
+        <Route path="ad-management" element={<AdManagement />} />
         <Route path="categories" element={<CategoryManager />} />
         <Route path="subscriptions" element={<SubscriptionPage />} />
         <Route path="reports" element={<DramaManagementDashboard />} />
