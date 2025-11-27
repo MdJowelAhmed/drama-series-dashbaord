@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Film,
@@ -8,6 +8,7 @@ import {
   Settings,
   ChevronDown,
   ReceiptPoundSterling,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,13 @@ import { cn } from "@/lib/utils";
 const Sidebar = () => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const navigate = useNavigate();
 
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("refreshToken");
+    navigate("/login");
+  };
   const navItems = [
     {
       name: "Overview",
@@ -150,6 +157,14 @@ const Sidebar = () => {
           <div>
             <p className="text-sm font-medium">Admin User</p>
             <p className="text-xs text-slate-400">admin@cine.com</p>
+
+            <button
+              onClick={handleLogout}
+              className="w-full mt-3 flex items-center gap-3 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition text-white"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Logout</span>
+            </button>
           </div>
         </div>
       </div>
