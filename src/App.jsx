@@ -14,10 +14,17 @@ import DramaManagementDashboard from './pages/report/report';
 import TrailerManagement from './pages/trailers/TrailerManagement';
 import CategoryManager from './pages/category/CategoryManagement';
 import ControllerManagement from './pages/controller/ControllerManagement';
+import LoginPage from './pages/authentication/login';
+import { AuthLayout } from './layout/AuthLayout';
 
 function App() {
   return (
+    
     <Routes>
+  <Route element={<AuthLayout />}>
+    <Route path="/login" element={<LoginPage />} />
+    {/* <Route path="/register" element={<Register />} /> */}
+  </Route>
       <Route path="/" element={<LayoutWrapper />}>
         <Route index element={<OverviewPage />} />
         <Route path="movies" element={<AllDramas />} />
@@ -34,6 +41,7 @@ function App() {
         <Route path="settings/password" element={<ChangePasswordPage />} />
         <Route path="settings/agreement" element={<TermsPage />} />
         <Route path="settings/privacy" element={<PrivacyPage />} />
+     
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
