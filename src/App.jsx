@@ -16,6 +16,7 @@ import CategoryManager from './pages/category/CategoryManagement';
 import ControllerManagement from './pages/controller/ControllerManagement';
 import LoginPage from './pages/authentication/login';
 import { AuthLayout } from './layout/AuthLayout';
+import ForgotPasswordPage from './pages/authentication/ForgotPassword';
 
 function App() {
   return (
@@ -23,7 +24,8 @@ function App() {
     <Routes>
   <Route element={<AuthLayout />}>
     <Route path="/login" element={<LoginPage />} />
-    {/* <Route path="/register" element={<Register />} /> */}
+    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+   
   </Route>
       <Route path="/" element={<LayoutWrapper />}>
         <Route index element={<OverviewPage />} />

@@ -1,5 +1,11 @@
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Mail } from "lucide-react";
+import { useState } from "react";
+
 // Forgot Password Page
-const ForgotPasswordPage = ({ onBackToLogin }) => {
+const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -15,7 +21,7 @@ const ForgotPasswordPage = ({ onBackToLogin }) => {
 
   if (submitted) {
     return (
-      <AuthLayout>
+     
         <div className="flex justify-center px-4">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
             <div className="p-8 text-center">
@@ -35,21 +41,21 @@ const ForgotPasswordPage = ({ onBackToLogin }) => {
             </div>
           </Card>
         </div>
-      </AuthLayout>
+      
     );
   }
 
   return (
-    <AuthLayout>
+    
       <div className="flex justify-center px-4">
         <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
           <div className="p-8">
-            <button
+            {/* <button
               onClick={onBackToLogin}
               className="text-gray-300 hover:text-white text-sm mb-6 flex items-center gap-1"
             >
               ← Back to Login
-            </button>
+            </button> */}
 
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-white mb-2">Reset Password</h1>
@@ -87,6 +93,8 @@ const ForgotPasswordPage = ({ onBackToLogin }) => {
           </div>
         </Card>
       </div>
-    </AuthLayout>
+
   );
 };
+
+export default ForgotPasswordPage;

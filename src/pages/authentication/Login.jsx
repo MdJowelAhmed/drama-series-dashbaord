@@ -4,12 +4,14 @@ import { Input } from "@/components/ui/input";
 import { AuthLayout } from "@/layout/AuthLayout";
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const LoginPage = ({ onForgotPassword, onSignUp }) => {
+const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate=useNavigate()
 
   const handleLogin = () => {
     setLoading(true);
@@ -19,6 +21,10 @@ const LoginPage = ({ onForgotPassword, onSignUp }) => {
       alert("Login successful!");
     }, 1500);
   };
+
+const handleForgotPassword = () => {
+  navigate("/forgot-password");
+};
 
   return (
   
@@ -83,7 +89,7 @@ const LoginPage = ({ onForgotPassword, onSignUp }) => {
               {/* Forgot Password Link */}
               <div className="flex justify-end">
                 <button
-                  onClick={onForgotPassword}
+                  onClick={handleForgotPassword}
                   className="text-sm text-blue-400 hover:text-blue-300 transition"
                 >
                   Forgot Password?
@@ -101,18 +107,7 @@ const LoginPage = ({ onForgotPassword, onSignUp }) => {
               </Button>
             </div>
 
-            {/* Sign Up Link */}
-            <div className="mt-6 text-center">
-              <p className="text-gray-300 text-sm">
-                Don't have an account?{" "}
-                <button
-                  onClick={onSignUp}
-                  className="text-blue-400 hover:text-blue-300 font-semibold transition"
-                >
-                  Sign Up
-                </button>
-              </p>
-            </div>
+            
           </div>
         </Card>
       </div>
