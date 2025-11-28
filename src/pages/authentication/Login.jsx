@@ -115,7 +115,7 @@ const handleForgotPassword = () => {
               <Button
                 onClick={onFinish}
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 rounded-lg flex items-center justify-center gap-2 transition"
+                className="w-full  text-white font-semibold py-6 rounded-lg flex items-center justify-center gap-2 transition"
               >
                 {loading ? "Signing in..." : "Sign In"}
                 <ArrowRight className="w-4 h-4" />

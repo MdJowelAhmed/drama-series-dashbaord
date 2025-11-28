@@ -19,8 +19,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("token");
     navigate("/login");
   };
   const navItems = [
@@ -78,12 +77,7 @@ const Sidebar = () => {
     { name: "User Agreement", path: "/settings/agreement" },
     { name: "Privacy Policy", path: "/settings/privacy" },
   ];
-  // const authItems = [
-  //   { name: "Logout", path: "/logout", icon: LogOut },
-  //   { name: "Login", path: "/login", icon: LogIn },
-  //   { name: "Sign Up", path: "/signup", icon: LogIn },
-  //   { name: "", path: "/login", icon: LogIn },
-  // ];
+
 
   return (
     <div className="w-72 min-h-screen bg-black/30 backdrop-blur-sm text-white flex flex-col shrink-0">
