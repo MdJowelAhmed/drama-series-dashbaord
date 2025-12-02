@@ -16,7 +16,7 @@ const controllerApi = api.injectEndpoints({
     updateBackUpAdmin: builder.mutation({
       query: ({ id, updatedData }) => {
         return {
-          url: `/admin/subcategory/${id}`,
+          url: `/admin/update-admin/${id}`,
           method: "PATCH",
           body: updatedData,
         };
