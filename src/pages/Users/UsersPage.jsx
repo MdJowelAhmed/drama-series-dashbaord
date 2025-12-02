@@ -1,110 +1,73 @@
-import { useState } from 'react';
-import { Search, Eye, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useDeleteUserMutation, useGetAllUserQuery, useToggleUserStatusMutation } from '@/redux/feature/usersApi';
+// import { 
+//   useGetAllUserQuery, 
+//   useDeleteUserMutation, 
+//   useToggleUserStatusMutation 
+// } from '../redux/feature/usersApi';
 
 const UserManagement = () => {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      full_name: 'Ahmed Hassan',
-      email: 'ahmed.hassan@example.com',
-      phone: '01712345678',
-      subscription_package: 'Premium Plan',
-      subscription_end: '2025-12-10',
-      watch_time: '1200 hours',
-      total_download:"12",
-      money_spent:"200",
-      is_active: true,
-      created_at: '2024-01-15'
-    },
-    {
-      id: 2,
-      full_name: 'Fatima Rahman',
-      email: 'fatima.rahman@example.com',
-      phone: '01823456789',
-      subscription_package: 'Basic Plan',
-      subscription_end: '2025-11-20',
-      watch_time: '800 hours',
-      total_download:"8",
-      money_spent:"100",
-      is_active: true,
-      created_at: '2024-03-22'
-    },
-    {
-      id: 3,
-      full_name: 'Karim Uddin',
-      email: 'karim.uddin@example.com',
-      phone: '01934567890',
-      subscription_package: null,
-      subscription_end: null,
-      watch_time: '0 hours',
-      total_download:"0",
-      money_spent:"0",
-      is_active: false,
-      created_at: '2024-05-10'
-    },
-    {
-      id: 4,
-      full_name: 'Nusrat Jahan',
-      email: 'nusrat.jahan@example.com',
-      phone: '01645678901',
-      subscription_package: 'Enterprise Plan',
-      subscription_end: '2026-01-15',
-      watch_time: '1600 hours',
-      total_download:"16",
-      money_spent:"300",
-      is_active: true,
-      created_at: '2024-02-08'
-    },
-    {
-      id: 5,
-      full_name: 'Rafiq Ahmed',
-      email: 'rafiq.ahmed@example.com',
-      phone: '01756789012',
-      subscription_package: 'Premium Plan',
-      subscription_end: '2025-10-30',
-      watch_time: '1400 hours',
-      total_download:"14",
-      money_spent:"250",
-      is_active: true,
-      created_at: '2024-06-12'
-    },
-    {
-      id: 6,
-      full_name: 'Sultana Begum',
-      email: 'sultana.begum@example.com',
-      phone: null,
-      subscription_package: null,
-      subscription_end: null,
-      watch_time: '0 hours',
-      total_download:"0",
-      money_spent:"0",
-      is_active: false,
-      created_at: '2024-08-20'
-    }
-  ]);
-
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [perPage, setPerPage] = useState(10);
 
-  const filteredUsers = users.filter((user) =>
-    user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Build query params
+  const queryParams = [
+    {
+      name: 'page',
+      value: currentPage
+    },
+    {
+      name: 'limit',
+      value: perPage
+    }
+  ]
+  
+  if (searchQuery) {
+    queryParams.append({
+      name: 'searchTerm',
+      value: searchQuery
+    });
+  }
 
-  const handleDelete = () => {
-    setUsers(users.filter(user => user.id !== selectedUser.id));
-    setDeleteDialogOpen(false);
-    setSelectedUser(null);
+  const { data: usersData, isLoading, error } = useGetAllUserQuery(queryParams);
+  const [deleteUser] = useDeleteUserMutation();
+  const [toggleUserStatus] = useToggleUserStatusMutation();
+
+  const handleDelete = async () => {
+    try {
+      await deleteUser(selectedUser._id).unwrap();
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+    } catch (err) {
+      console.error('Failed to delete user:', err);
+    }
   };
 
-  const handleToggleStatus = (userId) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, is_active: !user.is_active } : user
-    ));
+  const handleToggleStatus = async (userId, currentStatus) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+      await toggleUserStatus({ id: userId, status: newStatus }).unwrap();
+    } catch (err) {
+      console.error('Failed to toggle user status:', err);
+    }
   };
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const users = usersData?.data || [];
+  const meta = usersData?.meta || { page: 1, limit: 10, total: 0, totalPage: 1 };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
@@ -115,8 +78,8 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="min-h-screen0 ">
-      <div className=" mx-auto space-y-6">
+    <div className="min-h-screen">
+      <div className="mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-accent">User Management</h1>
@@ -138,97 +101,153 @@ const UserManagement = () => {
         </div>
 
         <div className="bg-secondary rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Name</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Email</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Phone</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Subscription</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Watch Time</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Total Download</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Money Spend</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Status</th>
-                  {/* <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Joined</th> */}
-                  <th className="text-right px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="text-center py-12 text-slate-600">
-                      No users found
-                    </td>
-                  </tr>
-                ) : filteredUsers.map((user) => (
-                  <tr key={user.id} className=" transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-accent">{user.full_name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.phone || 'N/A'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.subscription_package 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-slate-100 text-slate-800'
-                      }`}>
-                        {user.subscription_package || 'None'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.watch_time}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.total_download}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-accent">{user.money_spent}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleToggleStatus(user.id)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            user.is_active ? 'bg-blue-600' : 'bg-slate-300'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              user.is_active ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                        <span className="text-sm text-accent">
-                          {user.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </td>
-                    {/* <td className="px-6 py-4 whitespace-nowrap text-accent">
-                      {formatDate(user.created_at)}
-                    </td> */}
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setDetailsDialogOpen(true);
-                          }}
-                          className="p-2 text-accent  rounded-lg transition-colors"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="p-2 text-accent rounded-lg transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-accent">Loading users...</div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-red-600">Error loading users</div>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Name</th>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Email</th>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Role</th>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Verified</th>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Status</th>
+                      {/* <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Online</th> */}
+                      <th className="text-right px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {users.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="text-center py-12 text-slate-600">
+                          No users found
+                        </td>
+                      </tr>
+                    ) : users.map((user) => (
+                      <tr key={user._id} className="transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            {user.image ? (
+                              <img src={user.image} alt={user.name} className="h-8 w-8 rounded-full" />
+                            ) : (
+                              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                <span className="text-blue-600 font-medium text-sm">
+                                  {user.name?.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="font-medium text-accent">{user.name}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-accent">{user.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            user.verified 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {user.verified ? 'Verified' : 'Unverified'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleToggleStatus(user._id, user.status)}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                user.status === 'active' ? 'bg-blue-600' : 'bg-slate-300'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                  user.status === 'active' ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                              />
+                            </button>
+                            <span className="text-sm text-accent capitalize">
+                              {user.status}
+                            </span>
+                          </div>
+                        </td>
+                        {/* <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className={`h-2 w-2 rounded-full ${
+                              user.onlineStatus?.isOnline ? 'bg-green-500' : 'bg-slate-300'
+                            }`} />
+                            <span className="text-sm text-accent">
+                              {user.onlineStatus?.isOnline ? 'Online' : 'Offline'}
+                            </span>
+                          </div>
+                        </td> */}
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setDetailsDialogOpen(true);
+                              }}
+                              className="p-2 text-accent rounded-lg transition-colors"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="p-2 text-accent rounded-lg transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination */}
+              {meta.totalPage > 1 && (
+                <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+                  <div className="text-sm text-slate-600">
+                    Showing {((meta.page - 1) * meta.limit) + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} users
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-accent">
+                      Page {meta.page} of {meta.totalPage}
+                    </span>
+                    <Button
+                      onClick={() => setCurrentPage(prev => Math.min(meta.totalPage, prev + 1))}
+                      disabled={currentPage === meta.totalPage}
+                      className="px-3 py-1 border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {detailsDialogOpen && selectedUser && (
@@ -238,53 +257,93 @@ const UserManagement = () => {
                 <h2 className="text-xl font-bold text-slate-900 mb-6">User Details</h2>
                 
                 <div className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">Name</p>
-                    <p className="text-base text-slate-900">{selectedUser.full_name}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">Email</p>
-                    <p className="text-base text-slate-900">{selectedUser.email}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">Phone</p>
-                    <p className="text-base text-slate-900">{selectedUser.phone || 'N/A'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">Subscription Type</p>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      selectedUser.subscription_package 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-slate-100 text-slate-800'
-                    }`}>
-                      {selectedUser.subscription_package || 'None'}
-                    </span>
-                  </div>
-                  
-                  {selectedUser.subscription_end && (
+                  <div className="flex items-center gap-3 mb-4">
+                    {selectedUser.image ? (
+                      <img src={selectedUser.image} alt={selectedUser.name} className="h-16 w-16 rounded-full" />
+                    ) : (
+                      <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span className="text-blue-600 font-bold text-2xl">
+                          {selectedUser.name?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <div>
-                      <p className="text-sm font-medium text-slate-600 mb-1">Subscription Expires</p>
-                      <p className="text-base text-slate-900">{formatDate(selectedUser.subscription_end)}</p>
+                      <h3 className="text-lg font-semibold text-slate-900">{selectedUser.name}</h3>
+                      <p className="text-sm text-slate-500">{selectedUser.email}</p>
                     </div>
-                  )}
-                  
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">Status</p>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      selectedUser.is_active 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-slate-100 text-slate-800'
-                    }`}>
-                      {selectedUser.is_active ? 'Active' : 'Inactive'}
-                    </span>
                   </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">Joined</p>
-                    <p className="text-base text-slate-900">{formatDate(selectedUser.created_at)}</p>
+
+                  <div className="border-t pt-4 space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Role</p>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {selectedUser.role}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Verification Status</p>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        selectedUser.verified 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {selectedUser.verified ? 'Verified' : 'Unverified'}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Account Status</p>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        selectedUser.status === 'active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedUser.status}
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Online Status</p>
+                      <div className="flex items-center gap-2">
+                        <div className={`h-2 w-2 rounded-full ${
+                          selectedUser.onlineStatus?.isOnline ? 'bg-green-500' : 'bg-slate-300'
+                        }`} />
+                        <span className="text-sm text-slate-900">
+                          {selectedUser.onlineStatus?.isOnline ? 'Online' : 'Offline'}
+                        </span>
+                      </div>
+                      {selectedUser.onlineStatus?.lastSeen && !selectedUser.onlineStatus?.isOnline && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          Last seen: {formatDate(selectedUser.onlineStatus.lastSeen)}
+                        </p>
+                      )}
+                    </div>
+
+                    {selectedUser.stripeCustomerId && (
+                      <div>
+                        <p className="text-sm font-medium text-slate-600 mb-1">Stripe Customer ID</p>
+                        <p className="text-sm text-slate-900">{selectedUser.stripeCustomerId}</p>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Joined</p>
+                      <p className="text-base text-slate-900">{formatDate(selectedUser.createdAt)}</p>
+                    </div>
+
+                    {selectedUser.pageAccess && selectedUser.pageAccess.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium text-slate-600 mb-1">Page Access</p>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedUser.pageAccess.map((page, index) => (
+                            <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
+                              {page}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -306,7 +365,7 @@ const UserManagement = () => {
             <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
               <h2 className="text-xl font-bold text-slate-900 mb-2">Are you sure?</h2>
               <p className="text-slate-600 mb-6">
-                This will permanently delete {selectedUser.full_name}'s account. This action cannot be undone.
+                This will permanently delete {selectedUser.name}'s account. This action cannot be undone.
               </p>
               <div className="flex gap-3">
                 <button

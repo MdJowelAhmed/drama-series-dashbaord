@@ -17,12 +17,12 @@ const usersApi = api.injectEndpoints({
       query: (args) => {
         const params = new URLSearchParams();
           if (args) {
-          args.forEach((  name , value ) => {
-            params.append(name, value);
+          args.forEach((arg) => {
+            params.append(arg.name, arg.value);
           });
         }
         return {
-          url: "/admin/get-admin",
+          url: "/user-management",
           method: "GET",
            params,
         };
@@ -41,8 +41,8 @@ const usersApi = api.injectEndpoints({
     toggleUserStatus: builder.mutation({
       query: ({ id, status }) => {
         return {
-          url: `/admin/get-admin/${id}`,
-          method: "PUT",
+          url: `/user-management/status/${id}`,
+          method: "PATCH",
           body: { status },
         };
       },
