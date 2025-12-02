@@ -14,10 +14,17 @@ const usersApi = api.injectEndpoints({
       invalidatesTags: ["Admin"],
     }),
     getAllUser: builder.query({
-      query: () => {
+      query: (args) => {
+        const params = new URLSearchParams();
+          if (args) {
+          args.forEach((  name , value ) => {
+            params.append(name, value);
+          });
+        }
         return {
           url: "/admin/get-admin",
           method: "GET",
+           params,
         };
       },
       providesTags: ["Admin"],
