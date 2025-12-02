@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AuthLayout } from "@/layout/AuthLayout";
+import { useLoginMutation } from "@/redux/feature/authApi";
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,14 +14,28 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate=useNavigate()
 
-  const handleLogin = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      console.log("Login:", { email, password });
-      alert("Login successful!");
-    }, 1500);
-  };
+  const [login, { isLoading, isSuccess, error, data }] = useLoginMutation();
+
+const onFinish = async () => {
+  try {
+    const response = await login({
+      email,
+      password,
+    }).unwrap();
+    
+    if (response.success) {
+      const token = response.data.accessToken;
+      localStorage.setItem("token", token);
+      // const decoded = jwtDecode(token);
+      navigate("/");
+      // if (decoded.role === "ADMIN") navigate("/category-management");
+      // else if (decoded.role === "SUPER_ADMIN") navigate("/");
+    }
+  } catch (err) {
+    console.error("Login failed:", err);
+  }
+};
+
 
 const handleForgotPassword = () => {
   navigate("/forgot-password");
@@ -98,9 +113,9 @@ const handleForgotPassword = () => {
 
               {/* Login Button */}
               <Button
-                onClick={handleLogin}
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 rounded-lg flex items-center justify-center gap-2 transition"
+                onClick={onFinish}
+                disabled={isLoading}
+                className="w-full  text-white font-semibold py-6 rounded-lg flex items-center justify-center gap-2 transition"
               >
                 {loading ? "Signing in..." : "Sign In"}
                 <ArrowRight className="w-4 h-4" />

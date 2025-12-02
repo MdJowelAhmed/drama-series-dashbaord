@@ -8,6 +8,7 @@ import {
   Phone,
   CheckSquare,
   Square,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,42 +22,30 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+ 
+  useCreateBackUpAdminMutation,
+  useUpdateBackUpAdminMutation,
+  useDeleteBackUpAdminMutation,
+} from "@/redux/feature/controllerApi";
+import { useGetAllBackUpAdminQuery } from "@/redux/feature/controllerApi";
 
 const AVAILABLE_PAGES = [
   { value: "dashboard", label: "Dashboard Overview" },
-  { value: "users", label: "Users Management" },
-  { value: 'category', label: 'Category management' },
-  { value: "movies", label: "Movies Management" },
-  { value: "trailers", label: "Trailers Management" },
-  { value: "reports", label: "Reports Analysis" },
-  // { value: "settings", label: "Settings" },
-  // { value: 'analytics', label: 'Analytics' },
+  { value: "user", label: "Users Management" },
+  { value: "category", label: "Category Management" },
+  { value: "movie", label: "Movies Management" },
+  { value: "trailer", label: "Trailers Management" },
+  { value: "report", label: "Reports Analysis" },
 ];
 
 export default function ControllerManagement() {
-  const [controllers, setControllers] = useState([
-    {
-      id: 1,
-      name: "Karim Ahmed",
-      email: "karim@example.com",
-      phone: "01712345678",
-      pageAccess: ["dashboard", "users", "products", "orders"],
-    },
-    {
-      id: 2,
-      name: "Rahim Khan",
-      email: "rahim@example.com",
-      phone: "01812345678",
-      pageAccess: ["dashboard", "products", "reports"],
-    },
-    {
-      id: 3,
-      name: "Fatima Begum",
-      email: "fatima@example.com",
-      phone: "01912345678",
-      pageAccess: ["dashboard", "orders", "analytics"],
-    },
-  ]);
+  const { data: adminData, isLoading } = useGetAllBackUpAdminQuery();
+  const [createAdmin, { isLoading: isCreating }] = useCreateBackUpAdminMutation();
+  const [updateAdmin, { isLoading: isUpdating }] = useUpdateBackUpAdminMutation();
+  const [deleteAdmin] = useDeleteBackUpAdminMutation();
+
+  const controllers = adminData?.data || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -81,75 +70,80 @@ export default function ControllerManagement() {
   };
 
   const openEditModal = (controller) => {
-    setEditingId(controller.id);
+    setEditingId(controller._id);
+    const pageAccessArray = controller.pageAccess
+      .filter((page) => page.access)
+      .map((page) => page.name);
+
     setFormData({
       name: controller.name,
       email: controller.email,
       phone: controller.phone,
       password: "",
-      pageAccess: controller.pageAccess,
+      pageAccess: pageAccessArray,
     });
     setIsModalOpen(true);
   };
 
-  const handleSubmit = () => {
-    if (
-      !formData.name.trim() ||
-      !formData.email.trim() ||
-      !formData.phone.trim()
-    ) {
-      alert("Please fill all required fields");
-      return;
-    }
+  const handleSubmit = async () => {
+    // if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) {
+    //   alert("Please fill all required fields");
+    //   return;
+    // }
 
-    if (!editingId && !formData.password.trim()) {
-      alert("Password is required for new controllers");
-      return;
-    }
+    // if (!editingId && !formData.password.trim()) {
+    //   alert("Password is required for new controllers");
+    //   return;
+    // }
 
-    if (formData.pageAccess.length === 0) {
-      alert("Please select at least one page access");
-      return;
-    }
+    // if (formData.pageAccess.length === 0) {
+    //   alert("Please select at least one page access");
+    //   return;
+    // }
 
-    if (editingId) {
-      setControllers(
-        controllers.map((controller) =>
-          controller.id === editingId
-            ? {
-                ...controller,
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                pageAccess: formData.pageAccess,
-              }
-            : controller
-        )
-      );
-    } else {
-      const newController = {
-        id: Date.now(),
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        pageAccess: formData.pageAccess,
-      };
-      setControllers([...controllers, newController]);
-    }
+    const pageAccessFormatted = formData.pageAccess.map((page) => ({
+      name: page,
+      access: true,
+    }));
 
-    setIsModalOpen(false);
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      password: "",
-      pageAccess: [],
-    });
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      pageAccess: pageAccessFormatted,
+    };
+
+    if (!editingId) {
+      payload.password = formData.password;
+    }
+console.log("payload", payload);
+    try {
+      if (editingId) {
+        await updateAdmin({ id: editingId, updatedData: payload }).unwrap();
+      } else {
+        await createAdmin(payload).unwrap();
+      }
+
+      setIsModalOpen(false);
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        pageAccess: [],
+      });
+    } catch (error) {
+      alert(error?.data?.message || "Something went wrong");
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this controller?")) {
-      setControllers(controllers.filter((controller) => controller.id !== id));
+      try {
+        await deleteAdmin(id).unwrap();
+      } catch (error) {
+        alert(error?.data?.message || "Failed to delete controller");
+      }
     }
   };
 
@@ -169,8 +163,16 @@ export default function ControllerManagement() {
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -207,42 +209,41 @@ export default function ControllerManagement() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {controllers.map((controller) => (
-                  <tr
-                    key={controller.id}
-                    className="transition-colors "
-                  >
+                  <tr key={controller._id} className="transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 " />
-                        <span className="text-sm font-medium ">
+                        <User className="w-4 h-4" />
+                        <span className="text-sm font-medium">
                           {controller.name}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 " />
-                        <span className="text-sm ">{controller.email}</span>
+                        <Mail className="w-4 h-4" />
+                        <span className="text-sm">{controller.email}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 " />
-                        <span className="text-sm ">{controller.phone}</span>
+                        <Phone className="w-4 h-4" />
+                        <span className="text-sm">{controller.phone}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {controller.pageAccess.map((page) => (
-                          <Badge
-                            key={page}
-                            variant="secondary"
-                            className="bg-blue-100 text-blue-800 text-xs"
-                          >
-                            {AVAILABLE_PAGES.find((p) => p.value === page)
-                              ?.label || page}
-                          </Badge>
-                        ))}
+                        {controller.pageAccess
+                          .filter((page) => page.access)
+                          .map((page) => (
+                            <Badge
+                              key={page._id}
+                              variant="secondary"
+                              className="bg-blue-100 text-blue-800 text-xs"
+                            >
+                              {AVAILABLE_PAGES.find((p) => p.value === page.name)
+                                ?.label || page.name}
+                            </Badge>
+                          ))}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -258,7 +259,7 @@ export default function ControllerManagement() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(controller.id)}
+                          onClick={() => handleDelete(controller._id)}
                           className="h-8 w-8 text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -343,24 +344,24 @@ export default function ControllerManagement() {
               </div>
               <div className="space-y-3">
                 <Label>Page Access Permissions</Label>
-                <div className="border border-slate-200 grid grid-cols-2 rounded-lg p-4 space-y-2 bg-">
+                <div className="border border-slate-200 grid grid-cols-2 rounded-lg p-4 space-y-2">
                   {AVAILABLE_PAGES.map((page) => (
                     <div
                       key={page.value}
                       onClick={() => togglePageAccess(page.value)}
-                      className=" gap-3 flex items-center p-2  rounded cursor-pointer transition-colors"
+                      className="gap-3 flex items-center p-2 rounded cursor-pointer transition-colors"
                     >
                       {formData.pageAccess.includes(page.value) ? (
                         <CheckSquare className="w-5 h-5 text-blue-600" />
                       ) : (
-                        <Square className="w-5 h-5 " />
+                        <Square className="w-5 h-5" />
                       )}
-                      <span className="text-sm font-medium ">{page.label}</span>
+                      <span className="text-sm font-medium">{page.label}</span>
                     </div>
                   ))}
                 </div>
                 {formData.pageAccess.length > 0 && (
-                  <p className="text-xs ">
+                  <p className="text-xs">
                     {formData.pageAccess.length} page
                     {formData.pageAccess.length !== 1 ? "s" : ""} selected
                   </p>
@@ -375,8 +376,17 @@ export default function ControllerManagement() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSubmit}>
-                {editingId ? "Update Controller" : "Create Controller"}
+              <Button onClick={handleSubmit} disabled={isCreating || isUpdating}>
+                {isCreating || isUpdating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : editingId ? (
+                  "Update Controller"
+                ) : (
+                  "Create Controller"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
