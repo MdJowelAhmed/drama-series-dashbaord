@@ -243,6 +243,11 @@ const ReusableVideoUploadModal = ({
       newErrors.video = "Video file is required";
     }
 
+    // Require thumbnail for new uploads
+    if (!isEditMode && showThumbnail && !thumbnailFile) {
+      newErrors.thumbnail = "Thumbnail is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -272,25 +277,72 @@ const ReusableVideoUploadModal = ({
         libraryId = bunnyData.libraryId;
       }
 
-      // Handle thumbnail upload using FormData
-      if (thumbnailFile) {
+      // Handle thumbnail upload - Use native fetch for reliable FormData handling
+      if (thumbnailFile && videoId) {
         setUploadStatus("Uploading thumbnail...");
         
-        if (uploadThumbnail) {
-          // Use the provided upload mutation
-          const thumbnailFormData = new FormData();
-          thumbnailFormData.append("thumbnail", thumbnailFile);
-          if (videoId) {
-            thumbnailFormData.append("videoId", videoId);
+        try {
+          // Create FormData with the thumbnail file
+          const formDataToSend = new FormData();
+          formDataToSend.append("thumbnail", thumbnailFile, thumbnailFile.name);
+          
+          console.log("Uploading thumbnail for videoId:", videoId);
+          console.log("Thumbnail file details:", {
+            name: thumbnailFile.name,
+            size: thumbnailFile.size,
+            type: thumbnailFile.type
+          });
+          
+          // Get auth token
+          const token = localStorage.getItem("token");
+          
+          // Use native fetch for FormData upload - more reliable than RTK Query
+          const response = await fetch(
+            `http://10.10.7.48:5003/api/v1/trailer/${videoId}/thumbnail`,
+            {
+              method: "POST",
+              headers: {
+                // Don't set Content-Type - browser sets it with boundary for FormData
+                ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+              },
+              body: formDataToSend,
+            }
+          );
+          
+          const thumbnailResult = await response.json();
+          console.log("Thumbnail upload response:", thumbnailResult);
+          
+          if (!response.ok) {
+            throw new Error(thumbnailResult.message || "Thumbnail upload failed");
           }
           
-          try {
-            const thumbnailResult = await uploadThumbnail(thumbnailFormData).unwrap();
-            thumbnailUrl = thumbnailResult.data?.thumbnailUrl || thumbnailResult.thumbnailUrl;
-          } catch (error) {
-            console.warn("Thumbnail upload failed, continuing without thumbnail:", error);
+          // Extract thumbnail URL from response - check various possible paths
+          thumbnailUrl = thumbnailResult.data?.result || 
+                        thumbnailResult.data?.thumbnail_url ||
+                        thumbnailResult.data?.url ||
+                        thumbnailResult.thumbnailUrl || 
+                        thumbnailResult.thumbnail_url ||
+                        thumbnailResult.url;
+          
+          if (thumbnailUrl) {
+            toast.success("Thumbnail uploaded successfully");
+            console.log("Thumbnail URL:", thumbnailUrl);
+          } else {
+            console.warn("Thumbnail uploaded but URL not found in response:", thumbnailResult);
           }
+        } catch (error) {
+          console.error("Thumbnail upload failed:", error);
+          const errorMsg = error?.message || "Upload failed";
+          toast.error("Thumbnail upload failed: " + errorMsg);
+          // Don't continue if thumbnail is required but failed
+          setUploadingVideo(false);
+          return;
         }
+      } else if (thumbnailFile && !videoId) {
+        console.error("Cannot upload thumbnail without videoId");
+        toast.error("Cannot upload thumbnail: Video ID is missing");
+        setUploadingVideo(false);
+        return;
       }
 
       // Prepare submit data
@@ -306,6 +358,11 @@ const ReusableVideoUploadModal = ({
       if (thumbnailUrl && !thumbnailUrl.startsWith("blob:")) {
         submitData.thumbnailUrl = thumbnailUrl;
         submitData.thumbnail_url = thumbnailUrl;
+      } else if (showThumbnail && !isEditMode) {
+        // For new uploads without thumbnail URL, show error
+        toast.error("Thumbnail is required but URL is missing");
+        setUploadingVideo(false);
+        return;
       }
 
       setUploadStatus("Saving...");
@@ -333,6 +390,7 @@ const ReusableVideoUploadModal = ({
     } catch (error) {
       setUploadingVideo(false);
       setUploadStatus("");
+      console.error("Upload error:", error);
       const errorMessage = error?.data?.message || error?.message || "Operation failed";
       toast.error(errorMessage);
     }
@@ -349,6 +407,11 @@ const ReusableVideoUploadModal = ({
       // Reset to original thumbnail if in edit mode
       const originalThumbnail = editingData?.thumbnail_url || editingData?.thumbnailUrl;
       setThumbnailPreview(originalThumbnail ? getVideoAndThumbnail(originalThumbnail) : null);
+      
+      // Clear thumbnail error if exists
+      if (errors.thumbnail) {
+        setErrors((prev) => ({ ...prev, thumbnail: null }));
+      }
     }
   };
 
@@ -549,7 +612,7 @@ const ReusableVideoUploadModal = ({
               {showThumbnail && (
                 <div className={!showVideo || isEditMode ? "md:col-span-2" : ""}>
                   <Label className="block text-sm font-semibold text-white/80 mb-2">
-                    Thumbnail Image
+                    Thumbnail Image {!isEditMode && <span className="text-red-400">*</span>}
                   </Label>
                   <div
                     onDragEnter={(e) => handleDrag(e, "thumbnail")}
@@ -559,6 +622,8 @@ const ReusableVideoUploadModal = ({
                     className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
                       dragActive.thumbnail
                         ? "border-blue-500 bg-blue-500/10 scale-[1.02]"
+                        : errors.thumbnail
+                        ? "border-red-500/50 bg-red-500/5"
                         : "border-white/20 hover:border-white/40 bg-white/5"
                     }`}
                   >
@@ -616,6 +681,12 @@ const ReusableVideoUploadModal = ({
                       </>
                     )}
                   </div>
+                  {errors.thumbnail && (
+                    <p className="text-sm text-red-400 mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {errors.thumbnail}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
