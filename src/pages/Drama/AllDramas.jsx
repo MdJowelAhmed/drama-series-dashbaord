@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, Eye, Trash2, Edit } from "lucide-react";
+import { Plus, Search, Eye, Trash2, Edit, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,86 +13,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-// import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
-import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import {
+  useGetAllDramaQuery,
+  useCreateDramaMutation,
+  useUpdateDramaMutation,
+  useDeleteDramaMutation,
+} from "@/redux/feature/dramaManagement/dramaManagementApi";
+import { getImageUrl } from "@/components/share/imageUrl";
 import CommonFormModal from "@/components/modals/CommonFormModal";
-
-// Dummy Data
-const initialDramas = [
-  {
-    id: 1,
-    title: "The Crown",
-    description: "A historical drama about the reign of Queen Elizabeth II",
-    genre: "Historical Drama",
-    status: "Completed",
-    thumbnail_url:
-      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-01-15T10:30:00Z",
-  },
-  {
-    id: 2,
-    title: "Breaking Bad",
-    description: "A chemistry teacher turned methamphetamine manufacturer",
-    genre: "Crime Thriller",
-    status: "Completed",
-    thumbnail_url:
-      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-02-20T14:15:00Z",
-  },
-  {
-    id: 3,
-    title: "Stranger Things",
-    description: "Supernatural events in a small town during the 1980s",
-    genre: "Sci-Fi Horror",
-    status: "Ongoing",
-    thumbnail_url:
-      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-03-10T09:45:00Z",
-  },
-  {
-    id: 4,
-    title: "Money Heist",
-    description: "A group of criminals plan and execute elaborate heists",
-    genre: "Action Thriller",
-    status: "Completed",
-    thumbnail_url:
-      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-04-05T16:20:00Z",
-  },
-  {
-    id: 5,
-    title: "The Witcher",
-    description: "A monster hunter navigates a world of magic and danger",
-    genre: "Fantasy Adventure",
-    status: "Ongoing",
-    thumbnail_url:
-      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-05-12T11:00:00Z",
-  },
-  {
-    id: 6,
-    title: "Dark",
-    description: "Time travel and family secrets in a German town",
-    genre: "Sci-Fi Mystery",
-    status: "Completed",
-    thumbnail_url:
-      "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    created_at: "2024-06-18T13:30:00Z",
-  },
-];
+import { useGetAllCategoryQuery } from "@/redux/feature/categoryApi";
 
 const AllDramas = () => {
-  const [dramas, setDramas] = useState(initialDramas);
   const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -100,221 +34,126 @@ const AllDramas = () => {
   const [selectedDrama, setSelectedDrama] = useState(null);
   const navigate = useNavigate();
 
-  // Form states
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    genre: "",
-    status: "Ongoing",
-    thumbnail_url: "",
-    color: "#3b82f6"
-  });
+  // RTK Query hooks
+  const { data: dramasData, isLoading, isError, refetch } = useGetAllDramaQuery([
+    { name: "searchTerm", value: searchQuery },
+  ]);
+  const [createDrama, { isLoading: isCreating }] = useCreateDramaMutation();
+  const [updateDrama, { isLoading: isUpdating }] = useUpdateDramaMutation();
+  const [deleteDrama, { isLoading: isDeleting }] = useDeleteDramaMutation();
+  const {data:categoryData} = useGetAllCategoryQuery();
+  const categories = categoryData?.data || [];
+  console.log(categories);
+  const dramas = dramasData?.data?.result || [];
 
   const filteredDramas = dramas.filter((drama) =>
     drama.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleDelete = () => {
-    setDramas(dramas.filter((d) => d.id !== selectedDrama.id));
-    setDeleteDialogOpen(false);
-    setSelectedDrama(null);
+  const handleDelete = async () => {
+    if (!selectedDrama?._id) return;
+    try {
+      await deleteDrama(selectedDrama._id).unwrap();
+      toast.success("Drama deleted successfully");
+      setDeleteDialogOpen(false);
+      setSelectedDrama(null);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to delete drama");
+    }
   };
 
-  const handleCreate = () => {
-    const newDrama = {
-      id: Math.max(...dramas.map((d) => d.id), 0) + 1,
-      ...formData,
-      created_at: new Date().toISOString(),
-      thumbnail_url:
-        formData.thumbnail_url ||
-        "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=800",
-    };
-    setDramas([...dramas, newDrama]);
-    setCreateModalOpen(false);
-    resetForm();
+  const handleCreate = async (formData) => {
+    try {
+      // Prepare FormData for API (form-data with thumbnail and data)
+      const submitData = new FormData();
+
+      // Add thumbnail file if exists
+      if (formData.thumbnailFile) {
+        submitData.append("thumbnail", formData.thumbnailFile);
+      }
+
+      // Prepare data object
+      const dataObject = {
+        title: formData.title,
+        type: formData.type,
+        genre: formData.genre,
+        tags: formData.tags || [],
+        description: formData.description,
+        accentColor: formData.color,
+        status: formData.status || "Ongoing",
+        contentName: formData.contentName,
+      };
+
+      // Add data as JSON string
+      submitData.append("data", JSON.stringify(dataObject));
+
+      await createDrama(submitData).unwrap();
+      toast.success("Drama created successfully");
+      setCreateModalOpen(false);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to create drama");
+    }
   };
 
-  const handleEdit = () => {
-    setDramas(
-      dramas.map((d) => (d.id === selectedDrama.id ? { ...d, ...formData } : d))
-    );
-    setEditModalOpen(false);
-    setSelectedDrama(null);
-    resetForm();
+  const handleEdit = async (formData) => {
+    if (!selectedDrama?._id) return;
+    try {
+      // Prepare FormData for API
+      const submitData = new FormData();
+
+      // Add thumbnail file if new file selected
+      if (formData.thumbnailFile) {
+        submitData.append("thumbnail", formData.thumbnailFile);
+      }
+
+      // Prepare data object
+      const dataObject = {
+        title: formData.title,
+        type: formData.type,
+        genre: formData.genre,
+        tags: formData.tags || [],
+        description: formData.description,
+        accentColor: formData.color,
+        status: formData.status || "Ongoing",
+        contentName: formData.contentName,
+      };
+
+      // Add data as JSON string
+      submitData.append("data", JSON.stringify(dataObject));
+
+      await updateDrama({
+        id: selectedDrama._id,
+        updatedData: submitData,
+      }).unwrap();
+      toast.success("Drama updated successfully");
+      setEditModalOpen(false);
+      setSelectedDrama(null);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to update drama");
+    }
   };
 
   const openEditModal = (drama) => {
     setSelectedDrama(drama);
-    setFormData({
-      title: drama.title,
-      description: drama.description,
-      genre: drama.genre,
-      status: drama.status,
-      thumbnail_url: drama.thumbnail_url,
-    });
     setEditModalOpen(true);
   };
 
-  const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      genre: "",
-      status: "Ongoing",
-      thumbnail_url: "",
-    });
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, thumbnail_url: reader.result });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, thumbnail_url: reader.result });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-const DramaForm = () => (
-    <div className="space-y-4 p-6 rounded-xl shadow-sm max-h-[60vh] overflow-y-auto">
-      <div>
-        <Label htmlFor="title">Title</Label>
-        <Input
-          id="title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          placeholder="Enter drama title"
-        />
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
-          placeholder="Enter description"
-          rows={3}
-        />
-      </div>
-      <div>
-        <Label htmlFor="genre">Genre</Label>
-        <Input
-          id="genre"
-          value={formData.genre}
-          onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-          placeholder="e.g., Action, Drama, Comedy"
-        />
-      </div>
-      <div>
-        <Label htmlFor="status">Status</Label>
-        <select
-          id="status"
-          value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-          className="w-full px-3 py-2 border border-slate-300 rounded-md"
-        >
-          <option value="Ongoing">Ongoing</option>
-          <option value="Completed">Completed</option>
-        </select>
-      </div>
+    );
+  }
 
-      <div>
-        <Label>Thumbnail Image</Label>
-        <div
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById("file-upload").click()}
-          className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer"
-        >
-          {formData.thumbnail_url ? (
-            <div className="space-y-3">
-              <img
-                src={formData.thumbnail_url}
-                alt="Preview"
-                className="mx-auto h-40 w-full object-cover rounded-lg"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setFormData({ ...formData, thumbnail_url: "" });
-                }}
-              >
-                Remove Image
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center">
-                <Plus className="h-6 w-6 text-slate-400" />
-              </div>
-              <div className="text-sm text-slate-600">
-                <span className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">
-                  Click to upload
-                </span>{" "}
-                or drag and drop
-              </div>
-              <p className="text-xs text-slate-500">PNG, JPG, GIF up to 10MB</p>
-              <input
-                id="file-upload"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-            </div>
-          )}
-        </div>
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-red-600">Failed to load dramas</p>
+        <Button onClick={() => refetch()}>Try Again</Button>
       </div>
-
-      <div>
-        <Label>Accent Color</Label>
-        <div className="flex items-center gap-3">
-          <input
-            type="color"
-            value={formData.color}
-            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-            className="w-12 h-10 p-0 border-0 bg-transparent cursor-pointer"
-          />
-          <input
-            type="text"
-            value={formData.color?.toUpperCase()}
-            onChange={(e) => {
-              const v = e.target.value;
-              const normalized = v.startsWith('#') ? v : `#${v}`;
-              setFormData({ ...formData, color: normalized });
-            }}
-            className="px-3 py-2 border rounded-md w-28"
-          />
-          <div className="w-8 h-8 rounded-full shadow-sm" style={{ backgroundColor: formData.color }} />
-          <p className="text-xs text-slate-500">Preview & HEX</p>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -322,21 +161,18 @@ const DramaForm = () => (
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-accent">
-              Movie Management
+              Drama Management
             </h1>
             <p className="text-accent mt-1">
-              Manage all your movies and series
+              Manage all your dramas and series
             </p>
           </div>
           <Button
-            onClick={() => {
-              resetForm();
-              setCreateModalOpen(true);
-            }}
+            onClick={() => setCreateModalOpen(true)}
             className="bg-primary py-6 text-accent shadow hover:bg-primary-foreground"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add New Movie
+            Add New Drama
           </Button>
         </div>
 
@@ -344,36 +180,62 @@ const DramaForm = () => (
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search movies..."
+              placeholder="Search dramas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
+          <div className="text-sm text-accent">
+            Total: {dramasData?.data?.meta?.total || 0} dramas
+          </div>
         </div>
 
         {filteredDramas.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-600">No movies found</p>
+            <p className="text-slate-600">No dramas found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredDramas.map((drama) => (
               <Card
-                key={drama.id}
+                key={drama._id}
                 className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col"
               >
-                <div className="relative h-42  overflow-hidden">
-                  <img
-                    src={drama.thumbnail_url}
-                    alt={drama.title}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="relative h-48 overflow-hidden bg-slate-200">
+                  {drama.thumbnail ? (
+                    <img
+                      src={getImageUrl(drama.thumbnail)}
+                      alt={drama.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400">
+                      No Image
+                    </div>
+                  )}
                   <div className="absolute top-2 right-2">
-                    <Badge className="bg-white/30 text-white">
+                    <Badge
+                      className={`${
+                        drama.status === "Completed"
+                          ? "bg-green-500/90"
+                          : drama.status === "Ongoing"
+                          ? "bg-blue-500/90"
+                          : "bg-yellow-500/90"
+                      } text-white`}
+                    >
                       {drama.status}
                     </Badge>
                   </div>
+                  {drama.accentColor && (
+                    <div
+                      className="absolute bottom-0 left-0 right-0 h-1"
+                      style={{ backgroundColor: drama.accentColor }}
+                    />
+                  )}
                 </div>
                 <CardContent className="p-4 flex-1">
                   <h3 className="font-semibold text-accent text-lg mb-2 truncate">
@@ -383,28 +245,57 @@ const DramaForm = () => (
                     {drama.description || "No description"}
                   </p>
                   <div className="flex items-center justify-between text-sm text-accent">
-                    <span>{drama.genre || "Drama"}</span>
+                    <span className="font-medium">{drama.genre || drama.type}</span>
                     <span>
-                      {new Date(drama.created_at).toLocaleDateString()}
+                      {drama.createdAt
+                        ? new Date(drama.createdAt).toLocaleDateString()
+                        : "-"}
                     </span>
+                  </div>
+                  {drama.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {drama.tags.slice(0, 3).map((tag, index) => (
+                        <span
+                          key={index}
+                          className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {drama.tags.length > 3 && (
+                        <span className="text-xs text-slate-400">
+                          +{drama.tags.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                    <span>Views: {drama.totalViews || 0}</span>
+                    <span>Rating: {drama.rating || 0}</span>
                   </div>
                 </CardContent>
                 <div className="flex justify-between gap-10 p-4">
                   <Button
                     size="sm"
                     className="flex-1 py-5"
-                    onClick={() => navigate(`/movies/${drama.id}`)}
+                    onClick={() => navigate(`/dramas/${drama._id}`)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     View
                   </Button>
-                  <div className="flex gap-5">
-                    <Button size="sm" className="flex-1 py-5" onClick={() => openEditModal(drama)}>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="py-5"
+                      onClick={() => openEditModal(drama)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
-                      className="flex-1 py-5"
+                      variant="outline"
+                      className="py-5 text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={() => {
                         setSelectedDrama(drama);
                         setDeleteDialogOpen(true);
@@ -422,9 +313,10 @@ const DramaForm = () => (
         {/* Create Drama Modal */}
         {createModalOpen && (
           <CommonFormModal
-            title="Create New Movies"
+            title="Create New Drama"
             data={null}
             onClose={() => setCreateModalOpen(false)}
+            categories={categories}
             onSave={handleCreate}
             showStatus={true}
             showGenre={true}
@@ -432,12 +324,13 @@ const DramaForm = () => (
         )}
 
         {/* Edit Drama Modal */}
-        {editModalOpen && (
+        {editModalOpen && selectedDrama && (
           <CommonFormModal
-            title="Edit Movie"
+            title="Edit Drama"
+            categories={categories}
             data={{
               ...selectedDrama,
-              thumbnail: selectedDrama.thumbnail_url
+              thumbnail: selectedDrama.thumbnail ? getImageUrl(selectedDrama.thumbnail) : null,
             }}
             onClose={() => {
               setEditModalOpen(false);
@@ -448,24 +341,6 @@ const DramaForm = () => (
             showGenre={true}
           />
         )}
-
-        {/* Edit Modal */}
-        {/* <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Drama</DialogTitle>
-            </DialogHeader>
-            <DramaForm />
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleEdit} disabled={!formData.title}>
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog> */}
 
         {/* Delete Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -478,11 +353,13 @@ const DramaForm = () => (
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
                 className="bg-red-600 hover:bg-red-700"
+                disabled={isDeleting}
               >
+                {isDeleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>
