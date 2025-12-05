@@ -4,33 +4,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
-const VIDEO_TYPES = [
-  "Science Fiction",
-  "Romantic",
-  "War",
-  "History",
-  "Action",
-  "Comedy",
-  "Drama",
-  "Thriller",
-  "Horror",
-  "Mystery",
-  "Fantasy",
-  "Adventure",
-  "Crime",
-  "Biography",
-  "Documentary",
-  "Animation",
-  "Musical",
-  "Western",
-  "Superhero",
-  "Noir",
-];
+// const VIDEO_TYPES = [
+//   "Science Fiction",
+//   "Romantic",
+//   "War",
+//   "History",
+//   "Action",
+//   "Comedy",
+//   "Drama",
+//   "Thriller",
+//   "Horror",
+//   "Mystery",
+//   "Fantasy",
+//   "Adventure",
+//   "Crime",
+//   "Biography",
+//   "Documentary",
+//   "Animation",
+//   "Musical",
+//   "Western",
+//   "Superhero",
+//   "Noir",
+// ];
 
 const CommonFormModal = ({
   title,
+  categories,
   data,
   onClose,
   onSave,
@@ -38,28 +45,27 @@ const CommonFormModal = ({
   showGenre = false,
   showVideoFields = false,
 }) => {
-const [type, setType] = useState(data?.type || "");
+  const [type, setType] = useState(data?.type || "");
 
-const [formData, setFormData] = useState({
-  title: data?.title || "",
-  description: data?.description || "",
-  genre: data?.genre || "",
-  status: data?.status || "Ongoing",
-  tags: data?.tags || [],
-  color: data?.color || "#3b82f6",
-  thumbnail: data?.thumbnail_url || null,
-  contentName: data?.contentName || "",
-  type: data?.type || "",
-});
-
+  const [formData, setFormData] = useState({
+    title: data?.title || "",
+    description: data?.description || "",
+    genre: data?.genre || "",
+    status: data?.status || "Ongoing",
+    tags: data?.tags || [],
+    color: data?.accentColor || data?.color || "#3b82f6",
+    thumbnail: data?.thumbnail || data?.thumbnail_url || null,
+    thumbnailFile: null, // Store actual file for API upload
+    contentName: data?.contentName || "",
+    type: data?.type || "",
+  });
 
   const [tagInput, setTagInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
 
-
   useEffect(() => {
-  setFormData((prev) => ({ ...prev, type }));
-}, [type]);
+    setFormData((prev) => ({ ...prev, type }));
+  }, [type]);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -84,7 +90,11 @@ const [formData, setFormData] = useState({
   const handleFileChange = (file) => {
     const reader = new FileReader();
     reader.onloadend = () => {
-      setFormData((prev) => ({ ...prev, thumbnail: reader.result }));
+      setFormData((prev) => ({
+        ...prev,
+        thumbnail: reader.result,
+        thumbnailFile: file, // Store actual file for API upload
+      }));
     };
     reader.readAsDataURL(file);
   };
@@ -138,19 +148,17 @@ const [formData, setFormData] = useState({
               />
             </div>
 
-           
-              <div>
-                <Label htmlFor="genre">Genre</Label>
-                <Input
-                  id="genre"
-                  value={formData.genre}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, genre: e.target.value }))
-                  }
-                  placeholder="e.g., Action, Drama, Comedy"
-                />
-              </div>
-            
+            <div>
+              <Label htmlFor="genre">Genre</Label>
+              <Input
+                id="genre"
+                value={formData.genre}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, genre: e.target.value }))
+                }
+                placeholder="e.g., Action, Drama, Comedy"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -164,9 +172,9 @@ const [formData, setFormData] = useState({
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {VIDEO_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
+                  {categories?.data?.map((t) => (
+                    <SelectItem key={t._id} value={t._id}>
+                      {t.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -184,7 +192,7 @@ const [formData, setFormData] = useState({
                   }
                   placeholder="Type a tag and press Enter"
                 />
-                <Button onClick={handleAddTag} type="button" className= "h-12">
+                <Button onClick={handleAddTag} type="button" className="h-12">
                   Add
                 </Button>
               </div>
@@ -227,22 +235,20 @@ const [formData, setFormData] = useState({
                 rows={3}
               />
             </div>
-   
-              <div>
-                <Label htmlFor="contentName">Top Banner </Label>
-                <Input
-                  id="contentName"
-                  value={formData.contentName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      contentName: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter top banner "
-                />
-              </div>
-       
+            <div>
+              <Label htmlFor="contentName">Top Banner </Label>
+              <Input
+                id="contentName"
+                value={formData.contentName}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contentName: e.target.value,
+                  }))
+                }
+                placeholder="Enter top banner "
+              />
+            </div>
             <div>
               <Label>Accent Color</Label>
               <div className="flex items-center gap-3">
@@ -300,7 +306,11 @@ const [formData, setFormData] = useState({
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setFormData((prev) => ({ ...prev, thumbnail: null }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        thumbnail: null,
+                        thumbnailFile: null,
+                      }));
                     }}
                   >
                     Remove Image
