@@ -26,6 +26,8 @@ export const api = createApi({
     "Ad",
     "Movie",
     "Drama",
+    "Season",
+    "DramaVideo",
   ],
   endpoints: () => ({}),
 });

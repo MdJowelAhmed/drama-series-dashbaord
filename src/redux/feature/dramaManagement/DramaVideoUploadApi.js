@@ -1,17 +1,19 @@
-import { api } from "../base-url/baseUrlApi";
+import { api } from "../../base-url/baseUrlApi";
 
 const dramaVideoUploadApi = api.injectEndpoints({
   endpoints: (builder) => ({
+    // Create a new episode/video
     createDramaVideo: builder.mutation({
-      query: (dramaVideo) => ({
+      query: (videoData) => ({
         url: "/video-management/create",
         method: "POST",
-        body: dramaVideo,
+        body: videoData,
       }),
-      invalidatesTags: ["DramaVideo"],
+      invalidatesTags: ["DramaVideo", "Season"],
     }),
 
-    videoUrlGenerate: builder.mutation({
+    // Generate upload URL for Bunny CDN
+    dramaVideoUrlGenerate: builder.mutation({
       query: (videoUrl) => ({
         url: "/video-management/generate-upload-url",
         method: "POST",
@@ -20,9 +22,8 @@ const dramaVideoUploadApi = api.injectEndpoints({
       invalidatesTags: ["DramaVideo"],
     }),
 
-    // Upload thumbnail - Note: For FormData uploads, native fetch is used in the modal
-    // This mutation is kept for potential future use or alternative implementations
-    uploadThumbnail: builder.mutation({
+    // Upload thumbnail - native fetch is used for FormData uploads
+    uploadDramaVideoThumbnail: builder.mutation({
       query: ({ videoId, formData }) => ({
         url: `/video-management/${videoId}/thumbnail`,
         method: "POST",
@@ -31,23 +32,26 @@ const dramaVideoUploadApi = api.injectEndpoints({
       invalidatesTags: ["DramaVideo"],
     }),
 
+    // Update an episode/video
     updateDramaVideo: builder.mutation({
       query: ({ id, updatedData }) => ({
         url: `/video-management/update/${id}`,
         method: "PUT",
         body: updatedData,
       }),
-      invalidatesTags: ["DramaVideo"],
+      invalidatesTags: ["DramaVideo", "Season"],
     }),
 
+    // Delete an episode/video
     deleteDramaVideo: builder.mutation({
       query: (id) => ({
         url: `/video-management/delete/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["DramaVideo"],
+      invalidatesTags: ["DramaVideo", "Season"],
     }),
 
+    // Get all videos
     getAllDramaVideo: builder.query({
       query: () => ({
         url: "/video-management",
@@ -56,6 +60,17 @@ const dramaVideoUploadApi = api.injectEndpoints({
       providesTags: ["DramaVideo"],
     }),
 
+    // Get videos by season ID
+    getVideosBySeasonId: builder.query({
+      query: (seasonId) => ({
+        url: `/video-management`,
+        method: "GET",
+        params: { seasonId },
+      }),
+      providesTags: ["DramaVideo"],
+    }),
+
+    // Get single video by ID
     getDramaVideoById: builder.query({
       query: (id) => ({
         url: `/video-management/single/${id}`,
@@ -64,6 +79,7 @@ const dramaVideoUploadApi = api.injectEndpoints({
       providesTags: ["DramaVideo"],
     }),
 
+    // Toggle video status
     toggleDramaVideoStatus: builder.mutation({
       query: ({ id, status }) => ({
         url: `/video-management/single/${id}`,
@@ -77,11 +93,12 @@ const dramaVideoUploadApi = api.injectEndpoints({
 
 export const {
   useCreateDramaVideoMutation,
-  useVideoUrlGenerateMutation,
-  useUploadThumbnailMutation,
+  useDramaVideoUrlGenerateMutation,
+  useUploadDramaVideoThumbnailMutation,
   useUpdateDramaVideoMutation,
   useDeleteDramaVideoMutation,
   useGetAllDramaVideoQuery,
+  useGetVideosBySeasonIdQuery,
   useGetDramaVideoByIdQuery,
   useToggleDramaVideoStatusMutation,
 } = dramaVideoUploadApi;
