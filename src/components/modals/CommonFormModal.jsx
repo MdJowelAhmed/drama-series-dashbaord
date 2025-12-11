@@ -45,8 +45,8 @@ const CommonFormModal = ({
   showGenre = false,
   showVideoFields = false,
 }) => {
-  const [type, setType] = useState(data?.type || "");
-
+  const [categoryId, setCategoryId] = useState(data?.categoryId?._id || data?.categoryId || "");
+  console.log(categories);
   const [formData, setFormData] = useState({
     title: data?.title || "",
     description: data?.description || "",
@@ -57,15 +57,15 @@ const CommonFormModal = ({
     thumbnail: data?.thumbnail || data?.thumbnail_url || null,
     thumbnailFile: null, // Store actual file for API upload
     contentName: data?.contentName || "",
-    type: data?.type || "",
+    categoryId: data?.categoryId?._id || data?.categoryId || "",
   });
 
   const [tagInput, setTagInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, type }));
-  }, [type]);
+    setFormData((prev) => ({ ...prev, categoryId }));
+  }, [categoryId]);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -164,17 +164,17 @@ const CommonFormModal = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text- mb-1">
-                Type *
+                Category *
               </label>
 
-              <Select value={type} onValueChange={setType}>
+              <Select value={categoryId} onValueChange={setCategoryId}>
                 <SelectTrigger className="w-full px-4 py-[22px] border border-white/40 rounded-md focus:ring-4 focus:ring-accent-foreground focus:border-blue-500 outline-none transition-all  text-white">
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories?.data?.map((t) => (
-                    <SelectItem key={t._id} value={t._id}>
-                      {t.name}
+                  {categories?.map((cat) => (
+                    <SelectItem key={cat._id} value={cat._id}>
+                      {cat.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

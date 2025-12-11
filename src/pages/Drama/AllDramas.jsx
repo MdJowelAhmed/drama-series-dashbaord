@@ -75,13 +75,14 @@ const AllDramas = () => {
       // Prepare data object
       const dataObject = {
         title: formData.title,
-        type: formData.type,
+        // type: formData.type,
         genre: formData.genre,
         tags: formData.tags || [],
         description: formData.description,
         accentColor: formData.color,
         status: formData.status || "Ongoing",
         contentName: formData.contentName,
+        categoryId: formData.categoryId,
       };
 
       // Add data as JSON string
@@ -109,7 +110,8 @@ const AllDramas = () => {
       // Prepare data object
       const dataObject = {
         title: formData.title,
-        type: formData.type,
+        // type: formData.type,
+        categoryId: formData.categoryId,
         genre: formData.genre,
         tags: formData.tags || [],
         description: formData.description,
