@@ -72,7 +72,7 @@ const VerifyOtpPage = ({ email, onBackToLogin, onOtpVerified }) => {
               <Button
                 onClick={handleSubmit}
                 disabled={loading || otp.join("").length !== 6}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 rounded-lg disabled:opacity-50"
+                className="w-full  text-white font-semibold  rounded-md disabled:opacity-50"
               >
                 {loading ? "Verifying..." : "Verify OTP"}
               </Button>
