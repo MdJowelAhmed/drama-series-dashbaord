@@ -13,10 +13,11 @@ const PrivacyPage = () => {
   queryParams.push({ name: "key", value: "privacyPolicy" });
   const { data, isLoading: isLoadingSetting, isError } = useGetSettingQuery(queryParams);
   const [updateSetting, { isLoading: isUpdating }] = useUpdateSettingMutation();
+  console.log(data);
 
   useEffect(() => {
     if (data) {
-      setContent(data.data);
+      setContent(data);
     }
   }, [data]);
 
@@ -32,10 +33,12 @@ const PrivacyPage = () => {
   };
 
   const handleSave = async () => {
-    setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success('Privacy Policy updated successfully!');
-    setLoading(false);
+    try {
+      const response = await updateSetting({privacyPolicy: content }).unwrap();
+      toast.success(response.message || "Privacy Policy updated successfully!");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to update Privacy Policy");
+    }
   };
 
   return (
