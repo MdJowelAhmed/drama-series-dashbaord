@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
+import { useProfileQuery, useUpdateProfileMutation } from "@/redux/feature/authApi";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -17,6 +18,9 @@ const profileSchema = z.object({
 
 const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
+  const {data} = useProfileQuery();
+  console.log(data);
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
 
   const {
     register,
