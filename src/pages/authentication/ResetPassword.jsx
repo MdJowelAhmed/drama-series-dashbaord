@@ -1,3 +1,9 @@
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Eye, EyeOff, Lock } from "lucide-react";
+import { useState } from "react";
+
 // Reset Password Page
 const ResetPasswordPage = ({ email, onBackToLogin, onPasswordReset }) => {
   const [password, setPassword] = useState("");
@@ -29,7 +35,7 @@ const ResetPasswordPage = ({ email, onBackToLogin, onPasswordReset }) => {
   };
 
   return (
-    <AuthLayout>
+   
       <div className="flex justify-center px-4">
         <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
           <div className="p-8">
@@ -111,7 +117,7 @@ const ResetPasswordPage = ({ email, onBackToLogin, onPasswordReset }) => {
               <Button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 rounded-lg"
+                className="w-full  text-white font-semibold py- rounded-sm"
               >
                 {loading ? "Resetting..." : "Reset Password"}
               </Button>
@@ -119,6 +125,8 @@ const ResetPasswordPage = ({ email, onBackToLogin, onPasswordReset }) => {
           </div>
         </Card>
       </div>
-    </AuthLayout>
+
   );
 };
+
+export default ResetPasswordPage;

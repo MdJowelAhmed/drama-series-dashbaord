@@ -1,7 +1,14 @@
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { AuthLayout } from "@/layout/AuthLayout";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 // Verify OTP Page
 const VerifyOtpPage = ({ email, onBackToLogin, onOtpVerified }) => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const navigate=useNavigate()
 
   const handleOtpChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
@@ -24,20 +31,16 @@ const VerifyOtpPage = ({ email, onBackToLogin, onOtpVerified }) => {
         console.log("OTP verified:", otpValue);
         onOtpVerified();
       }, 1500);
+      navigate("/reset-password");
     }
   };
 
   return (
-    <AuthLayout>
+  
       <div className="flex justify-center px-4">
-        <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+        <Card className="w-full max-w-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
           <div className="p-8">
-            <button
-              onClick={onBackToLogin}
-              className="text-gray-300 hover:text-white text-sm mb-6 flex items-center gap-1"
-            >
-              ← Back to Login
-            </button>
+          
 
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-white mb-2">Verify OTP</h1>
@@ -86,6 +89,9 @@ const VerifyOtpPage = ({ email, onBackToLogin, onOtpVerified }) => {
           </div>
         </Card>
       </div>
-    </AuthLayout>
+    
   );
 };
+
+
+export default VerifyOtpPage;

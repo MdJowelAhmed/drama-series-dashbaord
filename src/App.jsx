@@ -19,6 +19,8 @@ import { AuthLayout } from './layout/AuthLayout';
 import ForgotPasswordPage from './pages/authentication/ForgotPassword';
 import LoginPage from './pages/authentication/Login';
 import AdManagement from './pages/ad-management/AdManagement';
+import VerifyOtpPage from './pages/authentication/VerifyOtp';
+import ResetPasswordPage from './pages/authentication/ResetPassword';
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
   <Route element={<AuthLayout />}>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+    <Route path="/verify-email" element={< VerifyOtpPage/>} />
+    <Route path="/reset-password" element={< ResetPasswordPage/>} />
    
   </Route>
       <Route path="/" element={<LayoutWrapper />}>

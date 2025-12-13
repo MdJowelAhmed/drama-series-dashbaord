@@ -3,47 +3,18 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Mail } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Forgot Password Page
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate=useNavigate()
 
   const handleSubmit = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-      console.log("Reset link sent to:", email);
-    }, 1500);
+    navigate("/verify-email");
   };
-
-  if (submitted) {
-    return (
-     
-        <div className="flex justify-center px-4">
-          <Card className="w-full max-w-xl bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-8 h-8 text-green-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Check Your Email</h2>
-              <p className="text-gray-300 text-sm mb-6">
-                We've sent a password reset link to <strong>{email}</strong>
-              </p>
-              <Button
-                onClick={onBackToLogin}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg"
-              >
-                Back to Login
-              </Button>
-            </div>
-          </Card>
-        </div>
-      
-    );
-  }
 
   return (
     
