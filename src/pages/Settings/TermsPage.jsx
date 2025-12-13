@@ -1,32 +1,25 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { useGetSettingQuery, useUpdateSettingMutation } from '@/redux/feature/settingsApi';
 
 const TermsPage = () => {
   const [loading, setLoading] = useState(false);
-  const [content, setContent] = useState(`
-    <h2>User Agreement</h2>
-    <p>Last updated: ${new Date().toLocaleDateString()}</p>
+  const [content, setContent] = useState();
+  const queryParams =[]
+  queryParams.push({ name: "key", value: "userAgreement" });
+  const { data, isLoading: isLoadingSetting, isError } = useGetSettingQuery(queryParams);
+  const [updateSetting, { isLoading: isUpdating }] = useUpdateSettingMutation();
+  console.log(data);
 
-    <h3>1. Introduction</h3>
-    <p>Welcome to CineAdmin. These User Agreement outline the rules and regulations for the use of our platform.</p>
-
-    <h3>2. Acceptance of Terms</h3>
-    <p>By accessing this platform, you accept these User Agreement in full. Do not continue to use CineAdmin if you do not accept all of the User Agreement stated on this page.</p>
-
-    <h3>3. User Responsibilities</h3>
-    <p>Users are responsible for maintaining the confidentiality of their account information and for all activities that occur under their account.</p>
-
-    <h3>4. Content Policy</h3>
-    <p>All content uploaded to the platform must comply with applicable laws and regulations. We reserve the right to remove any content that violates our policies.</p>
-
-    <h3>5. Subscription and Payments</h3>
-    <p>Subscription fees are non-refundable unless otherwise stated. Users must maintain an active subscription to access premium features.</p>
-  `);
-
+  useEffect(() => {
+    if (data) {
+      setContent(data);
+    }
+  }, [data]);
   const modules = {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
@@ -38,10 +31,12 @@ const TermsPage = () => {
   };
 
   const handleSave = async () => {
-    setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success('Terms & Conditions updated successfully!');
-    setLoading(false);
+    try {
+      const response = await updateSetting({userAgreement: content }).unwrap();
+      toast.success(response.message || "User Agreement updated successfully!");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to update User Agreement");
+    }
   };
 
   return (
