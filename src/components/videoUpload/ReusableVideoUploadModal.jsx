@@ -627,6 +627,15 @@ const ReusableVideoUploadModal = ({
                   <Label className="block text-sm font-semibold text-white/80 mb-2">
                     Thumbnail Image {!isEditMode && <span className="text-red-400">*</span>}
                   </Label>
+                  {/* Hidden file input - always available */}
+                  <input
+                    type="file"
+                    onChange={(e) => handleFileChange(e, "thumbnail")}
+                    accept="image/*"
+                    className="hidden"
+                    id="thumbnail-upload"
+                    disabled={uploadingVideo}
+                  />
                   <div
                     onDragEnter={(e) => handleDrag(e, "thumbnail")}
                     onDragLeave={(e) => handleDrag(e, "thumbnail")}
@@ -642,11 +651,15 @@ const ReusableVideoUploadModal = ({
                   >
                     {thumbnailPreview || thumbnailFile ? (
                       <div className="space-y-3">
-                        <img
-                          src={thumbnailPreview}
-                          alt="Thumbnail preview"
-                          className="h-32 mx-auto rounded-lg object-cover shadow-lg border border-white/10"
-                        />
+                        {/* Clickable thumbnail preview */}
+                        <label htmlFor="thumbnail-upload" className="cursor-pointer block">
+                          <img
+                            src={thumbnailPreview}
+                            alt="Thumbnail preview"
+                            className="h-32 mx-auto rounded-lg object-cover shadow-lg border border-white/10 hover:opacity-80 transition-opacity"
+                          />
+                          <p className="text-xs text-white/50 mt-2">Click image to change</p>
+                        </label>
                         {thumbnailFile && (
                           <>
                             <p className="text-sm text-white font-medium truncate max-w-full">
@@ -657,16 +670,29 @@ const ReusableVideoUploadModal = ({
                             </p>
                           </>
                         )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeFile("thumbnail")}
-                          disabled={uploadingVideo}
-                          className="text-red-400 hover:text-red-300 border-red-400/50"
-                        >
-                          {thumbnailFile ? "Remove" : "Change"}
-                        </Button>
+                        <div className="flex gap-2 justify-center">
+                          {/* Change Thumbnail Button */}
+                          <label
+                            htmlFor="thumbnail-upload"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-300 rounded-lg cursor-pointer hover:bg-blue-500/30 font-medium transition-all border border-blue-500/30 text-sm"
+                          >
+                            <Upload className="h-4 w-4" />
+                            {isEditMode ? "Change Thumbnail" : "Change"}
+                          </label>
+                          {/* Remove Button - only show if a new file is selected */}
+                          {thumbnailFile && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeFile("thumbnail")}
+                              disabled={uploadingVideo}
+                              className="text-red-400 hover:text-red-300 border-red-400/50"
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -677,14 +703,6 @@ const ReusableVideoUploadModal = ({
                         <p className="text-xs text-white/40 mb-4">
                           Supports: JPG, PNG, WEBP (Max 5MB)
                         </p>
-                        <input
-                          type="file"
-                          onChange={(e) => handleFileChange(e, "thumbnail")}
-                          accept="image/*"
-                          className="hidden"
-                          id="thumbnail-upload"
-                          disabled={uploadingVideo}
-                        />
                         <label
                           htmlFor="thumbnail-upload"
                           className="inline-block px-6 py-2.5 bg-white/10 text-white rounded-lg cursor-pointer hover:bg-white/20 font-medium transition-all border border-white/20"
