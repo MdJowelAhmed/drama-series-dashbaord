@@ -262,8 +262,8 @@ const ReusableVideoUploadModal = ({
       setUploadingVideo(true);
       
       let videoUrl = editingData?.video_url || editingData?.videoUrl;
-      let videoId = editingData?.videoId;
-      let libraryId = editingData?.libraryId;
+      let videoId = editingData?.videoId || editingData?.video_id;
+      let libraryId = editingData?.libraryId || editingData?.library_id;
       let thumbnailUrl = editingData?.thumbnail_url || editingData?.thumbnailUrl;
 
       // Upload video if new file selected
@@ -450,20 +450,33 @@ const ReusableVideoUploadModal = ({
           </div>
         );
       case "color":
+        const colorValue = formData[field.name] || field.defaultValue || "#3b82f6";
         return (
           <div className="flex gap-3 items-center">
-            <Input
-              type="color"
-              value={formData[field.name] || "#3b82f6"}
-              onChange={(e) => handleInputChange(field.name, e.target.value)}
-              className="h-12 w-20 border-2 border-slate-200/30 rounded-lg cursor-pointer bg-transparent"
-              disabled={uploadingVideo}
-            />
-            <Input
-              {...commonProps}
-              type="text"
-              className="flex-1 px-4 py-3 border-2 border-slate-200/30 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white/5 text-white"
-            />
+            <div className="relative">
+              <Input
+                type="color"
+                value={colorValue}
+                onChange={(e) => handleInputChange(field.name, e.target.value)}
+                className="h-12 w-20 border-2 border-slate-200/30 rounded-lg cursor-pointer bg-transparent opacity-0 absolute inset-0 z-10"
+                disabled={uploadingVideo}
+              />
+              {/* Color Preview Box */}
+              <div 
+                className="h-12 w-20 rounded-lg border-2 border-white/30 shadow-inner cursor-pointer transition-all hover:border-white/50"
+                style={{ backgroundColor: colorValue }}
+              />
+            </div>
+            {/* Color Preview with Hex Value */}
+            <div 
+              className="flex-1 px-4 py-3 border-2 border-slate-200/30 rounded-lg bg-white/5 flex items-center gap-3"
+            >
+              <div 
+                className="w-6 h-6 rounded-full border-2 border-white/30 shadow-md flex-shrink-0"
+                style={{ backgroundColor: colorValue }}
+              />
+              <span className="text-white font-medium">{colorValue.toUpperCase()}</span>
+            </div>
           </div>
         );
       case "number":
