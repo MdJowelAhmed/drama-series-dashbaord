@@ -156,17 +156,15 @@ const Sidebar = () => {
       </nav>
 
       <div className="p-4 border-t border-slate-800 shrink-0">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary-foreground flex items-center justify-center">
-            <span className="text-sm font-bold">AD</span>
-          </div>
+        <div className="flex items-center gap-3 px-4">
+          
           <div>
-            <p className="text-sm font-medium">Admin User</p>
-            <p className="text-xs text-slate-400">admin@cine.com</p>
+            {/* <p className="text-sm font-medium">Admin User</p>
+            <p className="text-xs text-slate-400">admin@cine.com</p> */}
 
             <button
               onClick={handleLogout}
-              className="w-full mt-3 flex items-center gap-3 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition text-white"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition text-white"
             >
               <LogOut className="h-5 w-5" />
               <span>Logout</span>
