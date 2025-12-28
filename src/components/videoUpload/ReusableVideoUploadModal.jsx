@@ -318,7 +318,8 @@ const ReusableVideoUploadModal = ({
 
           // Use native fetch for FormData upload - more reliable than RTK Query
           const response = await fetch(
-            `http://10.10.7.48:5003/api/v1/trailer/${videoId}/thumbnail`,
+            `https://rakibur5003.binarybards.online/api/v1/trailer/${videoId}/thumbnail`,
+            // `http://10.10.7.48:5003/api/v1/trailer/${videoId}/thumbnail`,
             {
               method: "POST",
               headers: {
