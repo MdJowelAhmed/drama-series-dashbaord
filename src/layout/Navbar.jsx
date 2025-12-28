@@ -1,31 +1,37 @@
-import { Bell, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProfileQuery } from "@/redux/feature/authApi";
 import { getImageUrl } from "@/components/share/imageUrl";
 
-const Navbar = () => {
+const Navbar = ({ onMenuClick }) => {
   const { data } = useProfileQuery();
-  console.log(data);
+  
   return (
-    <div className="h-20 bg-  flex items-center justify-between px-6 ">
-      <div className="">
-        <p>Welcome Back, </p>
-        <h2 className="text-white text-xl font-medium">
-          {data?.data?.name}
+    <div className="h-20 flex items-center justify-between px-4 sm:px-6">
+      {/* Mobile Menu Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden text-white hover:bg-white/10"
+        onClick={onMenuClick}
+      >
+        <Menu className="h-6 w-6" />
+      </Button>
+
+      {/* Welcome Section */}
+      <div className="flex-1 md:flex-none">
+        <p className="text-xs sm:text-sm text-slate-300">Welcome Back, </p>
+        <h2 className="text-white text-lg sm:text-xl font-medium truncate">
+          {data?.data?.name || "User"}
         </h2>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-        </Button> */}
-
+      {/* Profile Image */}
+      <div className="flex items-center gap-2 sm:gap-4">
         <img
           src={getImageUrl(data?.data?.image)}
-          alt="logo"
-          className="h-16 w-16  rounded-full object-cover cursor-pointer  mr-10"
+          alt="profile"
+          className="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover cursor-pointer sm:mr-10"
         />
       </div>
     </div>

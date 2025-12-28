@@ -59,7 +59,7 @@ const dramaManagementApi = api.injectEndpoints({
     deleteDrama: builder.mutation({
       query: (id) => {
         return {
-          url: `/movie-management/get-movie/${id}`,
+          url: `/movie-management/delete-movie/${id}`,
           method: "DELETE",
         };
       },

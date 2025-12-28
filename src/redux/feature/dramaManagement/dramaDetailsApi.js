@@ -52,7 +52,7 @@ const dramaDetailsApi = api.injectEndpoints({
     // Update a season
     updateDramaSeason: builder.mutation({
       query: ({ id, updatedData }) => ({
-        url: `/season-management/${id}`,
+        url: `/season-management/update-season/${id}`,
         method: "PUT",
         body: updatedData,
       }),

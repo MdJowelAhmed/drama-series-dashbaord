@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Upload, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,18 +49,24 @@ const ReusableVideoUploadModal = ({
   const [uploadStatus, setUploadStatus] = useState("");
   const [errors, setErrors] = useState({});
 
+  // Ref to prevent double submission (synchronous guard)
+  const isSubmittingRef = useRef(false);
+
   const isEditMode = !!editingData?._id || !!editingData?.id;
 
   // Initialize form data when modal opens or editingData changes
   useEffect(() => {
     if (open) {
+      // Reset submitting ref when modal opens
+      isSubmittingRef.current = false;
+
       if (editingData) {
         const initialData = {};
         fields.forEach((field) => {
           initialData[field.name] = editingData[field.name] || "";
         });
         setFormData(initialData);
-        
+
         // Set existing thumbnail preview
         const existingThumbnail = editingData.thumbnail_url || editingData.thumbnailUrl;
         if (existingThumbnail) {
@@ -79,6 +85,9 @@ const ReusableVideoUploadModal = ({
       setUploadProgress(0);
       setUploadStatus("");
       setErrors({});
+    } else {
+      // Reset submitting ref when modal closes
+      isSubmittingRef.current = false;
     }
   }, [open, editingData, fields]);
 
@@ -143,7 +152,7 @@ const ReusableVideoUploadModal = ({
         const minutes = Math.floor(duration / 60);
         const seconds = duration % 60;
         const formatted = `${minutes}:${seconds.toString().padStart(2, "0")}`;
-        
+
         if (fields.some(f => f.name === "duration")) {
           setFormData((prev) => ({ ...prev, duration: formatted }));
         }
@@ -160,11 +169,11 @@ const ReusableVideoUploadModal = ({
         return;
       }
       setThumbnailFile(file);
-      
+
       // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       setThumbnailPreview(previewUrl);
-      
+
       toast.success("Thumbnail selected successfully");
     }
   };
@@ -187,7 +196,7 @@ const ReusableVideoUploadModal = ({
           fileName: videoFile.name,
         }).unwrap();
 
-        const { videoId, uploadUrl, apiKey, embedUrl, libraryId } = result.data;
+        const { videoId, uploadUrl, apiKey, embedUrl, libraryId, id, _id } = result.data;
 
         setUploadStatus("Uploading video to CDN...");
 
@@ -210,6 +219,7 @@ const ReusableVideoUploadModal = ({
               libraryId,
               embedUrl,
               videoUrl: embedUrl,
+              dbId: _id || id,
             });
           } else {
             reject(new Error("Video upload failed"));
@@ -232,7 +242,7 @@ const ReusableVideoUploadModal = ({
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     fields.forEach((field) => {
       if (field.required && !formData[field.name]?.toString().trim()) {
         newErrors[field.name] = `${field.label} is required`;
@@ -253,18 +263,27 @@ const ReusableVideoUploadModal = ({
   };
 
   const handleSubmit = async () => {
+    // Prevent double submission using synchronous ref check
+    if (isSubmittingRef.current) {
+      console.log("Submission already in progress, ignoring duplicate call");
+      return;
+    }
+
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     try {
+      // Set ref immediately (synchronous) to block any subsequent calls
+      isSubmittingRef.current = true;
       setUploadingVideo(true);
-      
+
       let videoUrl = editingData?.video_url || editingData?.videoUrl;
       let videoId = editingData?.videoId || editingData?.video_id;
       let libraryId = editingData?.libraryId || editingData?.library_id;
       let thumbnailUrl = editingData?.thumbnail_url || editingData?.thumbnailUrl;
+      let createdDbId = null;
 
       // Upload video if new file selected
       if (videoFile && generateUploadUrl) {
@@ -275,27 +294,28 @@ const ReusableVideoUploadModal = ({
         videoUrl = bunnyData.videoUrl;
         videoId = bunnyData.videoId;
         libraryId = bunnyData.libraryId;
+        createdDbId = bunnyData.dbId;
       }
 
       // Handle thumbnail upload - Use native fetch for reliable FormData handling
       if (thumbnailFile && videoId) {
         setUploadStatus("Uploading thumbnail...");
-        
+
         try {
           // Create FormData with the thumbnail file
           const formDataToSend = new FormData();
           formDataToSend.append("thumbnail", thumbnailFile, thumbnailFile.name);
-          
+
           console.log("Uploading thumbnail for videoId:", videoId);
           console.log("Thumbnail file details:", {
             name: thumbnailFile.name,
             size: thumbnailFile.size,
             type: thumbnailFile.type
           });
-          
+
           // Get auth token
           const token = localStorage.getItem("token");
-          
+
           // Use native fetch for FormData upload - more reliable than RTK Query
           const response = await fetch(
             `http://10.10.7.48:5003/api/v1/trailer/${videoId}/thumbnail`,
@@ -308,22 +328,22 @@ const ReusableVideoUploadModal = ({
               body: formDataToSend,
             }
           );
-          
+
           const thumbnailResult = await response.json();
           console.log("Thumbnail upload response:", thumbnailResult);
-          
+
           if (!response.ok) {
             throw new Error(thumbnailResult.message || "Thumbnail upload failed");
           }
-          
+
           // Extract thumbnail URL from response - check various possible paths
-          thumbnailUrl = thumbnailResult.data?.result || 
-                        thumbnailResult.data?.thumbnail_url ||
-                        thumbnailResult.data?.url ||
-                        thumbnailResult.thumbnailUrl || 
-                        thumbnailResult.thumbnail_url ||
-                        thumbnailResult.url;
-          
+          thumbnailUrl = thumbnailResult.data?.result ||
+            thumbnailResult.data?.thumbnail_url ||
+            thumbnailResult.data?.url ||
+            thumbnailResult.thumbnailUrl ||
+            thumbnailResult.thumbnail_url ||
+            thumbnailResult.url;
+
           if (thumbnailUrl) {
             toast.success("Thumbnail uploaded successfully");
             console.log("Thumbnail URL:", thumbnailUrl);
@@ -336,12 +356,14 @@ const ReusableVideoUploadModal = ({
           toast.error("Thumbnail upload failed: " + errorMsg);
           // Don't continue if thumbnail is required but failed
           setUploadingVideo(false);
+          isSubmittingRef.current = false;
           return;
         }
       } else if (thumbnailFile && !videoId) {
         console.error("Cannot upload thumbnail without videoId");
         toast.error("Cannot upload thumbnail: Video ID is missing");
         setUploadingVideo(false);
+        isSubmittingRef.current = false;
         return;
       }
 
@@ -362,6 +384,7 @@ const ReusableVideoUploadModal = ({
         // For new uploads without thumbnail URL, show error
         toast.error("Thumbnail is required but URL is missing");
         setUploadingVideo(false);
+        isSubmittingRef.current = false;
         return;
       }
 
@@ -376,20 +399,29 @@ const ReusableVideoUploadModal = ({
         }
         toast.success("Updated successfully!");
       } else {
-        if (createMutation) {
+        // If we have a createdDbId from the upload step, we should UPDATE that record
+        if (createdDbId && updateMutation) {
+          await updateMutation({
+            id: createdDbId,
+            updatedData: submitData,
+          }).unwrap();
+          toast.success("Created successfully!");
+        } else if (createMutation) {
           await createMutation(submitData).unwrap();
+          toast.success("Created successfully!");
         }
-        toast.success("Created successfully!");
       }
 
       setUploadingVideo(false);
       setUploadProgress(0);
       setUploadStatus("");
+      isSubmittingRef.current = false;
       onSave?.(submitData);
       onClose();
     } catch (error) {
       setUploadingVideo(false);
       setUploadStatus("");
+      isSubmittingRef.current = false;
       console.error("Upload error:", error);
       const errorMessage = error?.data?.message || error?.message || "Operation failed";
       toast.error(errorMessage);
@@ -407,7 +439,7 @@ const ReusableVideoUploadModal = ({
       // Reset to original thumbnail if in edit mode
       const originalThumbnail = editingData?.thumbnail_url || editingData?.thumbnailUrl;
       setThumbnailPreview(originalThumbnail ? getVideoAndThumbnail(originalThumbnail) : null);
-      
+
       // Clear thumbnail error if exists
       if (errors.thumbnail) {
         setErrors((prev) => ({ ...prev, thumbnail: null }));
@@ -422,9 +454,8 @@ const ReusableVideoUploadModal = ({
       onChange: (e) => handleInputChange(field.name, e.target.value),
       placeholder: field.placeholder,
       disabled: uploadingVideo,
-      className: `w-full px-4 py-3 border-2 border-slate-200/30 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white/5 text-white placeholder:text-white/40 ${
-        errors[field.name] ? "border-red-500" : ""
-      }`,
+      className: `w-full px-4 py-3 border-2 border-slate-200/30 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white/5 text-white placeholder:text-white/40 ${errors[field.name] ? "border-red-500" : ""
+        }`,
     };
 
     switch (field.type) {
@@ -462,16 +493,16 @@ const ReusableVideoUploadModal = ({
                 disabled={uploadingVideo}
               />
               {/* Color Preview Box */}
-              <div 
+              <div
                 className="h-12 w-20 rounded-lg border-2 border-white/30 shadow-inner cursor-pointer transition-all hover:border-white/50"
                 style={{ backgroundColor: colorValue }}
               />
             </div>
             {/* Color Preview with Hex Value */}
-            <div 
+            <div
               className="flex-1 px-4 py-3 border-2 border-slate-200/30 rounded-lg bg-white/5 flex items-center gap-3"
             >
-              <div 
+              <div
                 className="w-6 h-6 rounded-full border-2 border-white/30 shadow-md flex-shrink-0"
                 style={{ backgroundColor: colorValue }}
               />
@@ -558,13 +589,12 @@ const ReusableVideoUploadModal = ({
                     onDragLeave={(e) => handleDrag(e, "video")}
                     onDragOver={(e) => handleDrag(e, "video")}
                     onDrop={(e) => handleDrop(e, "video")}
-                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                      dragActive.video
-                        ? "border-blue-500 bg-blue-500/10 scale-[1.02]"
-                        : errors.video
+                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${dragActive.video
+                      ? "border-blue-500 bg-blue-500/10 scale-[1.02]"
+                      : errors.video
                         ? "border-red-500/50 bg-red-500/5"
                         : "border-white/20 hover:border-white/40 bg-white/5"
-                    }`}
+                      }`}
                   >
                     {videoFile ? (
                       <div className="space-y-3">
@@ -641,13 +671,12 @@ const ReusableVideoUploadModal = ({
                     onDragLeave={(e) => handleDrag(e, "thumbnail")}
                     onDragOver={(e) => handleDrag(e, "thumbnail")}
                     onDrop={(e) => handleDrop(e, "thumbnail")}
-                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-                      dragActive.thumbnail
-                        ? "border-blue-500 bg-blue-500/10 scale-[1.02]"
-                        : errors.thumbnail
+                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${dragActive.thumbnail
+                      ? "border-blue-500 bg-blue-500/10 scale-[1.02]"
+                      : errors.thumbnail
                         ? "border-red-500/50 bg-red-500/5"
                         : "border-white/20 hover:border-white/40 bg-white/5"
-                    }`}
+                      }`}
                   >
                     {thumbnailPreview || thumbnailFile ? (
                       <div className="space-y-3">
@@ -750,8 +779,8 @@ const ReusableVideoUploadModal = ({
               {uploadingVideo
                 ? `Uploading... ${uploadProgress}%`
                 : isEditMode
-                ? "Update"
-                : "Upload"}
+                  ? "Update"
+                  : "Upload"}
             </Button>
           </div>
         </div>

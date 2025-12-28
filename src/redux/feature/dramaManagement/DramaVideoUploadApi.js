@@ -36,7 +36,7 @@ const dramaVideoUploadApi = api.injectEndpoints({
     updateDramaVideo: builder.mutation({
       query: ({ id, updatedData }) => ({
         url: `/video-management/update/${id}`,
-        method: "PUT",
+        method: "PATCH",
         body: updatedData,
       }),
       invalidatesTags: ["DramaVideo", "Season"],
