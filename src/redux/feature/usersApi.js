@@ -7,7 +7,7 @@ const usersApi = api.injectEndpoints({
     deleteUser: builder.mutation({
       query: (id) => {
         return {
-          url: `/admins/${id}`,
+          url: `/user-management/${id}`,
           method: "DELETE",
         };
       },
