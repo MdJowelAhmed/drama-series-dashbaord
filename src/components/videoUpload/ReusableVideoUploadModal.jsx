@@ -262,8 +262,8 @@ const ReusableVideoUploadModal = ({
       setUploadingVideo(true);
       
       let videoUrl = editingData?.video_url || editingData?.videoUrl;
-      let videoId = editingData?.videoId;
-      let libraryId = editingData?.libraryId;
+      let videoId = editingData?.videoId || editingData?.video_id;
+      let libraryId = editingData?.libraryId || editingData?.library_id;
       let thumbnailUrl = editingData?.thumbnail_url || editingData?.thumbnailUrl;
 
       // Upload video if new file selected
@@ -450,20 +450,33 @@ const ReusableVideoUploadModal = ({
           </div>
         );
       case "color":
+        const colorValue = formData[field.name] || field.defaultValue || "#3b82f6";
         return (
           <div className="flex gap-3 items-center">
-            <Input
-              type="color"
-              value={formData[field.name] || "#3b82f6"}
-              onChange={(e) => handleInputChange(field.name, e.target.value)}
-              className="h-12 w-20 border-2 border-slate-200/30 rounded-lg cursor-pointer bg-transparent"
-              disabled={uploadingVideo}
-            />
-            <Input
-              {...commonProps}
-              type="text"
-              className="flex-1 px-4 py-3 border-2 border-slate-200/30 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white/5 text-white"
-            />
+            <div className="relative">
+              <Input
+                type="color"
+                value={colorValue}
+                onChange={(e) => handleInputChange(field.name, e.target.value)}
+                className="h-12 w-20 border-2 border-slate-200/30 rounded-lg cursor-pointer bg-transparent opacity-0 absolute inset-0 z-10"
+                disabled={uploadingVideo}
+              />
+              {/* Color Preview Box */}
+              <div 
+                className="h-12 w-20 rounded-lg border-2 border-white/30 shadow-inner cursor-pointer transition-all hover:border-white/50"
+                style={{ backgroundColor: colorValue }}
+              />
+            </div>
+            {/* Color Preview with Hex Value */}
+            <div 
+              className="flex-1 px-4 py-3 border-2 border-slate-200/30 rounded-lg bg-white/5 flex items-center gap-3"
+            >
+              <div 
+                className="w-6 h-6 rounded-full border-2 border-white/30 shadow-md flex-shrink-0"
+                style={{ backgroundColor: colorValue }}
+              />
+              <span className="text-white font-medium">{colorValue.toUpperCase()}</span>
+            </div>
           </div>
         );
       case "number":
@@ -476,8 +489,8 @@ const ReusableVideoUploadModal = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+      <div className="bg-[#FFFFFF3B] border border-white/10 rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-white">
@@ -614,6 +627,15 @@ const ReusableVideoUploadModal = ({
                   <Label className="block text-sm font-semibold text-white/80 mb-2">
                     Thumbnail Image {!isEditMode && <span className="text-red-400">*</span>}
                   </Label>
+                  {/* Hidden file input - always available */}
+                  <input
+                    type="file"
+                    onChange={(e) => handleFileChange(e, "thumbnail")}
+                    accept="image/*"
+                    className="hidden"
+                    id="thumbnail-upload"
+                    disabled={uploadingVideo}
+                  />
                   <div
                     onDragEnter={(e) => handleDrag(e, "thumbnail")}
                     onDragLeave={(e) => handleDrag(e, "thumbnail")}
@@ -629,11 +651,15 @@ const ReusableVideoUploadModal = ({
                   >
                     {thumbnailPreview || thumbnailFile ? (
                       <div className="space-y-3">
-                        <img
-                          src={thumbnailPreview}
-                          alt="Thumbnail preview"
-                          className="h-32 mx-auto rounded-lg object-cover shadow-lg border border-white/10"
-                        />
+                        {/* Clickable thumbnail preview */}
+                        <label htmlFor="thumbnail-upload" className="cursor-pointer block">
+                          <img
+                            src={thumbnailPreview}
+                            alt="Thumbnail preview"
+                            className="h-32 mx-auto rounded-lg object-cover shadow-lg border border-white/10 hover:opacity-80 transition-opacity"
+                          />
+                          <p className="text-xs text-white/50 mt-2">Click image to change</p>
+                        </label>
                         {thumbnailFile && (
                           <>
                             <p className="text-sm text-white font-medium truncate max-w-full">
@@ -644,16 +670,29 @@ const ReusableVideoUploadModal = ({
                             </p>
                           </>
                         )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeFile("thumbnail")}
-                          disabled={uploadingVideo}
-                          className="text-red-400 hover:text-red-300 border-red-400/50"
-                        >
-                          {thumbnailFile ? "Remove" : "Change"}
-                        </Button>
+                        <div className="flex gap-2 justify-center">
+                          {/* Change Thumbnail Button */}
+                          <label
+                            htmlFor="thumbnail-upload"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-300 rounded-lg cursor-pointer hover:bg-blue-500/30 font-medium transition-all border border-blue-500/30 text-sm"
+                          >
+                            <Upload className="h-4 w-4" />
+                            {isEditMode ? "Change Thumbnail" : "Change"}
+                          </label>
+                          {/* Remove Button - only show if a new file is selected */}
+                          {thumbnailFile && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeFile("thumbnail")}
+                              disabled={uploadingVideo}
+                              className="text-red-400 hover:text-red-300 border-red-400/50"
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -664,14 +703,6 @@ const ReusableVideoUploadModal = ({
                         <p className="text-xs text-white/40 mb-4">
                           Supports: JPG, PNG, WEBP (Max 5MB)
                         </p>
-                        <input
-                          type="file"
-                          onChange={(e) => handleFileChange(e, "thumbnail")}
-                          accept="image/*"
-                          className="hidden"
-                          id="thumbnail-upload"
-                          disabled={uploadingVideo}
-                        />
                         <label
                           htmlFor="thumbnail-upload"
                           className="inline-block px-6 py-2.5 bg-white/10 text-white rounded-lg cursor-pointer hover:bg-white/20 font-medium transition-all border border-white/20"

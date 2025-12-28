@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
+import { useChangePasswordMutation } from "@/redux/feature/authApi";
 
 const passwordSchema = z
   .object({
@@ -22,6 +23,7 @@ const passwordSchema = z
 
 const ChangePasswordPage = () => {
   const [loading, setLoading] = useState(false);
+  const [changePassword, { isLoading }] = useChangePasswordMutation();
 
   const {
     register,
@@ -33,11 +35,13 @@ const ChangePasswordPage = () => {
   });
 
   const onSubmit = async (data) => {
-    setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Password changed successfully!");
-    reset();
-    setLoading(false);
+    try {
+      const response = await changePassword(data).unwrap();
+      toast.success(response.message || "Password changed successfully!");
+      reset();
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to change password");
+    }
   };
 
   return (

@@ -57,8 +57,8 @@ const VideoDetailsModal = ({ video, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1a1a2e] rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+      <div className="bg-[#FFFFFF3B] rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-white">Video Details</h3>
@@ -84,13 +84,13 @@ const VideoDetailsModal = ({ video, onClose }) => {
                   aspectRatio="16:9"
                 />
                 {/* Back to thumbnail button */}
-                <button
+                {/* <button
                   onClick={() => setIsPlaying(false)}
                   className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm font-medium flex items-center gap-2 transition-all z-20"
                 >
                   <Pause className="h-4 w-4" />
                   Stop
-                </button>
+                </button> */}
               </div>
             ) : (
               <>

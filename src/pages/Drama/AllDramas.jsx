@@ -44,7 +44,7 @@ const AllDramas = () => {
   const {data:categoryData} = useGetAllCategoryQuery();
   const categories = categoryData?.data || [];
   console.log(categories);
-  const dramas = dramasData?.data?.result || [];
+  const dramas = dramasData?.data || [];
 
   const filteredDramas = dramas.filter((drama) =>
     drama.title?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -75,13 +75,14 @@ const AllDramas = () => {
       // Prepare data object
       const dataObject = {
         title: formData.title,
-        type: formData.type,
+        // type: formData.type,
         genre: formData.genre,
         tags: formData.tags || [],
         description: formData.description,
         accentColor: formData.color,
         status: formData.status || "Ongoing",
         contentName: formData.contentName,
+        categoryId: formData.categoryId,
       };
 
       // Add data as JSON string
@@ -109,7 +110,8 @@ const AllDramas = () => {
       // Prepare data object
       const dataObject = {
         title: formData.title,
-        type: formData.type,
+        // type: formData.type,
+        categoryId: formData.categoryId,
         genre: formData.genre,
         tags: formData.tags || [],
         description: formData.description,
@@ -154,6 +156,9 @@ const AllDramas = () => {
       </div>
     );
   }
+  const handleViewDetails = (drama) => {
+    navigate(`/movies/${drama._id}`);
+  };
 
   return (
     <div className="min-h-screen">
@@ -278,7 +283,8 @@ const AllDramas = () => {
                   <Button
                     size="sm"
                     className="flex-1 py-5"
-                    onClick={() => navigate(`/dramas/${drama._id}`)}
+                    // onClick={() => navigate(`/dramas/${drama._id}`)}
+                    onClick={() => handleViewDetails(drama)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     View
