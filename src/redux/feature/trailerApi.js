@@ -34,7 +34,7 @@ const trailerApi = api.injectEndpoints({
     updateTrailer: builder.mutation({
       query: ({ id, updatedData }) => ({
         url: `/trailer/update/${id}`,
-        method: "PUT",
+        method: "PATCH",
         body: updatedData,
       }),
       invalidatesTags: ["Trailer"],

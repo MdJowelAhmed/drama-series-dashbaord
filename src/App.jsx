@@ -3,7 +3,7 @@ import LayoutWrapper from './layout/LayoutWrapper';
 import OverviewPage from './pages/Overview/OverviewPage';
 import AllDramas from './pages/Drama/AllDramas';
 import DramaDetails from './pages/Drama/DramaDetails';
-import AllMovies from './pages/Movie/AllMovies';
+// import AllMovies from './pages/Movie/AllMovies';
 import SubscriptionPage from './pages/Subscription/SubscriptionPage';
 import UsersPage from './pages/Users/UsersPage';
 import ProfilePage from './pages/Settings/ProfilePage';
@@ -38,7 +38,7 @@ function App() {
         <Route path="movies" element={<AllDramas />} />
         <Route path="movies/:id" element={<DramaDetails />} />
         {/* <Route path="movies/:id" element={<DramaDetails />} /> */}
-        <Route path="movies" element={<AllMovies />} />
+        {/* <Route path="movies" element={<AllMovies />} /> */}
         <Route path="trailers" element={<TrailerManagement />} />
         <Route path="ad-management" element={<AdManagement />} />
         <Route path="categories" element={<CategoryManager />} />

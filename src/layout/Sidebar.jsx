@@ -9,11 +9,12 @@ import {
   ChevronDown,
   ReceiptPoundSterling,
   LogOut,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-const Sidebar = () => {
+const Sidebar = ({ onNavigate, showCloseButton = false }) => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
@@ -21,6 +22,12 @@ const Sidebar = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
+  };
+
+  const handleLinkClick = () => {
+    if (onNavigate) {
+      onNavigate();
+    }
   };
   const navItems = [
     {
@@ -80,16 +87,25 @@ const Sidebar = () => {
 
 
   return (
-    <div className="w-72 h-screen bg-black/30 backdrop-blur-sm text-white flex flex-col shrink-0 overflow-hidden">
-      <div className="p-6 border-b border-slate-800 shrink-0">
+    <div className="w-72 h-screen bg-black/30 backdrop-blur-sm text-white flex flex-col shrink-0 overflow-hidden relative">
+      {/* Close Button for Mobile */}
+      {showCloseButton && onNavigate && (
+        <button
+          onClick={onNavigate}
+          className="absolute top-4 right-4 z-50 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 p-2 hover:bg-white/10 text-white"
+          aria-label="Close sidebar"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
+      
+      <div className="p-4 sm:p-6 border-b border-slate-800 shrink-0">
         <div className="flex items-center justify-center gap-2">
-          {/* <Film className="h-8 w-8 text-primary" /> */}
-          <img src="/assets/logo.png" alt="logo" className="h- w-28" />
-          {/* <h1 className="text-2xl font-bold">Creepy Shorts</h1> */}
+          <img src="/assets/logo.png" alt="logo" className="h-auto w-24 sm:w-28" />
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-3 sm:p-4 space-y-2 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -98,15 +114,16 @@ const Sidebar = () => {
             <Link
               key={item.path}
               to={item.path}
+              onClick={handleLinkClick}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
                 isActive
-                  ? "bg-primary text-white hover:text-white" // <-- added hover:text-white
-                  : "text-slate-300 hover:bg-slate-800 hover:text-slate-200" // <-- specify hover:text color
+                  ? "bg-primary text-white hover:text-white"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-slate-200"
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span>{item.name}</span>
+              <Icon className="h-5 w-5 shrink-0" />
+              <span className="truncate">{item.name}</span>
             </Link>
           );
         })}
@@ -139,6 +156,7 @@ const Sidebar = () => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onClick={handleLinkClick}
                     className={cn(
                       "block px-4 py-2 rounded-lg text-sm transition-colors",
                       isActive

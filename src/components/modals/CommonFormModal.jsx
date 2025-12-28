@@ -270,10 +270,10 @@ const CommonFormModal = ({
                   }}
                   className="px-3 py-2 border rounded-md w-28"
                 />
-                <div
+                {/* <div
                   className="w-8 h-8 rounded-full shadow-sm"
                   style={{ backgroundColor: formData.color }}
-                />
+                /> */}
                 {/* <p className="text-xs text-slate-500">Preview & HEX</p> */}
               </div>
             </div>
