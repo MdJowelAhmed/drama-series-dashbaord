@@ -194,7 +194,7 @@ const EpisodeUploadModal = ({
           fileName: videoFile.name,
         }).unwrap();
 
-        const { videoId, uploadUrl, apiKey, embedUrl, libraryId } = result.data;
+        const { videoId, uploadUrl, apiKey, embedUrl, libraryId, downloadUrls } = result.data;
 
         setUploadStatus("Uploading video to CDN...");
 
@@ -217,6 +217,7 @@ const EpisodeUploadModal = ({
               libraryId,
               embedUrl,
               videoUrl: embedUrl,
+              downloadUrls: downloadUrls || {}, // Pass the full downloadUrls object
             });
           } else {
             reject(new Error("Video upload failed"));
@@ -273,6 +274,7 @@ const EpisodeUploadModal = ({
       let videoId = editingData?.videoId || editingData?.video_id;
       let libraryId = editingData?.libraryId || editingData?.library_id;
       let thumbnailUrl = editingData?.thumbnail_url || editingData?.thumbnailUrl;
+      let downloadUrls = editingData?.downloadUrls || editingData?.download_urls || {};
 
       // Upload video if new file selected
       if (videoFile && generateUploadUrl) {
@@ -283,6 +285,7 @@ const EpisodeUploadModal = ({
         videoUrl = bunnyData.videoUrl;
         videoId = bunnyData.videoId;
         libraryId = bunnyData.libraryId;
+        downloadUrls = bunnyData.downloadUrls || {};
       }
 
       // Handle thumbnail upload using native fetch for FormData
@@ -370,6 +373,7 @@ const EpisodeUploadModal = ({
         videoId: videoId,
         libraryId: libraryId,
         thumbnailUrl: thumbnailUrl,
+        downloadUrls: downloadUrls, // Add full downloadUrls object to the data sent to backend
         movieId: movieId,
         seasonId: seasonId,
         episodeNumber: parseInt(formData.episodeNumber, 10),
