@@ -29,6 +29,7 @@ export const api = createApi({
     "Drama",
     "Season",
     "DramaVideo",
+    "Package",
   ],
   endpoints: () => ({}),
 });

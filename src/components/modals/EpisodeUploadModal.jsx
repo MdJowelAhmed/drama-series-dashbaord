@@ -194,7 +194,29 @@ const EpisodeUploadModal = ({
           fileName: videoFile.name,
         }).unwrap();
 
-        const { videoId, uploadUrl, apiKey, embedUrl, libraryId, downloadUrls } = result.data;
+        // Debug: Log the full response to see what backend returns
+        console.log("🔍 Generate Upload URL Response:", result);
+        console.log("🔍 Response data:", result.data);
+
+        const { videoId, uploadUrl, apiKey, embedUrl, libraryId } = result.data;
+        
+        // Try to get downloadUrls from different possible locations in the response
+        // Note: Download URLs might not be available immediately after generating upload URL.
+        // They may only be available after video is fully uploaded and processed by Bunny Stream.
+        // Backend should return downloadUrls in the response if available.
+        const downloadUrls = result.data?.downloadUrls || 
+                            result.data?.download_urls || 
+                            result?.downloadUrls || 
+                            result?.download_urls || 
+                            {};
+
+        // Log downloadUrls for debugging
+        if (Object.keys(downloadUrls).length > 0) {
+          console.log("✅ Download URLs found:", downloadUrls);
+        } else {
+          console.warn("⚠️ Download URLs not found in backend response. Available keys:", Object.keys(result.data || {}));
+          console.warn("💡 Note: Download URLs may need to be fetched after video upload completes, or backend needs to return them in generate-upload-url response.");
+        }
 
         setUploadStatus("Uploading video to CDN...");
 
