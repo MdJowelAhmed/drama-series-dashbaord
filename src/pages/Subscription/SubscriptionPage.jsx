@@ -1,12 +1,6 @@
 import { useState } from "react";
-import { Pencil, X, Plus, ChevronDown } from "lucide-react";
+import { Pencil, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   useGetAllPackageQuery,
   useCreatePackageMutation,
@@ -50,14 +44,13 @@ const MEMBERSHIP_OPTIONS = [
 
 export default function SubscriptionPackagesManagement() {
   const [showPackageModal, setShowPackageModal] = useState(false);
-  const [selectedType, setSelectedType] = useState("all");
   const [currentPackage, setCurrentPackage] = useState({
     name: "",
     description: "",
     price: "",
     duration: "1 month",
     paymentType: "Yearly",
-    subscriptionType: "web",
+    subscriptionType: "app",
     // New discount fields
     discountPercentage: "",
     discountVisibleTo: "all",
@@ -90,7 +83,6 @@ export default function SubscriptionPackagesManagement() {
       "price",
       "duration",
       "paymentType",
-      "subscriptionType",
     ];
 
     // Check if all required fields have values
@@ -123,14 +115,12 @@ export default function SubscriptionPackagesManagement() {
       }
     }
 
-    // App subscription specific validation
-    if (currentPackage.subscriptionType === "app") {
-      if (currentPackage.isGoogle && !currentPackage.googleProductId) {
-        return false;
-      }
-      if (!currentPackage.isGoogle && !currentPackage.appleProductId) {
-        return false;
-      }
+    // App subscription specific validation - always required
+    if (currentPackage.isGoogle && !currentPackage.googleProductId) {
+      return false;
+    }
+    if (!currentPackage.isGoogle && !currentPackage.appleProductId) {
+      return false;
     }
 
     return true;
@@ -152,7 +142,7 @@ export default function SubscriptionPackagesManagement() {
           packageObj.paymentType === "One-time"
             ? "Yearly"
             : packageObj.paymentType || "Yearly",
-        subscriptionType: packageObj.subscriptionType || "web",
+        subscriptionType: "app",
         // Handle discount fields with defaults
         discountPercentage: packageObj.discountPercentage?.toString() || packageObj.discount?.toString() || "",
         discountVisibleTo: packageObj.discountVisibleTo || "all",
@@ -172,7 +162,7 @@ export default function SubscriptionPackagesManagement() {
         price: "",
         duration: "1 month",
         paymentType: "Yearly",
-        subscriptionType: "web",
+        subscriptionType: "app",
         discountPercentage: "",
         discountVisibleTo: "all",
         isGoogle: true,
@@ -199,21 +189,19 @@ export default function SubscriptionPackagesManagement() {
         price: Number(currentPackage.price),
         duration: currentPackage.duration,
         paymentType: currentPackage.paymentType,
-        subscriptionType: currentPackage.subscriptionType,
+        subscriptionType: "app",
         discount: currentPackage.discountPercentage
           ? parseInt(currentPackage.discountPercentage, 10)
           : 0,
         discountVisibleTo: currentPackage.discountVisibleTo,
+        // App-specific fields - always required
+        isGoogle: currentPackage.isGoogle,
       };
 
-      // Add app-specific fields if subscription type is app
-      if (currentPackage.subscriptionType === "app") {
-        formattedPackage.isGoogle = currentPackage.isGoogle;
-        if (currentPackage.isGoogle) {
-          formattedPackage.googleProductId = currentPackage.googleProductId;
-        } else {
-          formattedPackage.appleProductId = currentPackage.appleProductId;
-        }
+      if (currentPackage.isGoogle) {
+        formattedPackage.googleProductId = currentPackage.googleProductId;
+      } else {
+        formattedPackage.appleProductId = currentPackage.appleProductId;
       }
 
       if (editingPackageId !== null) {
@@ -245,7 +233,7 @@ export default function SubscriptionPackagesManagement() {
       price: "",
       duration: "1 month",
       paymentType: "Yearly",
-      subscriptionType: "web",
+      subscriptionType: "app",
       discountPercentage: "",
       discountVisibleTo: "all",
       isGoogle: true,
@@ -283,14 +271,8 @@ export default function SubscriptionPackagesManagement() {
     }
   };
 
-  // Filter packages based on selected type
-  const filteredPackages =
-    selectedType.toLowerCase() === "all"
-      ? subscriptionPackages
-      : subscriptionPackages.filter(
-          (pkg) =>
-            pkg.subscriptionType?.toLowerCase() === selectedType.toLowerCase()
-        );
+  // All packages are app subscriptions
+  const filteredPackages = subscriptionPackages;
 
   if (isLoadingPackages) {
     return (
@@ -315,35 +297,8 @@ export default function SubscriptionPackagesManagement() {
           </div>
         </div>
 
-        {/* Type Filter and Add Button */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="py-5 mr-2 text-white bg-red-600 hover:bg-red-700">
-                  <div className="flex items-center gap-4">
-                    <span>
-                      {selectedType === "all" ? "All Types" : selectedType}
-                    </span>
-                    <ChevronDown className="ml-2" size={14} />
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setSelectedType("all")}>
-                  All Types
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSelectedType("web")}>
-                  Web
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSelectedType("app")}>
-                  App
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Add Package Button */}
+        {/* Add Button */}
+        <div className="flex items-center justify-end mb-6">
           <Button
             className="flex items-center gap-2 px-4 py-2 text-white bg-red-500 hover:bg-red-600 rounded-md"
             onClick={() => openPackageModal()}
@@ -370,18 +325,8 @@ export default function SubscriptionPackagesManagement() {
               return (
                 <div
                   key={pkg.id || pkg._id}
-                  className="relative flex-1 p-10 border rounded-lg min-w-64 bg-white"
+                  className="relative flex-1 p-10 border rounded-lg min-w-64 bg-secondary"
                 >
-                  {/* Type Label - Rotated and positioned at top left */}
-                  <div
-                    className="absolute top-0 px-3 py-1 text-xs text-black bg-gray-100 rounded-md -left-5"
-                    style={{
-                      transform: "rotate(-50deg)",
-                      transformOrigin: "top right",
-                    }}
-                  >
-                    {pkg.subscriptionType || "web"}
-                  </div>
 
                   {/* Discount Badge */}
                   {hasDiscount && (
@@ -419,7 +364,7 @@ export default function SubscriptionPackagesManagement() {
                     </button>
                   </div>
 
-                  <div className="mb-3 text-sm text-center">{pkg.title}</div>
+                  <div className="mb-3 text-sm text-center">{pkg.name}</div>
 
                   {/* Updated Price Display */}
                   <div className="mb-3 text-center">
@@ -628,26 +573,8 @@ export default function SubscriptionPackagesManagement() {
                     </div>
                   </div>
 
-                  {/* Subscription Type */}
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Subscription Type <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="subscriptionType"
-                      value={currentPackage.subscriptionType}
-                      onChange={handlePackageChange}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      required
-                    >
-                      <option value="app">App</option>
-                      <option value="web">Web</option>
-                    </select>
-                  </div>
-
-                  {/* App Logic: Platform & Product ID */}
-                  {currentPackage.subscriptionType === "app" && (
-                    <div className="p-4 border rounded-md bg-blue-50">
+                  {/* App Configuration - Always shown */}
+                  <div className="p-4 border rounded-md bg-blue-50">
                       <h3 className="mb-3 text-lg font-semibold text-gray-700">
                         App Configuration
                       </h3>
@@ -738,7 +665,6 @@ export default function SubscriptionPackagesManagement() {
                         </p>
                       </div>
                     </div>
-                  )}
                 </form>
               </div>
 
