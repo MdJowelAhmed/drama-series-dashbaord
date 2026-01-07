@@ -5,7 +5,7 @@ const adApi = api.injectEndpoints({
     createAd: builder.mutation({
       query: (ad) => {
         return {
-          url: "/ad/create",
+          url: "/ad-management/create",
           method: "POST",
           body: ad,
         };
@@ -15,7 +15,7 @@ const adApi = api.injectEndpoints({
     videoUrlGenerateAd: builder.mutation({
       query: (videoUrl) => {
         return {
-          url: "/ad/generate-upload-url",
+          url: "/ad-management/generate-upload-url",
           method: "POST",
           body: videoUrl,
         };
@@ -25,8 +25,8 @@ const adApi = api.injectEndpoints({
     updateAd: builder.mutation({
       query: ({ id, updatedData }) => {
         return {
-          url: `/ad/update/${id}`,
-          method: "PUT",
+          url: `/ad-management/update/${id}`,
+          method: "PATCH",
           body: updatedData,
         };
       },
@@ -35,7 +35,7 @@ const adApi = api.injectEndpoints({
     deleteAd: builder.mutation({
       query: (id) => {
         return {
-          url: `/ad/delete/${id}`,
+          url: `/ad-management/delete/${id}`,
           method: "DELETE",
         };
       },
@@ -44,22 +44,13 @@ const adApi = api.injectEndpoints({
     getAllAd: builder.query({
       query: () => {
         return {
-          url: "/ad",
+          url: "/ad-management",
           method: "GET",
         };
       },
       providesTags: ["Ad"],
     }),
-    toggleAdStatus: builder.mutation({
-      query: ({ id, status }) => {
-        return {
-          url: `/ad/single/${id}`,
-          method: "PATCH",
-          body: { status },
-        };
-      },
-      invalidatesTags: ["Ad"],
-    }),
+  
   }),
 });
 
@@ -69,6 +60,5 @@ export const {
   useUpdateAdMutation,
   useDeleteAdMutation,
   useGetAllAdQuery,
-  useToggleAdStatusMutation,
 } = adApi;
 
