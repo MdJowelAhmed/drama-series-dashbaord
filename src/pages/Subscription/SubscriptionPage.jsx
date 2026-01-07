@@ -1,171 +1,291 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, Check, X } from "lucide-react";
+import { Pencil, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  useGetAllPackageQuery,
+  useCreatePackageMutation,
+  useUpdatePackageMutation,
+  useDeletePackageMutation,
+} from "@/redux/feature/packageApi";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-const SubscriptionManager = () => {
-  const [subscriptions, setSubscriptions] = useState([
-    {
-      id: 1,
-      name: "Basic Plan",
-      price: 299,
-      duration_days: 30,
-      description: "Perfect for individuals getting started",
-      features: [
-        "Access to basic features",
-        "Email support",
-        "5 GB storage",
-        "Single user",
-      ],
-    },
-    {
-      id: 2,
-      name: "Premium Plan",
-      price: 799,
-      duration_days: 30,
-      description: "Most popular choice for professionals",
-      features: [
-        "All basic features",
-        "Priority support",
-        "50 GB storage",
-        "Up to 5 users",
-        "Advanced analytics",
-      ],
-    },
-    {
-      id: 3,
-      name: "Enterprise Plan",
-      price: 1999,
-      duration_days: 30,
-      description: "For large teams and organizations",
-      features: [
-        "All premium features",
-        "24/7 phone support",
-        "Unlimited storage",
-        "Unlimited users",
-        "Custom integrations",
-        "Dedicated account manager",
-      ],
-    },
-  ]);
+// Duration options that match the API's expected enum values
+const DURATION_OPTIONS = [
+  { value: "1 month", label: "1 Month" },
+  { value: "3 months", label: "3 Months" },
+  { value: "6 months", label: "6 Months" },
+  { value: "1 year", label: "1 Year" },
+];
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingSubscription, setEditingSubscription] = useState(null);
-  const [selectedForDelete, setSelectedForDelete] = useState(null);
+// Payment type options that match the API's expected enum values
+const PAYMENT_TYPE_OPTIONS = [
+  { value: "Yearly", label: "Yearly" },
+  { value: "Monthly", label: "Monthly" },
+];
 
-  const [formData, setFormData] = useState({
+// Membership types that can see discounts
+const MEMBERSHIP_OPTIONS = [
+  { value: "all", label: "All Users" },
+  { value: "premium", label: "Premium Members" },
+  { value: "gold", label: "Gold Members" },
+  { value: "platinum", label: "Platinum Members" },
+  { value: "vip", label: "VIP Members" },
+];
+
+export default function SubscriptionPackagesManagement() {
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  const [currentPackage, setCurrentPackage] = useState({
     name: "",
-    price: "",
-    duration_days: "",
     description: "",
-    features: [""],
+    price: "",
+    duration: "1 month",
+    paymentType: "Yearly",
+    subscriptionType: "app",
+    // New discount fields
+    discountPercentage: "",
+    discountVisibleTo: "all",
+    // Platform fields
+    isGoogle: true,
+    googleProductId: "",
+    appleProductId: "",
   });
+  const [editingPackageId, setEditingPackageId] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [packageToDelete, setPackageToDelete] = useState(null);
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      price: "",
-      duration_days: "",
-      description: "",
-      features: [""],
-    });
-    setEditingSubscription(null);
+  // RTK Query hooks
+  const { data: packagesData, isLoading: isLoadingPackages } =
+    useGetAllPackageQuery();
+  const [createPackage, { isLoading: isCreating }] =
+    useCreatePackageMutation();
+  const [updatePackage, { isLoading: isUpdating }] =
+    useUpdatePackageMutation();
+  const [deletePackage, { isLoading: isDeleting }] =
+    useDeletePackageMutation();
+
+  const subscriptionPackages = packagesData?.data || [];
+
+  // Form validation function
+  const isFormValid = () => {
+    const requiredFields = [
+      "name",
+      "description",
+      "price",
+      "duration",
+      "paymentType",
+    ];
+
+    // Check if all required fields have values
+    for (let field of requiredFields) {
+      if (
+        !currentPackage[field] ||
+        currentPackage[field].toString().trim() === ""
+      ) {
+        return false;
+      }
+    }
+
+    // Check if price is a valid positive number
+    const price = Number(currentPackage.price);
+    if (isNaN(price) || price <= 0) {
+      return false;
+    }
+
+    // Check if discount percentage is valid (if provided)
+    if (currentPackage.discountPercentage !== "") {
+      const discount = Number(currentPackage.discountPercentage);
+
+      if (
+        !Number.isInteger(discount) ||
+        isNaN(discount) ||
+        discount < 0 ||
+        discount > 99
+      ) {
+        return false;
+      }
+    }
+
+    // App subscription specific validation - always required
+    if (currentPackage.isGoogle && !currentPackage.googleProductId) {
+      return false;
+    }
+    if (!currentPackage.isGoogle && !currentPackage.appleProductId) {
+      return false;
+    }
+
+    return true;
   };
 
-  const openCreateModal = () => {
-    resetForm();
-    setModalOpen(true);
+  // Package functions
+  const openPackageModal = (packageObj = null) => {
+    if (packageObj) {
+      // Edit existing - normalize data to match API expectations
+      const normalizedDuration =
+        packageObj.duration?.toLowerCase() || "1 month";
+
+      setCurrentPackage({
+        name: packageObj.name || "",
+        description: packageObj.description || "",
+        price: packageObj.price?.toString() || "",
+        duration: normalizedDuration,
+        paymentType:
+          packageObj.paymentType === "One-time"
+            ? "Yearly"
+            : packageObj.paymentType || "Yearly",
+        subscriptionType: "app",
+        // Handle discount fields with defaults
+        discountPercentage: packageObj.discountPercentage?.toString() || packageObj.discount?.toString() || "",
+        discountVisibleTo: packageObj.discountVisibleTo || "all",
+        // Platform specific
+        isGoogle: packageObj.hasOwnProperty("isGoogle")
+          ? packageObj.isGoogle
+          : true,
+        googleProductId: packageObj.googleProductId || "",
+        appleProductId: packageObj.appleProductId || "",
+      });
+      setEditingPackageId(packageObj._id || packageObj.id);
+    } else {
+      // Add new
+      setCurrentPackage({
+        name: "",
+        description: "",
+        price: "",
+        duration: "1 month",
+        paymentType: "Yearly",
+        subscriptionType: "app",
+        discountPercentage: "",
+        discountVisibleTo: "all",
+        isGoogle: true,
+        googleProductId: "",
+        appleProductId: "",
+      });
+      setEditingPackageId(null);
+    }
+    setShowPackageModal(true);
   };
 
-  const openEditModal = (subscription) => {
-    setEditingSubscription(subscription);
-    setFormData({
-      name: subscription.name,
-      price: subscription.price.toString(),
-      duration_days: subscription.duration_days.toString(),
-      description: subscription.description,
-      features: subscription.features.length > 0 ? subscription.features : [""],
-    });
-    setModalOpen(true);
-  };
-
-  const handleSubmit = () => {
-    const filteredFeatures = formData.features.filter((f) => f.trim() !== "");
-
-    if (
-      !formData.name ||
-      !formData.price ||
-      !formData.duration_days ||
-      !formData.description
-    ) {
+  const savePackage = async () => {
+    // Double check form validity before saving
+    if (!isFormValid()) {
+      toast.error("Please fill in all required fields with valid values.");
       return;
     }
 
-    if (editingSubscription) {
-      setSubscriptions(
-        subscriptions.map((sub) =>
-          sub.id === editingSubscription.id
-            ? {
-                ...sub,
-                name: formData.name,
-                price: Number(formData.price),
-                duration_days: Number(formData.duration_days),
-                description: formData.description,
-                features: filteredFeatures,
-              }
-            : sub
-        )
-      );
-    } else {
-      const newSubscription = {
-        id: Math.max(...subscriptions.map((s) => s.id), 0) + 1,
-        name: formData.name,
-        price: Number(formData.price),
-        duration_days: Number(formData.duration_days),
-        description: formData.description,
-        features: filteredFeatures,
+    try {
+      // Format package data - send original price and discount percentage to backend
+      const formattedPackage = {
+        name: currentPackage.name,
+        description: currentPackage.description,
+        price: Number(currentPackage.price),
+        duration: currentPackage.duration,
+        paymentType: currentPackage.paymentType,
+        subscriptionType: "app",
+        discount: currentPackage.discountPercentage
+          ? parseInt(currentPackage.discountPercentage, 10)
+          : 0,
+        discountVisibleTo: currentPackage.discountVisibleTo,
+        // App-specific fields - always required
+        isGoogle: currentPackage.isGoogle,
       };
-      setSubscriptions([...subscriptions, newSubscription]);
+
+      if (currentPackage.isGoogle) {
+        formattedPackage.googleProductId = currentPackage.googleProductId;
+      } else {
+        formattedPackage.appleProductId = currentPackage.appleProductId;
+      }
+
+      if (editingPackageId !== null) {
+        // Update existing package
+        await updatePackage({
+          id: editingPackageId,
+          updatedData: formattedPackage,
+        }).unwrap();
+        toast.success("Package updated successfully");
+      } else {
+        // Add new package
+        await createPackage(formattedPackage).unwrap();
+        toast.success("Package created successfully");
+      }
+      setShowPackageModal(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error saving package:", error);
+      toast.error(
+        error?.data?.message || "Please check all fields and try again."
+      );
     }
-
-    setModalOpen(false);
-    resetForm();
   };
 
-  const handleDelete = () => {
-    setSubscriptions(
-      subscriptions.filter((sub) => sub.id !== selectedForDelete.id)
+  const resetForm = () => {
+    setCurrentPackage({
+      name: "",
+      description: "",
+      price: "",
+      duration: "1 month",
+      paymentType: "Yearly",
+      subscriptionType: "app",
+      discountPercentage: "",
+      discountVisibleTo: "all",
+      isGoogle: true,
+      googleProductId: "",
+      appleProductId: "",
+    });
+    setEditingPackageId(null);
+  };
+
+  const handlePackageChange = (e) => {
+    const { name, value } = e.target;
+    setCurrentPackage((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const confirmDeletePackage = (id) => {
+    setPackageToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeletePackage = async () => {
+    if (!packageToDelete) return;
+    try {
+      await deletePackage(packageToDelete).unwrap();
+      toast.success("Package deleted successfully");
+      setDeleteDialogOpen(false);
+      setPackageToDelete(null);
+    } catch (error) {
+      console.error("Error deleting package:", error);
+      toast.error(
+        error?.data?.message || "An error occurred while deleting the package."
+      );
+    }
+  };
+
+  // All packages are app subscriptions
+  const filteredPackages = subscriptionPackages;
+
+  if (isLoadingPackages) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
     );
-    setDeleteDialogOpen(false);
-    setSelectedForDelete(null);
-  };
-
-  const addFeature = () => {
-    setFormData({
-      ...formData,
-      features: [...formData.features, ""],
-    });
-  };
-
-  const removeFeature = (index) => {
-    setFormData({
-      ...formData,
-      features: formData.features.filter((_, i) => i !== index),
-    });
-  };
-
-  const updateFeature = (index, value) => {
-    const newFeatures = [...formData.features];
-    newFeatures[index] = value;
-    setFormData({
-      ...formData,
-      features: newFeatures,
-    });
-  };
+  }
 
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-accent">
@@ -175,235 +295,430 @@ const SubscriptionManager = () => {
               Manage subscription plans and pricing
             </p>
           </div>
+        </div>
+
+        {/* Add Button */}
+        <div className="flex items-center justify-end mb-6">
           <Button
-            onClick={openCreateModal}
-            className="flex items-center gap-2  text-white px-4 py-2 rounded-md  transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-white bg-red-500 hover:bg-red-600 rounded-md"
+            onClick={() => openPackageModal()}
           >
-            <Plus className="h-4 w-4" />
-            Add New Plan
+            <Plus size={18} />
+            Add Subscription Package
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {subscriptions.map((subscription) => (
-            <div
-              key={subscription.id}
-              className="relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
-            >
-              <div className="p-6 flex-grow">
-                <h3 className="text-2xl font-bold text-slate-900">
-                  {subscription.name}
-                </h3>
-                <div className="mt-2">
-                  <span className="text-3xl font-bold text-slate-900">
-                    ৳{subscription.price}
-                  </span>
-                  <span className="text-sm text-slate-600">
-                    /{subscription.duration_days} days
-                  </span>
-                </div>
-
-                <p className="text-sm text-slate-600 mt-4 mb-6">
-                  {subscription.description}
-                </p>
-
-                <ul className="space-y-3 mb-6">
-                  {subscription.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-slate-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="flex gap-2 p-4 mt-auto">
-                <Button
-                  onClick={() => openEditModal(subscription)}
-                  className="flex-1 flex items-center justify-center gap-1 border border-slate-300 text px-3 py-2 rounded-lg transition-colors text-sm"
-                >
-                  <Edit className="h-4 w-4" />
-                  Edit
-                </Button>
-                <Button
-                  onClick={() => {
-                    setSelectedForDelete(subscription);
-                    setDeleteDialogOpen(true);
-                  }}
-                  className="border border-slate-300 px-3 py-2 rounded-lg transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+        {/* Subscription Plans */}
+        <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredPackages.length === 0 ? (
+            <div className="p-4 col-span-full text-center text-gray-500">
+              No subscription packages found. Add a new package to get started.
             </div>
-          ))}
+          ) : (
+            filteredPackages.map((pkg) => {
+              const hasDiscount = pkg.discount > 0;
+              const originalPrice = pkg.originalPrice || pkg.price;
+              const discountedPrice = hasDiscount
+                ? originalPrice * (1 - pkg.discount / 100)
+                : pkg.price;
+
+              return (
+                <div
+                  key={pkg.id || pkg._id}
+                  className="relative flex-1 p-10 border rounded-lg min-w-64 bg-secondary"
+                >
+
+                  {/* Discount Badge */}
+                  {hasDiscount && (
+                    <div className="absolute top-2 right-2 px-2 py-1 text-xs text-white bg-red-500 rounded-full">
+                      {pkg.discount}% OFF
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <button
+                      className="p-1 mr-2 hover:bg-gray-100 rounded"
+                      onClick={() => openPackageModal(pkg)}
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      className="p-1 text-red-500 hover:bg-red-50 rounded"
+                      onClick={() => confirmDeletePackage(pkg.id || pkg._id)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="mb-3 text-sm text-center">{pkg.name}</div>
+
+                  {/* Updated Price Display */}
+                  <div className="mb-3 text-center">
+                    {hasDiscount ? (
+                      <div>
+                        {/* Original Price with strikethrough */}
+                        <div className="text-2xl font-bold text-gray-400 line-through mb-1">
+                          ${originalPrice}
+                        </div>
+                        {/* Discounted Price */}
+                        <div className="text-5xl font-bold text-red-600">
+                          ${discountedPrice.toFixed(2)}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-6xl font-bold">${pkg.price}</div>
+                    )}
+                  </div>
+
+                  <div className="mb-2 text-xs text-center">
+                    {DURATION_OPTIONS.find(
+                      (opt) => opt.value === pkg.duration?.toLowerCase()
+                    )?.label || pkg.duration}{" "}
+                    - {pkg.paymentType}
+                  </div>
+
+                  <p className="mb-8 text-xs text-center">{pkg.description}</p>
+                  <button className="w-full py-2 text-white bg-red-500 rounded-md hover:bg-red-600">
+                    Subscribe
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {modalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white/10 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">
-                  {editingSubscription
-                    ? "Edit Subscription Plan"
-                    : "Create New Subscription Plan"}
+        {/* Add/Edit Subscription Package Modal */}
+        {showPackageModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            onClick={() => {
+              setShowPackageModal(false);
+              resetForm();
+            }}
+          >
+            <div
+              className="w-full max-w-3xl overflow-hidden bg-white rounded-lg shadow-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-2xl font-bold text-red-500">
+                  {editingPackageId !== null
+                    ? "Edit Package"
+                    : "Add New Package"}
                 </h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Plan Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Price (৳)
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.price}
-                        onChange={(e) =>
-                          setFormData({ ...formData, price: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Duration (days)
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.duration_days}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            duration_days: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows="3"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Features
-                    </label>
-                    <div className="space-y-2">
-                      {formData.features.map((feature, index) => (
-                        <div key={index} className="flex gap-2">
-                          <input
-                            type="text"
-                            value={feature}
-                            onChange={(e) =>
-                              updateFeature(index, e.target.value)
-                            }
-                            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter feature"
-                          />
-                          {formData.features.length > 1 && (
-                            <button
-                              onClick={() => removeFeature(index)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <X className="h-5 w-5" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={addFeature}
-                      className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      + Add Feature
-                    </button>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={() => {
-                        setModalOpen(false);
-                        resetForm();
-                      }}
-                      className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSubmit}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      {editingSubscription ? "Update Plan" : "Create Plan"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {deleteDialogOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-2">
-                Are you sure?
-              </h2>
-              <p className="text-slate-600 mb-6">
-                This will permanently delete "{selectedForDelete?.name}". Users
-                with this subscription will need to be migrated to another plan.
-              </p>
-              <div className="flex gap-3">
                 <button
                   onClick={() => {
-                    setDeleteDialogOpen(false);
-                    setSelectedForDelete(null);
+                    setShowPackageModal(false);
+                    resetForm();
                   }}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="hover:bg-gray-100 rounded p-1"
                 >
-                  Cancel
+                  <X size={24} />
                 </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-4">
+                <form className="space-y-4">
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Title */}
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={currentPackage.name}
+                        onChange={handlePackageChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        placeholder="e.g. Basic Plan, Premium Plan"
+                        required
+                      />
+                    </div>
+
+                    {/* Duration */}
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        Duration <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="duration"
+                        value={currentPackage.duration}
+                        onChange={handlePackageChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        required
+                      >
+                        {DURATION_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Price */}
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        Original Price <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="price"
+                        value={currentPackage.price}
+                        onChange={handlePackageChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        placeholder="e.g. 60.99"
+                        min="0"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+                    {/* Payment Type */}
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        Payment Type <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="paymentType"
+                        value={currentPackage.paymentType}
+                        onChange={handlePackageChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        required
+                      >
+                        {PAYMENT_TYPE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Discount Section */}
+                    <div className="p-4 border rounded-md bg-gray-50">
+                      {/* Discount Percentage */}
+                      <div className="">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          Discount Percentage (%)
+                        </label>
+                        <input
+                          type="number"
+                          name="discountPercentage"
+                          value={currentPackage.discountPercentage}
+                          onChange={(e) => {
+                            const value = e.target.value;
+
+                            if (!/^\d*$/.test(value)) {
+                              toast.error(
+                                "Fractional numbers (decimals) are not allowed."
+                              );
+                              return;
+                            }
+
+                            if (value.length > 2) {
+                              toast.error(
+                                "Discount can only be up to 2 digits (1-99)."
+                              );
+                              return;
+                            }
+
+                            setCurrentPackage((prev) => ({
+                              ...prev,
+                              discountPercentage: value,
+                            }));
+                          }}
+                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                          placeholder="e.g. 20 (for 20% off)"
+                          min="0"
+                          max="99"
+                        />
+
+                        <p className="mt-1 text-xs text-gray-500">
+                          Enter a discount percentage from 1-99. The final price
+                          will be calculated automatically.
+                        </p>
+                      </div>
+                    </div>
+                    {/* Description */}
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        Description <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        name="description"
+                        value={currentPackage.description}
+                        onChange={handlePackageChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        rows="4"
+                        placeholder="Enter package description"
+                        required
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  {/* App Configuration - Always shown */}
+                  <div className="p-4 border rounded-md bg-blue-50">
+                      <h3 className="mb-3 text-lg font-semibold text-gray-700">
+                        App Configuration
+                      </h3>
+
+                      {/* Platform Selection */}
+                      <div className="mb-4">
+                        <label className="block mb-2 text-sm font-medium text-gray-700">
+                          Platform <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex items-center gap-6">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="isGoogle"
+                              checked={currentPackage.isGoogle === true}
+                              onChange={() =>
+                                setCurrentPackage((prev) => ({
+                                  ...prev,
+                                  isGoogle: true,
+                                }))
+                              }
+                              className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                            />
+                            <span className="text-sm text-gray-700">
+                              Google Play
+                            </span>
+                          </label>
+
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="isGoogle"
+                              checked={currentPackage.isGoogle === false}
+                              onChange={() =>
+                                setCurrentPackage((prev) => ({
+                                  ...prev,
+                                  isGoogle: false,
+                                }))
+                              }
+                              className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                            />
+                            <span className="text-sm text-gray-700">
+                              Apple App Store
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Product ID Input */}
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          {currentPackage.isGoogle
+                            ? "Google Product ID"
+                            : "Apple Product ID"}{" "}
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={
+                            currentPackage.isGoogle
+                              ? currentPackage.googleProductId
+                              : currentPackage.appleProductId
+                          }
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCurrentPackage((prev) => ({
+                              ...prev,
+                              // Update the field corresponding to the current platform selection
+                              [prev.isGoogle
+                                ? "googleProductId"
+                                : "appleProductId"]: val,
+                            }));
+                          }}
+                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                          placeholder={
+                            currentPackage.isGoogle
+                              ? "e.g. basic_03"
+                              : "e.g. com.app.basic"
+                          }
+                          required
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          This ID must match the product ID configured in{" "}
+                          {currentPackage.isGoogle
+                            ? "Google Play Console"
+                            : "App Store Connect"}
+                          .
+                        </p>
+                      </div>
+                    </div>
+                </form>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4">
                 <button
-                  onClick={handleDelete}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  className={`w-full py-3 font-medium text-white rounded-md transition-colors ${
+                    !isFormValid() || isCreating || isUpdating
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-red-500 hover:bg-red-600"
+                  }`}
+                  onClick={savePackage}
+                  disabled={!isFormValid() || isCreating || isUpdating}
                 >
-                  Delete
+                  {isCreating || isUpdating ? "Saving..." : "Save"}
                 </button>
+
+                {/* Validation message */}
+                {!isFormValid() && (
+                  <p className="mt-2 text-sm text-red-600 text-center">
+                    Please fill in all required fields with valid values
+                  </p>
+                )}
               </div>
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Are you sure you want to delete this subscription package?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPackageToDelete(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeletePackage}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Yes, Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
-};
-
-export default SubscriptionManager;
+}

@@ -13,8 +13,8 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
     server: {
-    // host: "69.62.67.86",
-    host: "10.10.7.62",
+    host: "72.62.164.122",
+    // host: "10.10.7.62",
     port: 3000,
   },
 });
