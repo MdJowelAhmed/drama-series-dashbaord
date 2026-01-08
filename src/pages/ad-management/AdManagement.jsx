@@ -20,24 +20,6 @@ const AD_FIELDS = [
     required: true,
     gridCols: 2,
   },
-  {
-    name: "link_url",
-    label: "Link URL",
-    type: "url",
-    placeholder: "https://example.com/your-link",
-    required: true,
-    gridCols: 2,
-    icon: ExternalLink,
-  },
-  {
-    name: "description",
-    label: "Description",
-    type: "textarea",
-    placeholder: "Enter ad description (optional)",
-    required: false,
-    gridCols: 2,
-    rows: 3,
-  },
 ];
 
 const VideoPlayerModal = ({ ad, onClose }) => {
@@ -276,7 +258,7 @@ const AdManagement = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-2 p-4">
+                  <div className="flex justify-between gap-2 p-4">
                     <Button
                       size="sm"
                       className="py-5"

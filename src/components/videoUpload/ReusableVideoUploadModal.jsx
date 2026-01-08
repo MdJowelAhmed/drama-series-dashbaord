@@ -254,6 +254,7 @@ const ReusableVideoUploadModal = ({
     if (!isEditMode && showVideo && !videoFile) {
       newErrors.video = "Video file is required";
     }
+    // In edit mode, video is optional - user can update if needed
 
     // Require thumbnail for new uploads
     if (!isEditMode && showThumbnail && !thumbnailFile) {
@@ -375,13 +376,25 @@ const ReusableVideoUploadModal = ({
       // Prepare submit data
       const submitData = {
         ...formData,
-        videoUrl: videoUrl,
-        video_url: videoUrl,
-        videoId: videoId,
-        libraryId: libraryId,
-        downloadUrls: downloadUrls,
-        download_urls: downloadUrls,
       };
+
+      // Only include video data if we have video information
+      if (videoUrl) {
+        submitData.videoUrl = videoUrl;
+        submitData.video_url = videoUrl;
+      }
+      if (videoId) {
+        submitData.videoId = videoId;
+        submitData.video_id = videoId;
+      }
+      if (libraryId) {
+        submitData.libraryId = libraryId;
+        submitData.library_id = libraryId;
+      }
+      if (downloadUrls && Object.keys(downloadUrls).length > 0) {
+        submitData.downloadUrls = downloadUrls;
+        submitData.download_urls = downloadUrls;
+      }
 
       // Only include thumbnail if we have a valid CDN URL (not blob)
       if (thumbnailUrl && !thumbnailUrl.startsWith("blob:")) {
@@ -586,10 +599,10 @@ const ReusableVideoUploadModal = ({
           {(showVideo || showThumbnail) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Video Upload */}
-              {showVideo && !isEditMode && (
+              {showVideo && (
                 <div>
                   <Label className="block text-sm font-semibold text-white/80 mb-2">
-                    Video File <span className="text-red-400">*</span>
+                    Video File {!isEditMode && <span className="text-red-400">*</span>}
                   </Label>
                   <div
                     onDragEnter={(e) => handleDrag(e, "video")}
@@ -759,14 +772,6 @@ const ReusableVideoUploadModal = ({
             </div>
           )}
 
-          {/* Edit Mode Note */}
-          {isEditMode && showVideo && (
-            <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-              <p className="text-sm text-blue-300">
-                <strong>Note:</strong> Video files cannot be changed after upload. You can update the thumbnail and other details.
-              </p>
-            </div>
-          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3 justify-end pt-4 border-t border-white/10">

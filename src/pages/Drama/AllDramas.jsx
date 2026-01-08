@@ -191,9 +191,9 @@ const AllDramas = () => {
               className="pl-10"
             />
           </div>
-          <div className="text-sm text-accent">
+          {/* <div className="text-sm text-accent">
             Total: {dramasData?.data?.meta?.total || 0} dramas
-          </div>
+          </div> */}
         </div>
 
         {filteredDramas.length === 0 ? (
