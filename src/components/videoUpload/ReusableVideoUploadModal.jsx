@@ -50,7 +50,6 @@ const ReusableVideoUploadModal = ({
   const [uploadStatus, setUploadStatus] = useState("");
   const [errors, setErrors] = useState({});
 
-  const baseUrl = baseUrl;
   // Ref to prevent double submission (synchronous guard)
   const isSubmittingRef = useRef(false);
 
