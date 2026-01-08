@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { getVideoAndThumbnail } from "@/components/share/imageUrl";
+import { baseUrl } from "@/redux/base-url/baseUrlApi";
 
-const API_BASE_URL = "http://72.62.164.122:5000/api/v1";
+const API_BASE_URL = baseUrl;
 // const API_BASE_URL = "https://rakibur5003.binarybards.online/api/v1";
 
 /**

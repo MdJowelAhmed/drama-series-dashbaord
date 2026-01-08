@@ -1,6 +1,7 @@
 // Base URL for API/server images
-const API_BASE_URL = "http://72.62.164.122:5000/api/v1";
+// const API_BASE_URL = "http://72.62.164.122:5000/api/v1";
 // const API_BASE_URL = "https://rakibur5003.binarybards.online";
+const API_BASE_URL = "http://10.10.7.48:5003";
 
 // CDN base URL for Bunny.net
 const CDN_BASE_URL = "yoga-app.b-cdn.net";

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { getVideoAndThumbnail } from "../share/imageUrl";
+import { baseUrl } from "@/redux/base-url/baseUrlApi";
 
 /**
  * ReusableVideoUploadModal - A dynamic video upload modal with proper thumbnail handling
@@ -49,6 +50,7 @@ const ReusableVideoUploadModal = ({
   const [uploadStatus, setUploadStatus] = useState("");
   const [errors, setErrors] = useState({});
 
+  const baseUrl = baseUrl;
   // Ref to prevent double submission (synchronous guard)
   const isSubmittingRef = useRef(false);
 
@@ -321,7 +323,7 @@ const ReusableVideoUploadModal = ({
 
           // Use native fetch for FormData upload - more reliable than RTK Query
           const response = await fetch(
-            `https://rakibur5003.binarybards.online/api/v1/trailer/${videoId}/thumbnail`,
+            `${baseUrl}/trailer/${videoId}/thumbnail`,
             // `http://10.10.7.48:5003/api/v1/trailer/${videoId}/thumbnail`,
             {
               method: "POST",
