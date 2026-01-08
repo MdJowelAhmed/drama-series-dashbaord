@@ -137,7 +137,7 @@ const AdManagement = () => {
   const [updateAd] = useUpdateAdMutation();
   const [deleteAd, { isLoading: isDeleting }] = useDeleteAdMutation();
 
-  const ads = Array.isArray(adsData?.data) ? adsData.data : [];
+  const ads = Array.isArray(adsData?.data?.result) ? adsData.data.result : [];
 
   const handleUploadAd = () => {
     setEditingAd(null);
