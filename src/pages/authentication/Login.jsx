@@ -6,6 +6,7 @@ import { useLoginMutation } from "@/redux/feature/authApi";
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -33,6 +34,7 @@ const onFinish = async () => {
     }
   } catch (err) {
     console.error("Login failed:", err);
+    toast.error(err.data.message);
   }
 };
 
@@ -115,7 +117,7 @@ const handleForgotPassword = () => {
               <Button
                 onClick={onFinish}
                 disabled={isLoading}
-                className="w-full  text-white font-semibold py-6 rounded-lg flex items-center justify-center gap-2 transition"
+                className="w-full   text-white font-semibold py-6 rounded-lg flex items-center justify-center gap-2 transition"
               >
                 {loading ? "Signing in..." : "Sign In"}
                 <ArrowRight className="w-4 h-4" />
