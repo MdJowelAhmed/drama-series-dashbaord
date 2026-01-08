@@ -196,7 +196,7 @@ const ReusableVideoUploadModal = ({
           fileName: videoFile.name,
         }).unwrap();
 
-        const { videoId, uploadUrl, apiKey, embedUrl, libraryId, id, _id } = result.data;
+        const { videoId, uploadUrl, apiKey, embedUrl, libraryId, id, _id, downloadUrls } = result.data;
 
         setUploadStatus("Uploading video to CDN...");
 
@@ -220,6 +220,7 @@ const ReusableVideoUploadModal = ({
               embedUrl,
               videoUrl: embedUrl,
               dbId: _id || id,
+              downloadUrls: downloadUrls || {},
             });
           } else {
             reject(new Error("Video upload failed"));
@@ -283,6 +284,7 @@ const ReusableVideoUploadModal = ({
       let videoId = editingData?.videoId || editingData?.video_id;
       let libraryId = editingData?.libraryId || editingData?.library_id;
       let thumbnailUrl = editingData?.thumbnail_url || editingData?.thumbnailUrl;
+      let downloadUrls = editingData?.downloadUrls || editingData?.download_urls || {};
       let createdDbId = null;
 
       // Upload video if new file selected
@@ -295,6 +297,7 @@ const ReusableVideoUploadModal = ({
         videoId = bunnyData.videoId;
         libraryId = bunnyData.libraryId;
         createdDbId = bunnyData.dbId;
+        downloadUrls = bunnyData.downloadUrls || {};
       }
 
       // Handle thumbnail upload - Use native fetch for reliable FormData handling
@@ -375,6 +378,8 @@ const ReusableVideoUploadModal = ({
         video_url: videoUrl,
         videoId: videoId,
         libraryId: libraryId,
+        downloadUrls: downloadUrls,
+        download_urls: downloadUrls,
       };
 
       // Only include thumbnail if we have a valid CDN URL (not blob)
