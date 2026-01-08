@@ -68,7 +68,6 @@ const VideoPlayerModal = ({ ad, onClose }) => {
           ) : videoSource ? (
             <video
               controls
-              autoPlay
               className="w-full rounded-lg"
               style={{ maxHeight: '70vh' }}
             >
@@ -199,42 +198,54 @@ const AdManagement = () => {
 
               return (
                 <div key={ad._id || ad.id} className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col rounded-2xl border border-white/20">
-                  <div 
-                    className="relative h-48 overflow-hidden bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center cursor-pointer group"
-                    onClick={() => handlePlayVideo(ad)}
-                  >
+                  <div className="relative h-48 overflow-hidden bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
                     {videoUrl && videoUrl.includes('iframe.mediadelivery.net') ? (
                       <div className="relative w-full h-full">
                         <iframe
                           src={videoUrl}
-                          className="w-full h-full"
-                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                          className="w-full h-full pointer-events-none"
+                          allow="accelerometer; gyroscope; encrypted-media; picture-in-picture;"
                           allowFullScreen
                         />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Play className="h-12 w-12 text-white" />
+                        <div 
+                          className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
+                          onClick={() => handlePlayVideo(ad)}
+                        >
+                          <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-all hover:scale-110">
+                            <Play className="h-12 w-12 text-white" fill="white" />
+                          </div>
                         </div>
                       </div>
                     ) : videoSource ? (
                       <>
                         <video
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover pointer-events-none"
                           muted
                           playsInline
                         >
                           <source src={videoSource} type="video/mp4" />
                         </video>
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Play className="h-12 w-12 text-white" />
+                        <div 
+                          className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
+                          onClick={() => handlePlayVideo(ad)}
+                        >
+                          <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-all hover:scale-110">
+                            <Play className="h-12 w-12 text-white" fill="white" />
+                          </div>
                         </div>
                       </>
                     ) : (
-                      <>
-                        <Film className="h-20 w-20 text-white/30" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Play className="h-12 w-12 text-white" />
+                      <div 
+                        className="absolute inset-0 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
+                        onClick={() => handlePlayVideo(ad)}
+                      >
+                        <Film className="h-20 w-20 text-white/30 mb-4" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-all hover:scale-110">
+                            <Play className="h-12 w-12 text-white" fill="white" />
+                          </div>
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
                   
