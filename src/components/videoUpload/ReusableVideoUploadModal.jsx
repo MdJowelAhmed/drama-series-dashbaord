@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { getVideoAndThumbnail } from "../share/imageUrl";
+import { baseUrl } from "@/redux/base-url/baseUrlApi";
 
 /**
  * ReusableVideoUploadModal - A dynamic video upload modal with proper thumbnail handling
@@ -196,7 +197,7 @@ const ReusableVideoUploadModal = ({
           fileName: videoFile.name,
         }).unwrap();
 
-        const { videoId, uploadUrl, apiKey, embedUrl, libraryId, id, _id } = result.data;
+        const { videoId, uploadUrl, apiKey, embedUrl, libraryId, id, _id, downloadUrls } = result.data;
 
         setUploadStatus("Uploading video to CDN...");
 
@@ -220,6 +221,7 @@ const ReusableVideoUploadModal = ({
               embedUrl,
               videoUrl: embedUrl,
               dbId: _id || id,
+              downloadUrls: downloadUrls || {},
             });
           } else {
             reject(new Error("Video upload failed"));
@@ -252,6 +254,7 @@ const ReusableVideoUploadModal = ({
     if (!isEditMode && showVideo && !videoFile) {
       newErrors.video = "Video file is required";
     }
+    // In edit mode, video is optional - user can update if needed
 
     // Require thumbnail for new uploads
     if (!isEditMode && showThumbnail && !thumbnailFile) {
@@ -283,6 +286,7 @@ const ReusableVideoUploadModal = ({
       let videoId = editingData?.videoId || editingData?.video_id;
       let libraryId = editingData?.libraryId || editingData?.library_id;
       let thumbnailUrl = editingData?.thumbnail_url || editingData?.thumbnailUrl;
+      let downloadUrls = editingData?.downloadUrls || editingData?.download_urls || {};
       let createdDbId = null;
 
       // Upload video if new file selected
@@ -295,6 +299,7 @@ const ReusableVideoUploadModal = ({
         videoId = bunnyData.videoId;
         libraryId = bunnyData.libraryId;
         createdDbId = bunnyData.dbId;
+        downloadUrls = bunnyData.downloadUrls || {};
       }
 
       // Handle thumbnail upload - Use native fetch for reliable FormData handling
@@ -318,7 +323,7 @@ const ReusableVideoUploadModal = ({
 
           // Use native fetch for FormData upload - more reliable than RTK Query
           const response = await fetch(
-            `https://rakibur5003.binarybards.online/api/v1/trailer/${videoId}/thumbnail`,
+            `${baseUrl}/trailer/${videoId}/thumbnail`,
             // `http://10.10.7.48:5003/api/v1/trailer/${videoId}/thumbnail`,
             {
               method: "POST",
@@ -371,11 +376,25 @@ const ReusableVideoUploadModal = ({
       // Prepare submit data
       const submitData = {
         ...formData,
-        videoUrl: videoUrl,
-        video_url: videoUrl,
-        videoId: videoId,
-        libraryId: libraryId,
       };
+
+      // Only include video data if we have video information
+      if (videoUrl) {
+        submitData.videoUrl = videoUrl;
+        submitData.video_url = videoUrl;
+      }
+      if (videoId) {
+        submitData.videoId = videoId;
+        submitData.video_id = videoId;
+      }
+      if (libraryId) {
+        submitData.libraryId = libraryId;
+        submitData.library_id = libraryId;
+      }
+      if (downloadUrls && Object.keys(downloadUrls).length > 0) {
+        submitData.downloadUrls = downloadUrls;
+        submitData.download_urls = downloadUrls;
+      }
 
       // Only include thumbnail if we have a valid CDN URL (not blob)
       if (thumbnailUrl && !thumbnailUrl.startsWith("blob:")) {
@@ -580,10 +599,10 @@ const ReusableVideoUploadModal = ({
           {(showVideo || showThumbnail) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Video Upload */}
-              {showVideo && !isEditMode && (
+              {showVideo && (
                 <div>
                   <Label className="block text-sm font-semibold text-white/80 mb-2">
-                    Video File <span className="text-red-400">*</span>
+                    Video File {!isEditMode && <span className="text-red-400">*</span>}
                   </Label>
                   <div
                     onDragEnter={(e) => handleDrag(e, "video")}
@@ -753,14 +772,6 @@ const ReusableVideoUploadModal = ({
             </div>
           )}
 
-          {/* Edit Mode Note */}
-          {isEditMode && showVideo && (
-            <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-              <p className="text-sm text-blue-300">
-                <strong>Note:</strong> Video files cannot be changed after upload. You can update the thumbnail and other details.
-              </p>
-            </div>
-          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3 justify-end pt-4 border-t border-white/10">

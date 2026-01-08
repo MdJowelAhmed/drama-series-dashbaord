@@ -191,9 +191,9 @@ const AllDramas = () => {
               className="pl-10"
             />
           </div>
-          <div className="text-sm text-accent">
+          {/* <div className="text-sm text-accent">
             Total: {dramasData?.data?.meta?.total || 0} dramas
-          </div>
+          </div> */}
         </div>
 
         {filteredDramas.length === 0 ? (
@@ -201,13 +201,13 @@ const AllDramas = () => {
             <p className="text-slate-600">No dramas found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
             {filteredDramas.map((drama) => (
               <Card
                 key={drama._id}
                 className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col"
               >
-                <div className="relative h-48 overflow-hidden bg-slate-200">
+                <div className="relative h-72 overflow-hidden bg-slate-200">
                   {drama.thumbnail ? (
                     <img
                       src={getImageUrl(drama.thumbnail)}
@@ -224,13 +224,8 @@ const AllDramas = () => {
                   )}
                   <div className="absolute top-2 right-2">
                     <Badge
-                      className={`${
-                        drama.status === "Completed"
-                          ? "bg-green-500/90"
-                          : drama.status === "Ongoing"
-                          ? "bg-blue-500/90"
-                          : "bg-yellow-500/90"
-                      } text-white`}
+                 style={{ backgroundColor: drama.accentColor }}
+                 className="text-white"
                     >
                       {drama.status}
                     </Badge>
@@ -243,26 +238,26 @@ const AllDramas = () => {
                   )}
                 </div>
                 <CardContent className="p-4 flex-1">
-                  <h3 className="font-semibold text-accent text-lg mb-2 truncate">
+                  <h3 className="font-semibold text-accent  mb-1 truncate">
                     {drama.title}
                   </h3>
-                  <p className="text-sm text-accent mb-3 line-clamp-2">
+                  {/* <p className="text-sm text-accent mb-3 line-clamp-2">
                     {drama.description || "No description"}
-                  </p>
-                  <div className="flex items-center justify-between text-sm text-accent">
+                  </p> */}
+                  {/* <div className="flex items-center justify-between text-sm text-accent">
                     <span className="font-medium">{drama.genre || drama.type}</span>
                     <span>
                       {drama.createdAt
                         ? new Date(drama.createdAt).toLocaleDateString()
                         : "-"}
                     </span>
-                  </div>
+                  </div> */}
                   {drama.tags?.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {drama.tags.slice(0, 3).map((tag, index) => (
                         <span
                           key={index}
-                          className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded"
+                          className="text-xs bg-gray-50 text-slate-600 px-2 py-0.5 rounded"
                         >
                           {tag}
                         </span>
@@ -274,12 +269,12 @@ const AllDramas = () => {
                       )}
                     </div>
                   )}
-                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 justify-between">
                     <span>Views: {drama.totalViews || 0}</span>
                     <span>Rating: {drama.rating || 0}</span>
                   </div>
                 </CardContent>
-                <div className="flex justify-between gap-10 p-4">
+                <div className="flex justify-between gap-10 px-4 pb-2">
                   <Button
                     size="sm"
                     className="flex-1 py-5"

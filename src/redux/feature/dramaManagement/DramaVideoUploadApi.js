@@ -60,12 +60,11 @@ const dramaVideoUploadApi = api.injectEndpoints({
       providesTags: ["DramaVideo"],
     }),
 
-    // Get videos by season ID
+    // Get videos by season ID (path param)
     getVideosBySeasonId: builder.query({
       query: (seasonId) => ({
-        url: `/video-management`,
+        url: `/video-management/get-all-videos/${seasonId}`,
         method: "GET",
-        params: { seasonId },
       }),
       providesTags: ["DramaVideo"],
     }),

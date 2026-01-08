@@ -13,6 +13,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,76 +121,81 @@ const SeasonCard = ({
             <p className="text-slate-500 font-medium">No episodes uploaded yet</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
             {videos.map((video) => (
-              <div
+              <Card
                 key={video._id || video.id}
-                className="group relative bg-gradient-to-br from-slate-50 to-blue-50 border-2 border-slate-200 rounded-2xl overflow-hidden hover:shadow-xl hover:scale-105 transition-all"
+                className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col"
               >
-                <div className="relative">
+                <div className="relative h-72 overflow-hidden bg-slate-200">
                   <img
                     src={getVideoAndThumbnail(video.thumbnailUrl || video.thumbnail_url)}
                     alt={video.title}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.src =
                         "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400";
                     }}
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Play className="h-12 w-12 text-white" />
+                
+                  <div className="absolute top-2 right-2">
+                    <Badge className="bg-black/70 backdrop-blur-sm text-white text-xs font-semibold flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDuration(video.duration)}
+                    </Badge>
                   </div>
-                  <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-semibold flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {formatDuration(video.duration)}
+                  <div className="absolute top-2 left-2">
+                    <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold">
+                      EP {video.episodeNumber || 0}
+                    </Badge>
                   </div>
                 </div>
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <div className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-md text-xs font-bold mb-2">
-                        EP {video.episodeNumber || 0}
-                      </div>
-                      <h4 className="font-bold text-slate-900 mb-1 line-clamp-2">
-                        {video.title}
-                      </h4>
-                      <p className="text-sm text-slate-600 flex items-center gap-2 mb-1">
-                        <Play className="h-3 w-3" />
-                        {video.views || 0} views
-                      </p>
-                      <p className="text-xs text-slate-500 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {video.createdAt
-                          ? new Date(video.createdAt).toLocaleDateString()
-                          : "N/A"}
-                      </p>
-                    </div>
+                <CardContent className="p-4 flex-1">
+                  <h3 className="font-semibold text-accent  line-clamp-2">
+                    {video.title}
+                  </h3>
+                  <div className="flex items-center justify-between text-sm text-accent ">
+                    <span className="flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      {video.views || 0} views
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {video.createdAt
+                        ? new Date(video.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </span>
                   </div>
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200">
+                </CardContent>
+                <div className="flex justify-between gap-2 px-4 pb-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 py-5"
+                    onClick={() => onViewDetails(video)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => onViewDetails(video)}
-                      className="flex-1"
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Details
-                    </Button>
-                    <Button
-                      size="sm"
+                      variant="outline"
+                      className="py-5"
                       onClick={() => onEditVideo(video, season._id || season.id, refetchVideos)}
                     >
-                      <Edit2 className="h-3 w-3" />
+                      <Edit2 className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
-                      variant="destructive"
+                      variant="outline"
+                      className="py-5 text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={() => onDeleteVideo(video, refetchVideos)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
