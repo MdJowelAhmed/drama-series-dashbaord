@@ -121,13 +121,13 @@ const SeasonCard = ({
             <p className="text-slate-500 font-medium">No episodes uploaded yet</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
             {videos.map((video) => (
               <Card
                 key={video._id || video.id}
                 className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col"
               >
-                <div className="relative h-48 overflow-hidden bg-slate-200">
+                <div className="relative h-72 overflow-hidden bg-slate-200">
                   <img
                     src={getVideoAndThumbnail(video.thumbnailUrl || video.thumbnail_url)}
                     alt={video.title}
@@ -137,9 +137,7 @@ const SeasonCard = ({
                         "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400";
                     }}
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                    <Play className="h-12 w-12 text-white" />
-                  </div>
+                
                   <div className="absolute top-2 right-2">
                     <Badge className="bg-black/70 backdrop-blur-sm text-white text-xs font-semibold flex items-center gap-1">
                       <Clock className="h-3 w-3" />
@@ -153,10 +151,10 @@ const SeasonCard = ({
                   </div>
                 </div>
                 <CardContent className="p-4 flex-1">
-                  <h3 className="font-semibold text-accent text-lg mb-2 line-clamp-2">
+                  <h3 className="font-semibold text-accent  line-clamp-2">
                     {video.title}
                   </h3>
-                  <div className="flex items-center justify-between text-sm text-accent mb-2">
+                  <div className="flex items-center justify-between text-sm text-accent ">
                     <span className="flex items-center gap-1">
                       <Eye className="h-3 w-3" />
                       {video.views || 0} views
@@ -169,7 +167,7 @@ const SeasonCard = ({
                     </span>
                   </div>
                 </CardContent>
-                <div className="flex justify-between gap-2 p-4">
+                <div className="flex justify-between gap-2 px-4 pb-2">
                   <Button
                     size="sm"
                     className="flex-1 py-5"
