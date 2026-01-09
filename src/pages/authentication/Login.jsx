@@ -119,8 +119,12 @@ const handleForgotPassword = () => {
                 disabled={isLoading}
                 className="w-full   text-white font-semibold py-6 rounded-lg flex items-center justify-center gap-2 transition"
               >
-                {loading ? "Signing in..." : "Sign In"}
-                <ArrowRight className="w-4 h-4" />
+                {loading ? "<div className='w-4 h-4 border-t-2 border-b-2 border-white rounded-full animate-spin'></div>" : "Sign In"}
+                {loading ? (
+                  <div className="w-4 h-4 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
+                ) : (
+                  <ArrowRight className="w-4 h-4" />
+                )}
               </Button>
             </div>
 

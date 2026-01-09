@@ -4,6 +4,13 @@ import { Button } from '@/components/ui/button';
 import ReusableVideoUploadModal from '@/components/videoUpload/ReusableVideoUploadModal';
 import VideoDetailsModal from '@/components/videoUpload/VideoDetailsModal';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   useCreateTrailerMutation,
   useVideoUrlGenerateMutation,
   useUploadThumbnailMutation,
@@ -61,30 +68,32 @@ const TRAILER_FIELDS = [
 
 const DeleteDialog = ({ item, onClose, onConfirm, isLoading }) => {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <h3 className="text-2xl font-bold mb-3 text-slate-900">Are you sure?</h3>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md bg-white">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold mb-3 text-slate-900">Are you sure?</DialogTitle>
+        </DialogHeader>
         <p className="text-slate-600 mb-6">
           This will permanently delete "<span className="font-semibold text-slate-900">{item?.name}</span>". This action cannot be undone.
         </p>
-        <div className="flex gap-3 justify-end">
-          <button 
+        <DialogFooter>
+          <Button 
             onClick={onClose} 
             disabled={isLoading}
-            className="px-6 py-2.5 border-2 border-slate-200 rounded-xl hover:bg-slate-50 font-medium transition-all disabled:opacity-50"
+            variant="outline"
           >
             Cancel
-          </button>
-          <button 
+          </Button>
+          <Button 
             onClick={onConfirm} 
             disabled={isLoading}
             className="px-6 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 hover:shadow-lg hover:scale-105 font-medium transition-all disabled:opacity-50"
           >
             {isLoading ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

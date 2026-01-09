@@ -1,5 +1,11 @@
 import { X, Clock, Calendar, Eye, Play, Film } from "lucide-react";
 import { getVideoAndThumbnail } from "@/components/share/imageUrl";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const VideoDetailsModal = ({ video, onClose }) => {
   // Helper to format duration
@@ -14,19 +20,13 @@ const VideoDetailsModal = ({ video, onClose }) => {
   const isEmbedUrl = video.videoUrl?.includes("iframe.mediadelivery.net/embed");
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
-          <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto bg-white">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Episode {video.episodeNumber || video.episode_number || 0}: {video.title}
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-all"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
         <div className="p-6 space-y-6">
           {/* Video Player */}
@@ -160,8 +160,8 @@ const VideoDetailsModal = ({ video, onClose }) => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
