@@ -14,7 +14,7 @@ const LayoutWrapper = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex bg-[url('/assets/User.png')] bg-cover bg-center bg-no-repeat w-full h-full overflow-hidden">
+    <div className="flex bg-[url('/assets/User.webp')] bg-cover bg-center bg-no-repeat w-full h-full overflow-hidden">
       
       {/* Desktop Sidebar - Hidden on mobile */}
       <div

@@ -7,8 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { getVideoAndThumbnail } from "@/components/share/imageUrl";
 import { baseUrl } from "@/redux/base-url/baseUrlApi";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-const API_BASE_URL = baseUrl;
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
 // const API_BASE_URL = "https://rakibur5003.binarybards.online/api/v1";
 
 /**
@@ -447,24 +453,14 @@ const EpisodeUploadModal = ({
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center z-50 p-4">
-      <div className="bg-[#FFFFFF3B] border border-white/10 rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-white">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto bg-[#FFFFFF3B] border-white/10">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-white">
             {isEditMode ? "Edit Episode" : "Upload New Episode"}
-          </h3>
-          <button
-            onClick={onClose}
-            disabled={uploadingVideo}
-            className="text-white/50 hover:text-white hover:bg-white/10 p-2 rounded-full transition-all disabled:opacity-50"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
         {/* Upload Progress */}
         {uploadingVideo && (
@@ -762,8 +758,8 @@ const EpisodeUploadModal = ({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

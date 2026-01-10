@@ -3,6 +3,13 @@ import { Plus, Trash2, Edit2, Play, Film, ExternalLink, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ReusableVideoUploadModal from '@/components/videoUpload/ReusableVideoUploadModal';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   useCreateAdMutation,
   useVideoUrlGenerateAdMutation,
   useUpdateAdMutation,
@@ -28,14 +35,11 @@ const VideoPlayerModal = ({ ad, onClose }) => {
   const videoSource = downloadUrls?.hd || downloadUrls?.sd || downloadUrls?.mobile || downloadUrls?.original || videoUrl;
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-[#FFFFFF3B] rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-accent">{ad?.title || ad?.name || 'Video Player'}</h3>
-          <button onClick={onClose} className="text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-full transition-all">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-[#FFFFFF3B] border-white/10" onClick={(e) => e.stopPropagation()}>
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-accent">{ad?.title || ad?.name || 'Video Player'}</DialogTitle>
+        </DialogHeader>
 
         <div className="space-y-4">
           {videoUrl && videoUrl.includes('iframe.mediadelivery.net') ? (
@@ -63,37 +67,39 @@ const VideoPlayerModal = ({ ad, onClose }) => {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
 const DeleteDialog = ({ item, onClose, onConfirm, isLoading }) => {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <h3 className="text-2xl font-bold mb-3 text-slate-900">Are you sure?</h3>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md bg-white">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold mb-3 text-slate-900">Are you sure?</DialogTitle>
+        </DialogHeader>
         <p className="text-slate-600 mb-6">
           This will permanently delete "<span className="font-semibold text-slate-900">{item?.name}</span>". This action cannot be undone.
         </p>
-        <div className="flex gap-3 justify-end">
-          <button 
+        <DialogFooter>
+          <Button 
             onClick={onClose} 
             disabled={isLoading}
-            className="px-6 py-2.5 border-2 border-slate-200 rounded-xl hover:bg-slate-50 font-medium transition-all disabled:opacity-50"
+            variant="outline"
           >
             Cancel
-          </button>
-          <button 
+          </Button>
+          <Button 
             onClick={onConfirm} 
             disabled={isLoading}
             className="px-6 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 hover:shadow-lg hover:scale-105 font-medium transition-all disabled:opacity-50"
           >
             {isLoading ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -112,7 +118,7 @@ const AdManagement = () => {
   const [updateAd] = useUpdateAdMutation();
   const [deleteAd, { isLoading: isDeleting }] = useDeleteAdMutation();
 
-  const ads = Array.isArray(adsData?.data?.result) ? adsData.data.result : [];
+  const ads = Array.isArray(adsData?.data) ? adsData.data : [];
 
   const handleUploadAd = () => {
     setEditingAd(null);
@@ -193,8 +199,8 @@ const AdManagement = () => {
                           className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
                           onClick={() => handlePlayVideo(ad)}
                         >
-                          <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-all hover:scale-110">
-                            <Play className="h-12 w-12 text-white" fill="white" />
+                          <div className="bg-red-500 backdrop-blur-sm rounded-full p-1  transition-all hover:scale-110">
+                            <Play className="h-10 w-10 text-white" fill="white" />
                           </div>
                         </div>
                       </div>

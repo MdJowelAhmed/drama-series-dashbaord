@@ -21,6 +21,8 @@ import LoginPage from './pages/authentication/Login';
 import AdManagement from './pages/ad-management/AdManagement';
 import VerifyOtpPage from './pages/authentication/VerifyOtp';
 import ResetPasswordPage from './pages/authentication/ResetPassword';
+import PrivateRoute from './components/PrivateRoute';
+import RemainderManage from './pages/remainder/RemainderManage';
 
 function App() {
   return (
@@ -33,7 +35,14 @@ function App() {
     <Route path="/reset-password" element={< ResetPasswordPage/>} />
    
   </Route>
-      <Route path="/" element={<LayoutWrapper />}>
+      <Route 
+        path="/" 
+        element={
+          <PrivateRoute>
+            <LayoutWrapper />
+          </PrivateRoute>
+        }
+      >
         <Route index element={<OverviewPage />} />
         <Route path="movies" element={<AllDramas />} />
         <Route path="movies/:id" element={<DramaDetails />} />
@@ -44,6 +53,7 @@ function App() {
         <Route path="categories" element={<CategoryManager />} />
         <Route path="subscriptions" element={<SubscriptionPage />} />
         <Route path="reports" element={<DramaManagementDashboard />} />
+        <Route path="remainder" element={<RemainderManage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="controllers" element={<ControllerManagement />} />
         <Route path="settings/profile" element={<ProfilePage />} />

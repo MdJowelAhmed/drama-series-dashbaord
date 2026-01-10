@@ -4,6 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 /**
  * SeasonFormModal - Modal for creating/editing drama seasons
@@ -91,24 +97,14 @@ const SeasonFormModal = ({
     onSave(submitData);
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center z-50 p-4">
-      <div className="bg-[#FFFFFF3B] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-white">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg bg-[#FFFFFF3B] border-white/10">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-white">
             {isEditMode ? "Edit Season" : "Create New Season"}
-          </h3>
-          <button
-            onClick={onClose}
-            disabled={isLoading}
-            className="text-white/50 hover:text-white hover:bg-white/10 p-2 rounded-full transition-all disabled:opacity-50"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
         <div className="space-y-5">
           {/* Title Field */}
@@ -199,8 +195,8 @@ const SeasonFormModal = ({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
