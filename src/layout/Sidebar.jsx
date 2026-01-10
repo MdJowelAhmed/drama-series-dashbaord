@@ -10,6 +10,7 @@ import {
   ReceiptPoundSterling,
   LogOut,
   X,
+  Bell,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,11 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
       name: "Subscription Package",
       path: "/subscriptions",
       icon: CreditCard,
+    },
+    {
+      name: "Remainder Management",
+      path: "/remainder",
+      icon: Bell,
     },
     {
       name: "User Management",
