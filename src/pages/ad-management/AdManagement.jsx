@@ -118,7 +118,7 @@ const AdManagement = () => {
   const [updateAd] = useUpdateAdMutation();
   const [deleteAd, { isLoading: isDeleting }] = useDeleteAdMutation();
 
-  const ads = Array.isArray(adsData?.data?.result) ? adsData.data.result : [];
+  const ads = Array.isArray(adsData?.data) ? adsData.data : [];
 
   const handleUploadAd = () => {
     setEditingAd(null);
@@ -199,8 +199,8 @@ const AdManagement = () => {
                           className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
                           onClick={() => handlePlayVideo(ad)}
                         >
-                          <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-all hover:scale-110">
-                            <Play className="h-12 w-12 text-white" fill="white" />
+                          <div className="bg-red-500 backdrop-blur-sm rounded-full p-1  transition-all hover:scale-110">
+                            <Play className="h-10 w-10 text-white" fill="white" />
                           </div>
                         </div>
                       </div>
