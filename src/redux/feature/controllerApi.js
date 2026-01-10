@@ -26,7 +26,7 @@ const controllerApi = api.injectEndpoints({
     deleteBackUpAdmin: builder.mutation({
       query: (id) => {
         return {
-          url: `/admins/${id}`,
+          url: `/admin/${id}`,
           method: "DELETE",
         };
       },
