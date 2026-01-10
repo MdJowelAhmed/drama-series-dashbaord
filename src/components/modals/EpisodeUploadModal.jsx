@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const API_BASE_URL = baseUrl;
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
 // const API_BASE_URL = "https://rakibur5003.binarybards.online/api/v1";
 
 /**

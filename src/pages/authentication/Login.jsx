@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { AuthLayout } from "@/layout/AuthLayout";
 import { useLoginMutation } from "@/redux/feature/authApi";
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { jwtDecode } from "jwt-decode";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -16,6 +17,31 @@ const LoginPage = () => {
   const navigate=useNavigate()
 
   const [login, { isLoading, isSuccess, error, data }] = useLoginMutation();
+
+  // Check if user is already logged in with valid SUPER_ADMIN token
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        // Check if token is expired
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          localStorage.removeItem('token');
+          return;
+        }
+        // If role is SUPER_ADMIN, redirect to home
+        if (decoded.role === 'SUPER_ADMIN') {
+          navigate("/");
+        } else {
+          // Remove invalid token
+          localStorage.removeItem('token');
+        }
+      } catch (error) {
+        // Invalid token, remove it
+        localStorage.removeItem('token');
+      }
+    }
+  }, [navigate]);
 
 const onFinish = async () => {
   try {
@@ -27,14 +53,22 @@ const onFinish = async () => {
     if (response.success) {
       const token = response.data.accessToken;
       localStorage.setItem("token", token);
-      // const decoded = jwtDecode(token);
-      navigate("/");
-      // if (decoded.role === "ADMIN") navigate("/category-management");
-      // else if (decoded.role === "SUPER_ADMIN") navigate("/");
+      
+      // Decode token to check role
+      const decoded = jwtDecode(token);
+      
+      // Check if role is SUPER_ADMIN
+      if (decoded.role === "SUPER_ADMIN") {
+        navigate("/");
+      } else {
+        // If role is not SUPER_ADMIN, show error and remove token
+        localStorage.removeItem("token");
+        toast.error("Access denied. Only SUPER_ADMIN can access this application.");
+      }
     }
   } catch (err) {
     console.error("Login failed:", err);
-    toast.error(err.data.message);
+    toast.error(err.data?.message || "Login failed. Please try again.");
   }
 };
 
@@ -116,14 +150,16 @@ const handleForgotPassword = () => {
               {/* Login Button */}
               <Button
                 onClick={onFinish}
-                disabled={isLoading}
+                disabled={isLoading || loading}
                 className="w-full   text-white font-semibold py-6 rounded-lg flex items-center justify-center gap-2 transition"
               >
-                {loading ? "<div className='w-4 h-4 border-t-2 border-b-2 border-white rounded-full animate-spin'></div>" : "Sign In"}
-                {loading ? (
+                {isLoading || loading ? (
                   <div className="w-4 h-4 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
                 ) : (
-                  <ArrowRight className="w-4 h-4" />
+                  <>
+                    Sign In
+                    <ArrowRight className="w-4 h-4" />
+                  </>
                 )}
               </Button>
             </div>

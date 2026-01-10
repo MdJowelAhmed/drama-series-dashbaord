@@ -21,6 +21,7 @@ import LoginPage from './pages/authentication/Login';
 import AdManagement from './pages/ad-management/AdManagement';
 import VerifyOtpPage from './pages/authentication/VerifyOtp';
 import ResetPasswordPage from './pages/authentication/ResetPassword';
+import PrivateRoute from './components/PrivateRoute';
 
 function App() {
   return (
@@ -33,7 +34,14 @@ function App() {
     <Route path="/reset-password" element={< ResetPasswordPage/>} />
    
   </Route>
-      <Route path="/" element={<LayoutWrapper />}>
+      <Route 
+        path="/" 
+        element={
+          <PrivateRoute>
+            <LayoutWrapper />
+          </PrivateRoute>
+        }
+      >
         <Route index element={<OverviewPage />} />
         <Route path="movies" element={<AllDramas />} />
         <Route path="movies/:id" element={<DramaDetails />} />

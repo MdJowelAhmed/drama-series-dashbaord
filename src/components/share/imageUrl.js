@@ -1,11 +1,14 @@
 // Base URL for API/server images
-const API_BASE_URL = "http://72.62.164.122:5000";
+// const API_BASE_URL = "http://72.62.164.122:5000";
 // const API_BASE_URL = "https://rakibur5003.binarybards.online";
 // const API_BASE_URL = "http://10.10.7.48:5003";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // CDN base URL for Bunny.net
 // const CDN_BASE_URL = "yoga-app.b-cdn.net";
-const CDN_BASE_URL = "http://72.62.164.122:5000";
+// const CDN_BASE_URL = "http://72.62.164.122:5000";
+// const CDN_BASE_URL = "http://10.10.7.48:5003";
+const CDN_BASE_URL = import.meta.env.VITE_CDN_BASE_URL;
 /**
  * Get proper image URL from path
  * Handles both full URLs and relative paths

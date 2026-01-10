@@ -329,7 +329,7 @@ const ReusableVideoUploadModal = ({
 
           // Use native fetch for FormData upload - more reliable than RTK Query
           const response = await fetch(
-            `${baseUrl}/trailer/${videoId}/thumbnail`,
+            `${import.meta.env.VITE_API_BASE_URL}/api/v1/trailer/${videoId}/thumbnail`,
             // `http://10.10.7.48:5003/api/v1/trailer/${videoId}/thumbnail`,
             {
               method: "POST",
