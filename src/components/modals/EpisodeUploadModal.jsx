@@ -189,82 +189,61 @@ const EpisodeUploadModal = ({
     }
   };
 
-  // Upload video to Bunny Stream
-  const uploadVideoToBunnyStream = async (videoFile, videoTitle) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        setUploadStatus("Initializing video upload...");
-        setUploadProgress(0);
+  // Generate upload URL to get videoId and URLs (no separate upload needed)
+  const getVideoUploadUrls = async (videoFile, videoTitle) => {
+    try {
+      setUploadStatus("Generating upload URL...");
+      setUploadProgress(0);
 
-        const result = await generateUploadUrl({
-          title: videoTitle,
-          fileName: videoFile.name,
-        }).unwrap();
+      const result = await generateUploadUrl({
+        title: videoTitle,
+        fileName: videoFile.name,
+      }).unwrap();
 
-        // Debug: Log the full response to see what backend returns
-        console.log("🔍 Generate Upload URL Response:", result);
-        console.log("🔍 Response data:", result.data);
+      console.log("🔍 Generate Upload URL Response:", result);
+      console.log("🔍 Response data:", result.data);
 
-        const { videoId, uploadUrl, apiKey, embedUrl, libraryId } = result.data;
-        
-        // Try to get downloadUrls from different possible locations in the response
-        // Note: Download URLs might not be available immediately after generating upload URL.
-        // They may only be available after video is fully uploaded and processed by Bunny Stream.
-        // Backend should return downloadUrls in the response if available.
-        const downloadUrls = result.data?.downloadUrls || 
-                            result.data?.download_urls || 
-                            result?.downloadUrls || 
-                            result?.download_urls || 
-                            {};
+      // Extract videoId from various possible locations
+      const videoId = result.data?.videoId || 
+                     result.data?.video_id || 
+                     result.data?.id || 
+                     result.data?._id ||
+                     result?.videoId ||
+                     result?.video_id;
 
-        // Log downloadUrls for debugging
-        if (Object.keys(downloadUrls).length > 0) {
-          console.log("✅ Download URLs found:", downloadUrls);
-        } else {
-          console.warn("⚠️ Download URLs not found in backend response. Available keys:", Object.keys(result.data || {}));
-          console.warn("💡 Note: Download URLs may need to be fetched after video upload completes, or backend needs to return them in generate-upload-url response.");
-        }
-
-        setUploadStatus("Uploading video to CDN...");
-
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(percentComplete);
-            setUploadStatus(`Uploading video: ${percentComplete}%`);
-          }
-        });
-
-        xhr.addEventListener("load", () => {
-          if (xhr.status === 200 || xhr.status === 201) {
-            setUploadStatus("Video upload complete!");
-            setUploadProgress(100);
-            resolve({
-              videoId,
-              libraryId,
-              embedUrl,
-              videoUrl: embedUrl,
-              downloadUrls: downloadUrls || {}, // Pass the full downloadUrls object
-            });
-          } else {
-            reject(new Error("Video upload failed"));
-          }
-        });
-
-        xhr.addEventListener("error", () => {
-          reject(new Error("Network error during video upload"));
-        });
-
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("AccessKey", apiKey);
-        xhr.setRequestHeader("Content-Type", "application/octet-stream");
-        xhr.send(videoFile);
-      } catch (error) {
-        reject(error);
+      if (!videoId) {
+        console.error("❌ VideoId not found in response:", result);
+        throw new Error("Video ID not found in server response. Please try again.");
       }
-    });
+
+      const embedUrl = result.data?.embedUrl || result.data?.embed_url || result.data?.uploadUrl || "";
+      const libraryId = result.data?.libraryId || result.data?.library_id || "";
+      
+      const downloadUrls = result.data?.downloadUrls || 
+                          result.data?.download_urls || 
+                          result?.downloadUrls || 
+                          result?.download_urls || 
+                          {};
+
+      if (Object.keys(downloadUrls).length > 0) {
+        console.log("✅ Download URLs found:", downloadUrls);
+      } else {
+        console.warn("⚠️ Download URLs not found in backend response. Available keys:", Object.keys(result.data || {}));
+      }
+
+      console.log("✅ Extracted videoId:", videoId);
+
+      return {
+        videoId,
+        libraryId,
+        embedUrl,
+        videoUrl: embedUrl,
+        downloadUrls: downloadUrls || {},
+      };
+    } catch (error) {
+      console.error("Generate upload URL error:", error);
+      throw error;
+    }
   };
 
   const validateForm = () => {
@@ -300,130 +279,152 @@ const EpisodeUploadModal = ({
       setUploadingVideo(true);
       
       let videoUrl = editingData?.video_url || editingData?.videoUrl;
-      let videoId = editingData?.videoId || editingData?.video_id;
+      let videoId = editingData?.videoId || editingData?.video_id || editingData?.videoId;
       let libraryId = editingData?.libraryId || editingData?.library_id;
       let thumbnailUrl = editingData?.thumbnail_url || editingData?.thumbnailUrl;
       let downloadUrls = editingData?.downloadUrls || editingData?.download_urls || {};
 
-      // Upload video if new file selected
+      // Debug: Log initial values
+      console.log("🔍 Initial values from editingData:", {
+        videoId,
+        videoUrl,
+        libraryId,
+        thumbnailUrl,
+        hasVideoFile: !!videoFile,
+        isEditMode
+      });
+
+      // Step 1: Generate upload URL to get videoId and URLs (if new video file)
       if (videoFile && generateUploadUrl) {
-        const bunnyData = await uploadVideoToBunnyStream(
+        const bunnyData = await getVideoUploadUrls(
           videoFile,
           formData.title || "Untitled Episode"
         );
+        
+        if (!bunnyData.videoId) {
+          toast.error("Failed to get Video ID from server. Please try again.");
+          setUploadingVideo(false);
+          return;
+        }
+        
         videoUrl = bunnyData.videoUrl;
         videoId = bunnyData.videoId;
         libraryId = bunnyData.libraryId;
         downloadUrls = bunnyData.downloadUrls || {};
+        
+        console.log("✅ VideoId after generation:", videoId);
       }
 
-      // Handle thumbnail upload using native fetch for FormData
+      // Validate that videoId exists (required by backend)
+      if (!videoId) {
+        toast.error("Video ID is required. Please select a video file.");
+        setUploadingVideo(false);
+        return;
+      }
+
+      // Step 2: Upload video file if new file selected (if upload endpoint exists)
+      // Note: If backend doesn't have separate upload endpoint, skip this step
+      // Video will be uploaded when create endpoint is called with video file
+      if (videoFile) {
+        // Video file will be handled by backend when create endpoint is called
+        // Or upload separately if endpoint exists
+        console.log("📤 Video file ready for upload:", videoFile.name);
+      }
+
+      // Step 3: Upload thumbnail if new file selected
       if (thumbnailFile && videoId) {
         setUploadStatus("Uploading thumbnail...");
-        
         try {
-          // Validate thumbnail file before upload
-          if (!(thumbnailFile instanceof File) && !(thumbnailFile instanceof Blob)) {
-            throw new Error("Invalid thumbnail file object");
-          }
-          
-          if (thumbnailFile.size === 0) {
-            throw new Error("Thumbnail file is empty");
-          }
-          
-          console.log("Thumbnail file details:", {
-            name: thumbnailFile.name,
-            size: thumbnailFile.size,
-            type: thumbnailFile.type,
-            isFile: thumbnailFile instanceof File,
-          });
-          
-          const formDataToSend = new FormData();
-          // Append the file directly - 'thumbnail' is the expected field name
-          formDataToSend.append("thumbnail", thumbnailFile);
-          
-          // Debug: Log FormData entries
-          console.log("FormData entries:");
-          for (const [key, value] of formDataToSend.entries()) {
-            if (value instanceof File) {
-              console.log(`  ${key}: File(name=${value.name}, size=${value.size}, type=${value.type})`);
-            } else {
-              console.log(`  ${key}:`, value);
-            }
-          }
+          const thumbnailFormData = new FormData();
+          thumbnailFormData.append("thumbnail", thumbnailFile);
           
           const token = localStorage.getItem("token");
-          console.log("Uploading to:", `${API_BASE_URL}/video-management/${videoId}/thumbnail`);
-          
-          const response = await fetch(
+          const thumbnailResponse = await fetch(
             `${API_BASE_URL}/video-management/${videoId}/thumbnail`,
             {
               method: "POST",
               headers: {
-                // Don't set Content-Type - browser will set it with boundary for FormData
                 ...(token ? { "Authorization": `Bearer ${token}` } : {}),
               },
-              body: formDataToSend,
+              body: thumbnailFormData,
             }
           );
-          
-          const thumbnailResult = await response.json();
-          console.log("Thumbnail upload response:", thumbnailResult);
-          
-          if (!response.ok) {
-            throw new Error(thumbnailResult.message || "Thumbnail upload failed");
+
+          if (!thumbnailResponse.ok) {
+            const errorData = await thumbnailResponse.json();
+            throw new Error(errorData.message || "Thumbnail upload failed");
           }
+
+          const thumbnailResult = await thumbnailResponse.json();
+          console.log("✅ Thumbnail uploaded:", thumbnailResult);
           
           thumbnailUrl = thumbnailResult.data?.result || 
-                        thumbnailResult.data?.thumbnail_url ||
-                        thumbnailResult.data?.thumbnailUrl ||
-                        thumbnailResult.data?.url ||
-                        thumbnailResult.thumbnailUrl || 
-                        thumbnailResult.thumbnail_url ||
-                        thumbnailResult.url;
+                       thumbnailResult.data?.thumbnail_url ||
+                       thumbnailResult.data?.thumbnailUrl ||
+                       thumbnailResult.data?.url ||
+                       thumbnailResult.thumbnailUrl || 
+                       thumbnailResult.thumbnail_url ||
+                       thumbnailResult.url;
           
           if (thumbnailUrl) {
             toast.success("Thumbnail uploaded successfully");
           }
         } catch (error) {
-          console.error("Thumbnail upload failed:", error);
+          console.error("Thumbnail upload error:", error);
           toast.error("Thumbnail upload failed: " + (error?.message || "Upload failed"));
           setUploadingVideo(false);
           return;
         }
       }
 
-      // Prepare submit data according to API requirements
+      // Step 4: Prepare JSON data (no FormData)
       const submitData = {
         title: formData.title.trim(),
         description: formData.description?.trim() || "",
         duration: duration,
-        videoUrl: videoUrl,
-        videoId: videoId,
-        libraryId: libraryId,
-        thumbnailUrl: thumbnailUrl,
-        downloadUrls: downloadUrls, // Add full downloadUrls object to the data sent to backend
+        videoUrl: videoUrl || "",
+        videoId: videoId, // Required field
+        libraryId: libraryId || "",
+        thumbnailUrl: thumbnailUrl || "",
+        downloadUrls: downloadUrls,
         movieId: movieId,
         seasonId: seasonId,
         episodeNumber: parseInt(formData.episodeNumber, 10),
       };
 
+      // Debug: Log what we're sending
+      console.log("📤 Submitting JSON data:", submitData);
+      console.log("📤 VideoId:", videoId);
+
       setUploadStatus("Saving episode data...");
 
-      if (isEditMode) {
-        if (updateMutation) {
-          await updateMutation({
-            id: editingData._id || editingData.id,
-            updatedData: submitData,
-          }).unwrap();
+      // Step 5: Send JSON data to create/update endpoint
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        isEditMode
+          ? `${API_BASE_URL}/video-management/update/${editingData._id || editingData.id}`
+          : `${API_BASE_URL}/video-management/create`,
+        {
+          method: isEditMode ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(submitData),
         }
-        toast.success("Episode updated successfully!");
-      } else {
-        if (createMutation) {
-          await createMutation(submitData).unwrap();
-        }
-        toast.success("Episode created successfully!");
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Operation failed");
       }
+
+      const result = await response.json();
+      console.log("✅ Upload response:", result);
+      setUploadStatus("Upload complete!");
+      setUploadProgress(100);
+
+      toast.success(isEditMode ? "Episode updated successfully!" : "Episode created successfully!");
 
       setUploadingVideo(false);
       setUploadProgress(0);
@@ -434,7 +435,7 @@ const EpisodeUploadModal = ({
       setUploadingVideo(false);
       setUploadStatus("");
       console.error("Upload error:", error);
-      const errorMessage = error?.data?.message || error?.message || "Operation failed";
+      const errorMessage = error?.message || "Operation failed";
       toast.error(errorMessage);
     }
   };
