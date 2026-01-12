@@ -154,36 +154,42 @@ const VideoUploadModal = ({
   };
 
   const uploadVideoToBunnyStream = async (videoFile, title) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        setUploadingVideo(true);
-        setUploadStatus("Initializing upload...");
-        setUploadProgress(0);
+    try {
+      setUploadingVideo(true);
+      setUploadStatus("Initializing upload...");
+      setUploadProgress(0);
 
+      // Step 1: Generate upload URL to get videoId
+      const initResponse = await fetch(`${getBaseUrl(isProduction)}/api/v1/admin/videos/library/generate-upload-url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({
+          title: title,
+          fileName: videoFile.name,
+        }),
+      });
 
-        const initResponse = await fetch(`${getBaseUrl(isProduction)}/api/v1/admin/videos/library/generate-upload-url`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
-          },
-          body: JSON.stringify({
-            title: title,
-            fileName: videoFile.name,
-          }),
-        });
+      if (!initResponse.ok) {
+        throw new Error("Failed to get upload URL");
+      }
 
-        if (!initResponse.ok) {
-          throw new Error("Failed to get upload URL");
-        }
+      const { data } = await initResponse.json();
+      const { videoId, embedUrl, downloadUrls } = data;
 
-        const { data } = await initResponse.json();
-        const { videoId, uploadUrl, apiKey, embedUrl } = data;
+      console.log("🔍 Generate Upload URL Response:", data);
 
-        setUploadStatus("Uploading video...");
-
+      // Step 2: Upload video file to backend via POST
+      setUploadStatus("Uploading video...");
+      
+      const formData = new FormData();
+      formData.append("video", videoFile);
+      
+      const response = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-
+        
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
             const percentComplete = Math.round((e.loaded / e.total) * 100);
@@ -192,18 +198,21 @@ const VideoUploadModal = ({
           }
         });
 
-        xhr.addEventListener("load", async () => {
-          if (xhr.status === 200 || xhr.status === 201) {
-            setUploadStatus("Upload complete! Processing...");
-            setUploadProgress(100);
-
-            resolve({
-              videoId,
-              embedUrl,
-              videoUrl: embedUrl,
-            });
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              resolve(result);
+            } catch {
+              resolve({ success: true });
+            }
           } else {
-            reject(new Error("Video upload failed"));
+            try {
+              const errorResult = JSON.parse(xhr.responseText);
+              reject(new Error(errorResult.message || "Video upload failed"));
+            } catch {
+              reject(new Error("Video upload failed"));
+            }
           }
         });
 
@@ -211,15 +220,30 @@ const VideoUploadModal = ({
           reject(new Error("Network error during upload"));
         });
 
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("AccessKey", apiKey);
-        xhr.setRequestHeader("Content-Type", "application/octet-stream");
-        xhr.send(videoFile);
+        xhr.open("POST", `${getBaseUrl(isProduction)}/api/v1/admin/videos/library/${videoId}/upload`);
+        xhr.setRequestHeader("Authorization", `Bearer ${localStorage.getItem("token")}`);
+        xhr.send(formData);
+      });
 
-      } catch (error) {
-        reject(error);
-      }
-    });
+      console.log("Video upload response:", response);
+      setUploadStatus("Upload complete! Processing...");
+      setUploadProgress(100);
+
+      // Get updated URLs from response if available
+      const updatedDownloadUrls = response?.data?.downloadUrls || 
+                                  response?.downloadUrls || 
+                                  downloadUrls || {};
+
+      return {
+        videoId,
+        embedUrl,
+        videoUrl: embedUrl,
+        downloadUrls: updatedDownloadUrls,
+      };
+    } catch (error) {
+      console.error("Video upload error:", error);
+      throw error;
+    }
   };
 
   const uploadThumbnailToBunnyStorage = async (thumbnailFile) => {
