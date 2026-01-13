@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { X, Upload, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { X, Upload, CheckCircle, Loader2, AlertCircle, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { getVideoAndThumbnail } from "@/components/share/imageUrl";
-import { baseUrl } from "@/redux/base-url/baseUrlApi";
 import {
   Dialog,
   DialogContent,
@@ -15,25 +14,7 @@ import {
 } from "@/components/ui/dialog";
 
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
-// const API_BASE_URL = "https://rakibur5003.binarybards.online/api/v1";
 
-/**
- * EpisodeUploadModal - Modal for uploading/editing drama episodes
- * 
- * Data structure for API:
- * {
- *   "title": "The Hidden Valley",
- *   "description": "A short adventure clip for testing.",
- *   "duration": 245,
- *   "videoUrl": "https://example.com/videos/hidden-valley.mp4",
- *   "videoId": "vid_982374",
- *   "libraryId": "lib_202412",
- *   "thumbnailUrl": "https://example.com/thumbs/hidden-valley.jpg",
- *   "movieId": "692ef10c91135c2b0da0977a",
- *   "seasonId": "692effc029646c4dac76fddc",
- *   "episodeNumber": 1
- * }
- */
 const EpisodeUploadModal = ({
   open,
   onClose,
@@ -58,12 +39,12 @@ const EpisodeUploadModal = ({
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
+  const [processingStatus, setProcessingStatus] = useState("");
   const [errors, setErrors] = useState({});
   const [duration, setDuration] = useState(0);
 
   const isEditMode = !!editingData?._id || !!editingData?.id;
 
-  // Initialize form data when modal opens or editingData changes
   useEffect(() => {
     if (open) {
       if (editingData) {
@@ -74,7 +55,6 @@ const EpisodeUploadModal = ({
         });
         setDuration(editingData.duration || 0);
         
-        // Set existing thumbnail preview
         const existingThumbnail = editingData.thumbnail_url || editingData.thumbnailUrl;
         if (existingThumbnail) {
           setThumbnailPreview(getVideoAndThumbnail(existingThumbnail));
@@ -92,11 +72,11 @@ const EpisodeUploadModal = ({
       setThumbnailFile(null);
       setUploadProgress(0);
       setUploadStatus("");
+      setProcessingStatus("");
       setErrors({});
     }
   }, [open, editingData, nextEpisodeNumber]);
 
-  // Clean up blob URLs on unmount
   useEffect(() => {
     return () => {
       if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
@@ -154,7 +134,6 @@ const EpisodeUploadModal = ({
       }
       setVideoFile(file);
 
-      // Auto-detect duration
       const video = document.createElement("video");
       video.preload = "metadata";
       video.onloadedmetadata = () => {
@@ -175,7 +154,6 @@ const EpisodeUploadModal = ({
       }
       setThumbnailFile(file);
       
-      // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       setThumbnailPreview(previewUrl);
       
@@ -189,11 +167,81 @@ const EpisodeUploadModal = ({
     }
   };
 
-  // Generate upload URL to get videoId and URLs (no separate upload needed)
+  // 🔥 NEW: Check video processing status
+  const checkVideoProcessingStatus = async (videoId, libraryId, apiKey, maxAttempts = 30) => {
+    let attempts = 0;
+    const checkInterval = 3000; // Check every 3 seconds
+
+    return new Promise((resolve, reject) => {
+      const intervalId = setInterval(async () => {
+        attempts++;
+        
+        try {
+          // Check video status from Bunny CDN
+          const statusUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`;
+          
+          const response = await fetch(statusUrl, {
+            method: "GET",
+            headers: {
+              "AccessKey": apiKey,
+              "Accept": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            console.warn(`⚠️ Status check failed (attempt ${attempts}/${maxAttempts})`);
+            if (attempts >= maxAttempts) {
+              clearInterval(intervalId);
+              reject(new Error("Video processing timeout"));
+            }
+            return;
+          }
+
+          const data = await response.json();
+          const status = data.status;
+          const encodingProgress = data.encodeProgress || 0;
+
+          console.log(`📹 Video Status: ${status}, Progress: ${encodingProgress}%`);
+
+          // Update processing status UI
+          if (status === 0 || status === 1) {
+            // 0 = Queued, 1 = Processing
+            setProcessingStatus(`Processing video... ${encodingProgress}%`);
+            setUploadProgress(90 + Math.floor(encodingProgress / 10)); // 90-100%
+          } else if (status === 2) {
+            // 2 = Encoding Failed
+            clearInterval(intervalId);
+            reject(new Error("Video encoding failed"));
+          } else if (status === 3 || status === 4) {
+            // 3 = Finished, 4 = Resolution Finished
+            setProcessingStatus("Video processing complete!");
+            setUploadProgress(100);
+            clearInterval(intervalId);
+            
+            // Wait a bit for CDN propagation
+            setTimeout(() => resolve(data), 2000);
+          }
+
+          if (attempts >= maxAttempts) {
+            clearInterval(intervalId);
+            reject(new Error("Video processing timeout - video may still be processing"));
+          }
+
+        } catch (error) {
+          console.error("Status check error:", error);
+          if (attempts >= maxAttempts) {
+            clearInterval(intervalId);
+            reject(error);
+          }
+        }
+      }, checkInterval);
+    });
+  };
+
   const getVideoUploadUrls = async (videoFile, videoTitle) => {
     try {
       setUploadStatus("Generating upload URL...");
-      setUploadProgress(0);
+      setUploadProgress(10);
 
       const result = await generateUploadUrl({
         title: videoTitle,
@@ -201,9 +249,7 @@ const EpisodeUploadModal = ({
       }).unwrap();
 
       console.log("🔍 Generate Upload URL Response:", result);
-      console.log("🔍 Response data:", result.data);
 
-      // Extract videoId from various possible locations
       const videoId = result.data?.videoId || 
                      result.data?.video_id || 
                      result.data?.id || 
@@ -216,8 +262,19 @@ const EpisodeUploadModal = ({
         throw new Error("Video ID not found in server response. Please try again.");
       }
 
-      const embedUrl = result.data?.embedUrl || result.data?.embed_url || result.data?.uploadUrl || "";
+      const embedUrl = result.data?.embedUrl || 
+                      result.data?.embed_url || 
+                      result.data?.uploadUrl || 
+                      result.data?.upload_url || 
+                      "";
       const libraryId = result.data?.libraryId || result.data?.library_id || "";
+      const apiKey = result.data?.apiKey || 
+                    result.data?.api_key || 
+                    result.data?.accessKey ||
+                    result.data?.access_key ||
+                    result.data?.libraryApiKey ||
+                    result.data?.library_api_key ||
+                    "";
       
       const downloadUrls = result.data?.downloadUrls || 
                           result.data?.download_urls || 
@@ -225,17 +282,13 @@ const EpisodeUploadModal = ({
                           result?.download_urls || 
                           {};
 
-      if (Object.keys(downloadUrls).length > 0) {
-        console.log("✅ Download URLs found:", downloadUrls);
-      } else {
-        console.warn("⚠️ Download URLs not found in backend response. Available keys:", Object.keys(result.data || {}));
-      }
-
       console.log("✅ Extracted videoId:", videoId);
+      console.log("✅ Upload URL:", embedUrl);
 
       return {
         videoId,
         libraryId,
+        apiKey,
         embedUrl,
         videoUrl: embedUrl,
         downloadUrls: downloadUrls || {},
@@ -281,20 +334,11 @@ const EpisodeUploadModal = ({
       let videoUrl = editingData?.video_url || editingData?.videoUrl;
       let videoId = editingData?.videoId || editingData?.video_id || editingData?.videoId;
       let libraryId = editingData?.libraryId || editingData?.library_id;
+      let apiKey = editingData?.apiKey || editingData?.api_key || "";
       let thumbnailUrl = editingData?.thumbnail_url || editingData?.thumbnailUrl;
       let downloadUrls = editingData?.downloadUrls || editingData?.download_urls || {};
 
-      // Debug: Log initial values
-      console.log("🔍 Initial values from editingData:", {
-        videoId,
-        videoUrl,
-        libraryId,
-        thumbnailUrl,
-        hasVideoFile: !!videoFile,
-        isEditMode
-      });
-
-      // Step 1: Generate upload URL to get videoId and URLs (if new video file)
+      // Step 1: Generate upload URL if new video
       if (videoFile && generateUploadUrl) {
         const bunnyData = await getVideoUploadUrls(
           videoFile,
@@ -310,30 +354,96 @@ const EpisodeUploadModal = ({
         videoUrl = bunnyData.videoUrl;
         videoId = bunnyData.videoId;
         libraryId = bunnyData.libraryId;
+        apiKey = bunnyData.apiKey || "";
         downloadUrls = bunnyData.downloadUrls || {};
-        
-        console.log("✅ VideoId after generation:", videoId);
+
+        // Step 2: Upload video to Bunny Stream
+        if (bunnyData.embedUrl) {
+          setUploadStatus("Uploading video to Bunny Stream...");
+          setUploadProgress(20);
+          
+          try {
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener("progress", (event) => {
+              if (event.lengthComputable) {
+                const percentComplete = Math.round((event.loaded / event.total) * 60) + 20; // 20-80%
+                setUploadProgress(percentComplete);
+                setUploadStatus(`Uploading video... ${percentComplete - 20}%`);
+              }
+            });
+
+            const uploadPromise = new Promise((resolve, reject) => {
+              xhr.addEventListener("load", () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  console.log("✅ Video uploaded successfully to Bunny Stream");
+                  toast.success("Video uploaded! Now processing...");
+                  setUploadProgress(80);
+                  resolve();
+                } else {
+                  console.error("❌ Video upload failed:", xhr.status, xhr.statusText);
+                  reject(new Error(`Video upload failed: ${xhr.status} ${xhr.statusText}`));
+                }
+              });
+
+              xhr.addEventListener("error", () => {
+                reject(new Error("Network error during video upload"));
+              });
+            });
+
+            const uploadUrl = bunnyData.embedUrl.includes('/videos/')
+              ? bunnyData.embedUrl
+              : `https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`;
+            
+            xhr.open("PUT", uploadUrl);
+            
+            if (apiKey) {
+              xhr.setRequestHeader("AccessKey", apiKey);
+            } else if (libraryId) {
+              xhr.setRequestHeader("AccessKey", libraryId);
+            } else {
+              toast.error("Missing API Key for video upload");
+              setUploadingVideo(false);
+              return;
+            }
+
+            xhr.send(videoFile);
+            await uploadPromise;
+
+            // 🔥 Step 3: Wait for video processing to complete
+            setUploadStatus("Video uploaded! Waiting for processing...");
+            setProcessingStatus("Processing video...");
+            setUploadProgress(85);
+
+            try {
+              await checkVideoProcessingStatus(videoId, libraryId, apiKey);
+              console.log("✅ Video processing complete!");
+              toast.success("Video is ready!");
+            } catch (processingError) {
+              console.warn("⚠️ Processing check timeout:", processingError);
+              toast.warning("Video uploaded but still processing. It will be available shortly.");
+              // Continue anyway - video will process in background
+            }
+
+          } catch (uploadError) {
+            console.error("Video upload error:", uploadError);
+            toast.error("Failed to upload video: " + uploadError.message);
+            setUploadingVideo(false);
+            return;
+          }
+        }
       }
 
-      // Validate that videoId exists (required by backend)
       if (!videoId) {
-        toast.error("Video ID is required. Please select a video file.");
+        toast.error("Video ID is required");
         setUploadingVideo(false);
         return;
       }
 
-      // Step 2: Upload video file if new file selected (if upload endpoint exists)
-      // Note: If backend doesn't have separate upload endpoint, skip this step
-      // Video will be uploaded when create endpoint is called with video file
-      if (videoFile) {
-        // Video file will be handled by backend when create endpoint is called
-        // Or upload separately if endpoint exists
-        console.log("📤 Video file ready for upload:", videoFile.name);
-      }
-
-      // Step 3: Upload thumbnail if new file selected
+      // Step 4: Upload thumbnail
       if (thumbnailFile && videoId) {
         setUploadStatus("Uploading thumbnail...");
+        setUploadProgress(92);
         try {
           const thumbnailFormData = new FormData();
           thumbnailFormData.append("thumbnail", thumbnailFile);
@@ -350,40 +460,33 @@ const EpisodeUploadModal = ({
             }
           );
 
-          if (!thumbnailResponse.ok) {
-            const errorData = await thumbnailResponse.json();
-            throw new Error(errorData.message || "Thumbnail upload failed");
-          }
-
-          const thumbnailResult = await thumbnailResponse.json();
-          console.log("✅ Thumbnail uploaded:", thumbnailResult);
-          
-          thumbnailUrl = thumbnailResult.data?.result || 
-                       thumbnailResult.data?.thumbnail_url ||
-                       thumbnailResult.data?.thumbnailUrl ||
-                       thumbnailResult.data?.url ||
-                       thumbnailResult.thumbnailUrl || 
-                       thumbnailResult.thumbnail_url ||
-                       thumbnailResult.url;
-          
-          if (thumbnailUrl) {
-            toast.success("Thumbnail uploaded successfully");
+          if (thumbnailResponse.ok) {
+            const thumbnailResult = await thumbnailResponse.json();
+            thumbnailUrl = thumbnailResult.data?.result || 
+                         thumbnailResult.data?.thumbnail_url ||
+                         thumbnailResult.data?.thumbnailUrl ||
+                         thumbnailResult.data?.url ||
+                         thumbnailResult.thumbnailUrl || 
+                         thumbnailResult.thumbnail_url ||
+                         thumbnailResult.url;
+            
+            if (thumbnailUrl) {
+              toast.success("Thumbnail uploaded");
+            }
           }
         } catch (error) {
           console.error("Thumbnail upload error:", error);
-          toast.error("Thumbnail upload failed: " + (error?.message || "Upload failed"));
-          setUploadingVideo(false);
-          return;
+          toast.warning("Thumbnail upload failed, but continuing...");
         }
       }
 
-      // Step 4: Prepare JSON data (no FormData)
+      // Step 5: Save episode data
       const submitData = {
         title: formData.title.trim(),
         description: formData.description?.trim() || "",
         duration: duration,
         videoUrl: videoUrl || "",
-        videoId: videoId, // Required field
+        videoId: videoId,
         libraryId: libraryId || "",
         thumbnailUrl: thumbnailUrl || "",
         downloadUrls: downloadUrls,
@@ -392,13 +495,9 @@ const EpisodeUploadModal = ({
         episodeNumber: parseInt(formData.episodeNumber, 10),
       };
 
-      // Debug: Log what we're sending
-      console.log("📤 Submitting JSON data:", submitData);
-      console.log("📤 VideoId:", videoId);
+      setUploadStatus("Saving episode...");
+      setUploadProgress(95);
 
-      setUploadStatus("Saving episode data...");
-
-      // Step 5: Send JSON data to create/update endpoint
       const token = localStorage.getItem("token");
       const response = await fetch(
         isEditMode
@@ -420,23 +519,27 @@ const EpisodeUploadModal = ({
       }
 
       const result = await response.json();
-      console.log("✅ Upload response:", result);
-      setUploadStatus("Upload complete!");
       setUploadProgress(100);
+      setUploadStatus("Complete!");
 
-      toast.success(isEditMode ? "Episode updated successfully!" : "Episode created successfully!");
+      toast.success(
+        isEditMode 
+          ? "Episode updated successfully!" 
+          : "Episode created successfully! Video is ready to watch."
+      );
 
       setUploadingVideo(false);
       setUploadProgress(0);
       setUploadStatus("");
+      setProcessingStatus("");
       onSave?.(submitData);
       onClose();
     } catch (error) {
       setUploadingVideo(false);
       setUploadStatus("");
+      setProcessingStatus("");
       console.error("Upload error:", error);
-      const errorMessage = error?.message || "Operation failed";
-      toast.error(errorMessage);
+      toast.error(error?.message || "Operation failed");
     }
   };
 
@@ -463,16 +566,28 @@ const EpisodeUploadModal = ({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Upload Progress */}
+        {/* Upload Progress - Enhanced */}
         {uploadingVideo && (
-          <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl">
             <div className="flex items-center gap-3 mb-3">
-              <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
-              <span className="font-medium text-blue-300">{uploadStatus}</span>
+              {uploadProgress < 100 ? (
+                <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+              ) : (
+                <CheckCircle className="h-5 w-5 text-green-400" />
+              )}
+              <div className="flex-1">
+                <p className="font-medium text-blue-300">{uploadStatus}</p>
+                {processingStatus && (
+                  <p className="text-sm text-blue-400 mt-1 flex items-center gap-2">
+                    <Video className="h-4 w-4 animate-pulse" />
+                    {processingStatus}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="w-full bg-blue-900/50 rounded-full h-2.5">
+            <div className="w-full bg-blue-900/50 rounded-full h-2.5 overflow-hidden">
               <div
-                className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
@@ -532,7 +647,7 @@ const EpisodeUploadModal = ({
           {duration > 0 && (
             <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
               <p className="text-sm text-green-300">
-                <strong>Duration detected:</strong> {formatDuration(duration)} ({duration} seconds)
+                <strong>Duration:</strong> {formatDuration(duration)} ({duration} seconds)
               </p>
             </div>
           )}
@@ -633,7 +748,6 @@ const EpisodeUploadModal = ({
               <Label className="block text-sm font-semibold text-white/80 mb-2">
                 Thumbnail Image {!isEditMode && <span className="text-red-400">*</span>}
               </Label>
-              {/* Hidden file input - always available */}
               <input
                 type="file"
                 onChange={(e) => handleFileChange(e, "thumbnail")}
@@ -657,18 +771,17 @@ const EpisodeUploadModal = ({
               >
                 {thumbnailPreview || thumbnailFile ? (
                   <div className="space-y-3">
-                    {/* Clickable thumbnail preview */}
                     <label htmlFor="episode-thumbnail-upload" className="cursor-pointer block">
                       <img
                         src={thumbnailPreview}
                         alt="Thumbnail preview"
                         className="h-32 mx-auto rounded-lg object-cover shadow-lg border border-white/10 hover:opacity-80 transition-opacity"
                       />
-                      <p className="text-xs text-white/50 mt-2">Click image to change</p>
+                      <p className="text-xs text-white/50 mt-2">Click to change</p>
                     </label>
                     {thumbnailFile && (
                       <>
-                        <p className="text-sm text-white font-medium truncate max-w-full">
+                        <p className="text-sm text-white font-medium truncate">
                           {thumbnailFile.name}
                         </p>
                         <p className="text-xs text-white/50">
@@ -677,15 +790,13 @@ const EpisodeUploadModal = ({
                       </>
                     )}
                     <div className="flex gap-2 justify-center">
-                      {/* Change Thumbnail Button */}
                       <label
                         htmlFor="episode-thumbnail-upload"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-300 rounded-lg cursor-pointer hover:bg-blue-500/30 font-medium transition-all border border-blue-500/30 text-sm"
                       >
                         <Upload className="h-4 w-4" />
-                        {isEditMode ? "Change Thumbnail" : "Change"}
+                        Change
                       </label>
-                      {/* Remove Button - only show if a new file is selected */}
                       {thumbnailFile && (
                         <Button
                           type="button"
@@ -704,10 +815,10 @@ const EpisodeUploadModal = ({
                   <>
                     <Upload className="h-10 w-10 mx-auto text-white/40 mb-3" />
                     <p className="text-sm text-white/70 mb-2 font-medium">
-                      Drag and drop thumbnail here
+                      Drag and drop thumbnail
                     </p>
                     <p className="text-xs text-white/40 mb-4">
-                      Supports: JPG, PNG, WEBP (Max 5MB)
+                      JPG, PNG, WEBP (Max 5MB)
                     </p>
                     <label
                       htmlFor="episode-thumbnail-upload"
@@ -731,7 +842,7 @@ const EpisodeUploadModal = ({
           {isEditMode && (
             <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
               <p className="text-sm text-blue-300">
-                <strong>Note:</strong> Video files cannot be changed after upload. You can update the thumbnail and other details.
+                <strong>Note:</strong> Video cannot be changed after upload. Update thumbnail and details only.
               </p>
             </div>
           )}
@@ -742,7 +853,7 @@ const EpisodeUploadModal = ({
               onClick={onClose}
               disabled={uploadingVideo}
               variant="outline"
-              className="px-6 py-5 border-white/20 text-white hover:bg-white/10 transition-all"
+              className="px-6 py-5 border-white/20 text-white hover:bg-white/10"
             >
               Cancel
             </Button>
@@ -752,7 +863,7 @@ const EpisodeUploadModal = ({
               className="px-6 py-5 bg-primary hover:bg-primary/80"
             >
               {uploadingVideo
-                ? `Uploading... ${uploadProgress}%`
+                ? `${uploadProgress < 80 ? 'Uploading' : uploadProgress < 100 ? 'Processing' : 'Saving'}... ${uploadProgress}%`
                 : isEditMode
                 ? "Update Episode"
                 : "Upload Episode"}
@@ -765,4 +876,3 @@ const EpisodeUploadModal = ({
 };
 
 export default EpisodeUploadModal;
-
