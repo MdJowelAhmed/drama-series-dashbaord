@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, Edit2, Play, Clock, Eye, Film, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ReusableVideoUploadModal from '@/components/videoUpload/ReusableVideoUploadModal';
+import TrailerUploadModal from '@/components/modals/TrailerUploadModal';
 import VideoDetailsModal from '@/components/videoUpload/VideoDetailsModal';
 import {
   Dialog,
@@ -11,60 +11,11 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  useCreateTrailerMutation,
   useVideoUrlGenerateMutation,
-  useUploadThumbnailMutation,
-  useUpdateTrailerMutation,
   useDeleteTrailerMutation,
   useGetAllTrailerQuery,
 } from '@/redux/feature/trailerApi';
 import { getVideoAndThumbnail } from '@/components/share/imageUrl';
-
-// Field configuration for Trailer upload
-const TRAILER_FIELDS = [
-  {
-    name: "title",
-    label: "Trailer Title",
-    type: "text",
-    placeholder: "Enter trailer title",
-    required: true,
-    gridCols: 1,
-  },
-  {
-    name: "duration",
-    label: "Duration (MM:SS)",
-    type: "text",
-    placeholder: "e.g., 2:30",
-    required: true,
-    gridCols: 1,
-  },
-  {
-    name: "contentName",
-    label: "Content Name",
-    type: "text",
-    placeholder: "Enter content name",
-    required: false,
-    gridCols: 1,
-  },
-  {
-    name: "color",
-    label: "Color",
-    type: "color",
-    placeholder: "#3b82f6",
-    required: false,
-    defaultValue: "#3b82f6",
-    gridCols: 1,
-  },
-  {
-    name: "description",
-    label: "Description",
-    type: "textarea",
-    placeholder: "Enter trailer description",
-    required: false,
-    gridCols: 2,
-    rows: 4,
-  },
-];
 
 const DeleteDialog = ({ item, onClose, onConfirm, isLoading }) => {
   return (
@@ -107,10 +58,7 @@ const TrailerManagement = () => {
 
   // RTK Query hooks
   const { data: trailersData, isLoading: isLoadingTrailers, refetch } = useGetAllTrailerQuery();
-  const [createTrailer] = useCreateTrailerMutation();
   const [generateUploadUrl] = useVideoUrlGenerateMutation();
-  const [uploadThumbnail] = useUploadThumbnailMutation();
-  const [updateTrailer] = useUpdateTrailerMutation();
   const [deleteTrailer, { isLoading: isDeleting }] = useDeleteTrailerMutation();
 
   const trailers = trailersData?.data?.result || [];
@@ -256,20 +204,13 @@ const TrailerManagement = () => {
           </div>
         )}
 
-        {/* Reusable Video Upload Modal */}
-        <ReusableVideoUploadModal
+        {/* Trailer Upload Modal */}
+        <TrailerUploadModal
           open={uploadModalOpen}
           onClose={() => setUploadModalOpen(false)}
           onSave={handleSaveTrailer}
           editingData={editingTrailer}
-          title="Upload Trailer"
-          fields={TRAILER_FIELDS}
           generateUploadUrl={generateUploadUrl}
-          uploadThumbnail={uploadThumbnail}
-          createMutation={createTrailer}
-          updateMutation={updateTrailer}
-          showThumbnail={true}
-          showVideo={true}
         />
 
         {/* Video Details Modal */}

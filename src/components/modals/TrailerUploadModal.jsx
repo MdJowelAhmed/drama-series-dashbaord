@@ -15,22 +15,19 @@ import {
 
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
 
-const EpisodeUploadModal = ({
+const TrailerUploadModal = ({
   open,
   onClose,
   onSave,
   editingData = null,
-  movieId,
-  seasonId,
-  nextEpisodeNumber = 1,
   generateUploadUrl,
-  createMutation,
-  updateMutation,
 }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    episodeNumber: nextEpisodeNumber,
+    contentName: "",
+    color: "#3b82f6",
+    duration: "",
   });
   const [videoFile, setVideoFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -41,7 +38,7 @@ const EpisodeUploadModal = ({
   const [uploadStatus, setUploadStatus] = useState("");
   const [processingStatus, setProcessingStatus] = useState("");
   const [errors, setErrors] = useState({});
-  const [duration, setDuration] = useState(0);
+  const [videoDurationSeconds, setVideoDurationSeconds] = useState(0);
 
   const isEditMode = !!editingData?._id || !!editingData?.id;
 
@@ -51,9 +48,17 @@ const EpisodeUploadModal = ({
         setFormData({
           title: editingData.title || "",
           description: editingData.description || "",
-          episodeNumber: editingData.episodeNumber || nextEpisodeNumber,
+          contentName: editingData.contentName || "",
+          color: editingData.color || "#3b82f6",
+          duration: editingData.duration || "",
         });
-        setDuration(editingData.duration || 0);
+        setVideoDurationSeconds(
+          typeof editingData.duration === 'number' 
+            ? editingData.duration 
+            : editingData.duration?.includes(':') 
+              ? parseDuration(editingData.duration) 
+              : 0
+        );
         
         const existingThumbnail = editingData.thumbnail_url || editingData.thumbnailUrl;
         if (existingThumbnail) {
@@ -63,9 +68,11 @@ const EpisodeUploadModal = ({
         setFormData({
           title: "",
           description: "",
-          episodeNumber: nextEpisodeNumber,
+          contentName: "",
+          color: "#3b82f6",
+          duration: "",
         });
-        setDuration(0);
+        setVideoDurationSeconds(0);
         setThumbnailPreview(null);
       }
       setVideoFile(null);
@@ -75,7 +82,7 @@ const EpisodeUploadModal = ({
       setProcessingStatus("");
       setErrors({});
     }
-  }, [open, editingData, nextEpisodeNumber]);
+  }, [open, editingData]);
 
   useEffect(() => {
     return () => {
@@ -84,6 +91,17 @@ const EpisodeUploadModal = ({
       }
     };
   }, [thumbnailPreview]);
+
+  const parseDuration = (durationStr) => {
+    if (!durationStr || typeof durationStr !== 'string') return 0;
+    const parts = durationStr.split(':');
+    if (parts.length === 2) {
+      const mins = parseInt(parts[0]) || 0;
+      const secs = parseInt(parts[1]) || 0;
+      return (mins * 60) + secs;
+    }
+    return 0;
+  };
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return "0 Bytes";
@@ -139,7 +157,11 @@ const EpisodeUploadModal = ({
       video.onloadedmetadata = () => {
         URL.revokeObjectURL(video.src);
         const durationInSeconds = Math.floor(video.duration);
-        setDuration(durationInSeconds);
+        setVideoDurationSeconds(durationInSeconds);
+        
+        // Auto-fill duration in MM:SS format
+        const formatted = formatDuration(durationInSeconds);
+        setFormData((prev) => ({ ...prev, duration: formatted }));
       };
       video.src = URL.createObjectURL(file);
       toast.success("Video selected successfully");
@@ -167,7 +189,7 @@ const EpisodeUploadModal = ({
     }
   };
 
-  // 🔥 NEW: Check video processing status
+  // 🔥 Check video processing status
   const checkVideoProcessingStatus = async (videoId, libraryId, apiKey, maxAttempts = 30) => {
     let attempts = 0;
     const checkInterval = 3000; // Check every 3 seconds
@@ -177,7 +199,6 @@ const EpisodeUploadModal = ({
         attempts++;
         
         try {
-          // Check video status from Bunny CDN
           const statusUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`;
           
           const response = await fetch(statusUrl, {
@@ -203,22 +224,16 @@ const EpisodeUploadModal = ({
 
           console.log(`📹 Video Status: ${status}, Progress: ${encodingProgress}%`);
 
-          // Update processing status UI
           if (status === 0 || status === 1) {
-            // 0 = Queued, 1 = Processing
             setProcessingStatus(`Processing video... ${encodingProgress}%`);
-            setUploadProgress(90 + Math.floor(encodingProgress / 10)); // 90-100%
+            setUploadProgress(90 + Math.floor(encodingProgress / 10));
           } else if (status === 2) {
-            // 2 = Encoding Failed
             clearInterval(intervalId);
             reject(new Error("Video encoding failed"));
           } else if (status === 3 || status === 4) {
-            // 3 = Finished, 4 = Resolution Finished
             setProcessingStatus("Video processing complete!");
             setUploadProgress(100);
             clearInterval(intervalId);
-            
-            // Wait a bit for CDN propagation
             setTimeout(() => resolve(data), 2000);
           }
 
@@ -306,8 +321,8 @@ const EpisodeUploadModal = ({
       newErrors.title = "Title is required";
     }
 
-    if (!formData.episodeNumber || formData.episodeNumber < 0) {
-      newErrors.episodeNumber = "Episode number is required";
+    if (!formData.duration?.trim()) {
+      newErrors.duration = "Duration is required";
     }
 
     if (!isEditMode && !videoFile) {
@@ -342,7 +357,7 @@ const EpisodeUploadModal = ({
       if (videoFile && generateUploadUrl) {
         const bunnyData = await getVideoUploadUrls(
           videoFile,
-          formData.title || "Untitled Episode"
+          formData.title || "Untitled Trailer"
         );
         
         if (!bunnyData.videoId) {
@@ -367,7 +382,7 @@ const EpisodeUploadModal = ({
             
             xhr.upload.addEventListener("progress", (event) => {
               if (event.lengthComputable) {
-                const percentComplete = Math.round((event.loaded / event.total) * 60) + 20; // 20-80%
+                const percentComplete = Math.round((event.loaded / event.total) * 60) + 20;
                 setUploadProgress(percentComplete);
                 setUploadStatus(`Uploading video... ${percentComplete - 20}%`);
               }
@@ -410,7 +425,7 @@ const EpisodeUploadModal = ({
             xhr.send(videoFile);
             await uploadPromise;
 
-            // 🔥 Step 3: Wait for video processing to complete
+            // Step 3: Wait for video processing to complete
             setUploadStatus("Video uploaded! Waiting for processing...");
             setProcessingStatus("Processing video...");
             setUploadProgress(85);
@@ -422,7 +437,6 @@ const EpisodeUploadModal = ({
             } catch (processingError) {
               console.warn("⚠️ Processing check timeout:", processingError);
               toast.warning("Video uploaded but still processing. It will be available shortly.");
-              // Continue anyway - video will process in background
             }
 
           } catch (uploadError) {
@@ -480,38 +494,40 @@ const EpisodeUploadModal = ({
         }
       }
 
-      // Step 5: Save episode data
+      // Step 5: Save trailer data as JSON
       const submitData = {
         title: formData.title.trim(),
         description: formData.description?.trim() || "",
-        duration: duration,
+        contentName: formData.contentName?.trim() || "",
+        color: formData.color || "#3b82f6",
+        duration: formData.duration, // MM:SS format
         videoUrl: videoUrl || "",
         videoId: videoId,
         libraryId: libraryId || "",
         thumbnailUrl: thumbnailUrl || "",
-        downloadUrls: downloadUrls,
-        movieId: movieId,
-        seasonId: seasonId,
-        episodeNumber: parseInt(formData.episodeNumber, 10),
+        downloadUrls: downloadUrls || {}, // Always include, even if empty
       };
 
-      setUploadStatus("Saving episode...");
+      console.log("📤 Submitting trailer data:", submitData);
+
+      setUploadStatus("Saving trailer...");
       setUploadProgress(95);
 
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        isEditMode
-          ? `${API_BASE_URL}/video-management/update/${editingData._id || editingData.id}`
-          : `${API_BASE_URL}/video-management/create`,
-        {
-          method: isEditMode ? "PATCH" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(submitData),
-        }
-      );
+      const endpoint = isEditMode
+        ? `${API_BASE_URL}/trailer/update/${editingData._id || editingData.id}`
+        : `${API_BASE_URL}/trailer/create`;
+
+      console.log("📍 Using endpoint:", endpoint);
+
+      const response = await fetch(endpoint, {
+        method: isEditMode ? "PATCH" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(submitData),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -524,8 +540,8 @@ const EpisodeUploadModal = ({
 
       toast.success(
         isEditMode 
-          ? "Episode updated successfully!" 
-          : "Episode created successfully! Video is ready to watch."
+          ? "Trailer updated successfully!" 
+          : "Trailer created successfully! Video is ready to watch."
       );
 
       setUploadingVideo(false);
@@ -546,7 +562,8 @@ const EpisodeUploadModal = ({
   const removeFile = (fileType) => {
     if (fileType === "video") {
       setVideoFile(null);
-      setDuration(0);
+      setVideoDurationSeconds(0);
+      setFormData((prev) => ({ ...prev, duration: "" }));
     } else {
       setThumbnailFile(null);
       if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
@@ -562,7 +579,7 @@ const EpisodeUploadModal = ({
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto bg-[#FFFFFF3B] border-white/10">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-white">
-            {isEditMode ? "Edit Episode" : "Upload New Episode"}
+            {isEditMode ? "Edit Trailer" : "Upload New Trailer"}
           </DialogTitle>
         </DialogHeader>
 
@@ -596,16 +613,16 @@ const EpisodeUploadModal = ({
         )}
 
         <div className="space-y-5">
-          {/* Title and Episode Number */}
+          {/* Title and Duration */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <Label className="block text-sm font-semibold text-white/80 mb-2">
-                Episode Title <span className="text-red-400">*</span>
+                Trailer Title <span className="text-red-400">*</span>
               </Label>
               <Input
                 value={formData.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
-                placeholder="Enter episode title"
+                placeholder="Enter trailer title"
                 disabled={uploadingVideo}
                 className={`w-full px-4 py-3 border-2 border-slate-200/30 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white/5 text-white placeholder:text-white/40 ${
                   errors.title ? "border-red-500" : ""
@@ -621,36 +638,69 @@ const EpisodeUploadModal = ({
 
             <div>
               <Label className="block text-sm font-semibold text-white/80 mb-2">
-                Episode Number <span className="text-red-400">*</span>
+                Duration (MM:SS) <span className="text-red-400">*</span>
               </Label>
               <Input
-                type="number"
-                min="0"
-                value={formData.episodeNumber}
-                onChange={(e) => handleInputChange("episodeNumber", e.target.value)}
-                placeholder="1"
+                value={formData.duration}
+                onChange={(e) => handleInputChange("duration", e.target.value)}
+                placeholder="e.g., 2:30"
                 disabled={uploadingVideo}
                 className={`w-full px-4 py-3 border-2 border-slate-200/30 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white/5 text-white placeholder:text-white/40 ${
-                  errors.episodeNumber ? "border-red-500" : ""
+                  errors.duration ? "border-red-500" : ""
                 }`}
               />
-              {errors.episodeNumber && (
+              {errors.duration && (
                 <p className="text-sm text-red-400 mt-1 flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" />
-                  {errors.episodeNumber}
+                  {errors.duration}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Duration Display */}
-          {duration > 0 && (
-            <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-              <p className="text-sm text-green-300">
-                <strong>Duration:</strong> {formatDuration(duration)} ({duration} seconds)
-              </p>
+          {/* Content Name and Color */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <Label className="block text-sm font-semibold text-white/80 mb-2">
+                Content Name
+              </Label>
+              <Input
+                value={formData.contentName}
+                onChange={(e) => handleInputChange("contentName", e.target.value)}
+                placeholder="Enter content name"
+                disabled={uploadingVideo}
+                className="w-full px-4 py-3 border-2 border-slate-200/30 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white/5 text-white placeholder:text-white/40"
+              />
             </div>
-          )}
+
+            <div>
+              <Label className="block text-sm font-semibold text-white/80 mb-2">
+                Color
+              </Label>
+              <div className="flex gap-3 items-center">
+                <div className="relative">
+                  <Input
+                    type="color"
+                    value={formData.color}
+                    onChange={(e) => handleInputChange("color", e.target.value)}
+                    className="h-12 w-20 border-2 border-slate-200/30 rounded-lg cursor-pointer bg-transparent opacity-0 absolute inset-0 z-10"
+                    disabled={uploadingVideo}
+                  />
+                  <div
+                    className="h-12 w-20 rounded-lg border-2 border-white/30 shadow-inner cursor-pointer transition-all hover:border-white/50"
+                    style={{ backgroundColor: formData.color }}
+                  />
+                </div>
+                <div className="flex-1 px-4 py-3 border-2 border-slate-200/30 rounded-lg bg-white/5 flex items-center gap-3">
+                  <div
+                    className="w-6 h-6 rounded-full border-2 border-white/30 shadow-md flex-shrink-0"
+                    style={{ backgroundColor: formData.color }}
+                  />
+                  <span className="text-white font-medium">{formData.color.toUpperCase()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Description */}
           <div>
@@ -660,7 +710,7 @@ const EpisodeUploadModal = ({
             <Textarea
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Enter episode description..."
+              placeholder="Enter trailer description..."
               rows={3}
               disabled={uploadingVideo}
               className="w-full px-4 py-3 border-2 border-slate-200/30 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white/5 text-white placeholder:text-white/40 resize-none"
@@ -722,11 +772,11 @@ const EpisodeUploadModal = ({
                         onChange={(e) => handleFileChange(e, "video")}
                         accept="video/*"
                         className="hidden"
-                        id="episode-video-upload"
+                        id="trailer-video-upload"
                         disabled={uploadingVideo}
                       />
                       <label
-                        htmlFor="episode-video-upload"
+                        htmlFor="trailer-video-upload"
                         className="inline-block px-6 py-2.5 bg-primary text-white rounded-lg cursor-pointer hover:bg-primary/80 font-medium transition-all"
                       >
                         Choose Video
@@ -753,7 +803,7 @@ const EpisodeUploadModal = ({
                 onChange={(e) => handleFileChange(e, "thumbnail")}
                 accept="image/*"
                 className="hidden"
-                id="episode-thumbnail-upload"
+                id="trailer-thumbnail-upload"
                 disabled={uploadingVideo}
               />
               <div
@@ -771,7 +821,7 @@ const EpisodeUploadModal = ({
               >
                 {thumbnailPreview || thumbnailFile ? (
                   <div className="space-y-3">
-                    <label htmlFor="episode-thumbnail-upload" className="cursor-pointer block">
+                    <label htmlFor="trailer-thumbnail-upload" className="cursor-pointer block">
                       <img
                         src={thumbnailPreview}
                         alt="Thumbnail preview"
@@ -791,7 +841,7 @@ const EpisodeUploadModal = ({
                     )}
                     <div className="flex gap-2 justify-center">
                       <label
-                        htmlFor="episode-thumbnail-upload"
+                        htmlFor="trailer-thumbnail-upload"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-300 rounded-lg cursor-pointer hover:bg-blue-500/30 font-medium transition-all border border-blue-500/30 text-sm"
                       >
                         <Upload className="h-4 w-4" />
@@ -821,7 +871,7 @@ const EpisodeUploadModal = ({
                       JPG, PNG, WEBP (Max 5MB)
                     </p>
                     <label
-                      htmlFor="episode-thumbnail-upload"
+                      htmlFor="trailer-thumbnail-upload"
                       className="inline-block px-6 py-2.5 bg-white/10 text-white rounded-lg cursor-pointer hover:bg-white/20 font-medium transition-all border border-white/20"
                     >
                       Choose Thumbnail
@@ -865,8 +915,8 @@ const EpisodeUploadModal = ({
               {uploadingVideo
                 ? `${uploadProgress < 80 ? 'Uploading' : uploadProgress < 100 ? 'Processing' : 'Saving'}... ${uploadProgress}%`
                 : isEditMode
-                ? "Update Episode"
-                : "Upload Episode"}
+                ? "Update Trailer"
+                : "Upload Trailer"}
             </Button>
           </div>
         </div>
@@ -875,4 +925,4 @@ const EpisodeUploadModal = ({
   );
 };
 
-export default EpisodeUploadModal;
+export default TrailerUploadModal;

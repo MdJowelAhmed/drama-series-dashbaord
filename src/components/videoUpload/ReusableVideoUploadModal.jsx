@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Upload, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { X, Upload, CheckCircle, Loader2, AlertCircle, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
 
 /**
  * ReusableVideoUploadModal - A dynamic video upload modal with proper thumbnail handling
@@ -54,7 +56,9 @@ const ReusableVideoUploadModal = ({
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
+  const [processingStatus, setProcessingStatus] = useState("");
   const [errors, setErrors] = useState({});
+  const [duration, setDuration] = useState(0);
 
   // Ref to prevent double submission (synchronous guard)
   const isSubmittingRef = useRef(false);
@@ -91,7 +95,9 @@ const ReusableVideoUploadModal = ({
       setThumbnailFile(null);
       setUploadProgress(0);
       setUploadStatus("");
+      setProcessingStatus("");
       setErrors({});
+      setDuration(editingData?.duration || 0);
     } else {
       // Reset submitting ref when modal closes
       isSubmittingRef.current = false;
@@ -155,12 +161,13 @@ const ReusableVideoUploadModal = ({
       video.preload = "metadata";
       video.onloadedmetadata = () => {
         URL.revokeObjectURL(video.src);
-        const duration = Math.floor(video.duration);
-        const minutes = Math.floor(duration / 60);
-        const seconds = duration % 60;
-        const formatted = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+        const durationInSeconds = Math.floor(video.duration);
+        setDuration(durationInSeconds);
 
         if (fields.some(f => f.name === "duration")) {
+          const minutes = Math.floor(durationInSeconds / 60);
+          const seconds = durationInSeconds % 60;
+          const formatted = `${minutes}:${seconds.toString().padStart(2, "0")}`;
           setFormData((prev) => ({ ...prev, duration: formatted }));
         }
       };
@@ -191,11 +198,82 @@ const ReusableVideoUploadModal = ({
     }
   };
 
-  // Generate upload URL to get videoId and URLs (no separate upload needed)
+  // 🔥 Check video processing status
+  const checkVideoProcessingStatus = async (videoId, libraryId, apiKey, maxAttempts = 30) => {
+    let attempts = 0;
+    const checkInterval = 3000; // Check every 3 seconds
+
+    return new Promise((resolve, reject) => {
+      const intervalId = setInterval(async () => {
+        attempts++;
+        
+        try {
+          // Check video status from Bunny CDN
+          const statusUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`;
+          
+          const response = await fetch(statusUrl, {
+            method: "GET",
+            headers: {
+              "AccessKey": apiKey,
+              "Accept": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            console.warn(`⚠️ Status check failed (attempt ${attempts}/${maxAttempts})`);
+            if (attempts >= maxAttempts) {
+              clearInterval(intervalId);
+              reject(new Error("Video processing timeout"));
+            }
+            return;
+          }
+
+          const data = await response.json();
+          const status = data.status;
+          const encodingProgress = data.encodeProgress || 0;
+
+          console.log(`📹 Video Status: ${status}, Progress: ${encodingProgress}%`);
+
+          // Update processing status UI
+          if (status === 0 || status === 1) {
+            // 0 = Queued, 1 = Processing
+            setProcessingStatus(`Processing video... ${encodingProgress}%`);
+            setUploadProgress(90 + Math.floor(encodingProgress / 10)); // 90-100%
+          } else if (status === 2) {
+            // 2 = Encoding Failed
+            clearInterval(intervalId);
+            reject(new Error("Video encoding failed"));
+          } else if (status === 3 || status === 4) {
+            // 3 = Finished, 4 = Resolution Finished
+            setProcessingStatus("Video processing complete!");
+            setUploadProgress(100);
+            clearInterval(intervalId);
+            
+            // Wait a bit for CDN propagation
+            setTimeout(() => resolve(data), 2000);
+          }
+
+          if (attempts >= maxAttempts) {
+            clearInterval(intervalId);
+            reject(new Error("Video processing timeout - video may still be processing"));
+          }
+
+        } catch (error) {
+          console.error("Status check error:", error);
+          if (attempts >= maxAttempts) {
+            clearInterval(intervalId);
+            reject(error);
+          }
+        }
+      }, checkInterval);
+    });
+  };
+
+  // Generate upload URL to get videoId and URLs
   const getVideoUploadUrls = async (videoFile, videoTitle) => {
     try {
       setUploadStatus("Generating upload URL...");
-      setUploadProgress(0);
+      setUploadProgress(10);
 
       const result = await generateUploadUrl({
         title: videoTitle,
@@ -203,28 +281,49 @@ const ReusableVideoUploadModal = ({
       }).unwrap();
 
       console.log("🔍 Generate Upload URL Response:", result);
-      console.log("🔍 Response data:", result.data);
 
-      const { videoId, embedUrl, libraryId, id, _id, downloadUrls } = result.data;
+      const videoId = result.data?.videoId || 
+                     result.data?.video_id || 
+                     result.data?.id || 
+                     result.data?._id ||
+                     result?.videoId ||
+                     result?.video_id;
 
-      const downloadUrlsData = downloadUrls || 
-                               result.data?.downloadUrls || 
-                               result.data?.download_urls || 
-                               result?.downloadUrls || 
-                               result?.download_urls || 
-                               {};
-
-      if (Object.keys(downloadUrlsData).length > 0) {
-        console.log("✅ Download URLs found:", downloadUrlsData);
+      if (!videoId) {
+        console.error("❌ VideoId not found in response:", result);
+        throw new Error("Video ID not found in server response. Please try again.");
       }
+
+      const embedUrl = result.data?.embedUrl || 
+                      result.data?.embed_url || 
+                      result.data?.uploadUrl || 
+                      result.data?.upload_url || 
+                      "";
+      const libraryId = result.data?.libraryId || result.data?.library_id || "";
+      const apiKey = result.data?.apiKey || 
+                    result.data?.api_key || 
+                    result.data?.accessKey ||
+                    result.data?.access_key ||
+                    result.data?.libraryApiKey ||
+                    result.data?.library_api_key ||
+                    "";
+      
+      const downloadUrls = result.data?.downloadUrls || 
+                          result.data?.download_urls || 
+                          result?.downloadUrls || 
+                          result?.download_urls || 
+                          {};
+
+      console.log("✅ Extracted videoId:", videoId);
+      console.log("✅ Upload URL:", embedUrl);
 
       return {
         videoId,
         libraryId,
+        apiKey,
         embedUrl,
         videoUrl: embedUrl,
-        dbId: _id || id,
-        downloadUrls: downloadUrlsData,
+        downloadUrls: downloadUrls || {},
       };
     } catch (error) {
       console.error("Generate upload URL error:", error);
@@ -273,166 +372,236 @@ const ReusableVideoUploadModal = ({
       setUploadingVideo(true);
 
       let videoUrl = editingData?.video_url || editingData?.videoUrl;
-      let videoId = editingData?.videoId || editingData?.video_id;
+      let videoId = editingData?.videoId || editingData?.video_id || editingData?.videoId;
       let libraryId = editingData?.libraryId || editingData?.library_id;
+      let apiKey = editingData?.apiKey || editingData?.api_key || "";
       let thumbnailUrl = editingData?.thumbnail_url || editingData?.thumbnailUrl;
       let downloadUrls = editingData?.downloadUrls || editingData?.download_urls || {};
-      let createdDbId = null;
 
-      // Step 1: Generate upload URL to get videoId and URLs (if new video file)
+      // Step 1: Generate upload URL if new video
       if (videoFile && generateUploadUrl) {
         const bunnyData = await getVideoUploadUrls(
           videoFile,
           formData.title || "Untitled"
         );
+        
+        if (!bunnyData.videoId) {
+          toast.error("Failed to get Video ID from server. Please try again.");
+          setUploadingVideo(false);
+          isSubmittingRef.current = false;
+          return;
+        }
+        
         videoUrl = bunnyData.videoUrl;
         videoId = bunnyData.videoId;
         libraryId = bunnyData.libraryId;
-        createdDbId = bunnyData.dbId;
+        apiKey = bunnyData.apiKey || "";
         downloadUrls = bunnyData.downloadUrls || {};
+
+        // Step 2: Upload video to Bunny Stream
+        if (bunnyData.embedUrl) {
+          setUploadStatus("Uploading video to Bunny Stream...");
+          setUploadProgress(20);
+          
+          try {
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener("progress", (event) => {
+              if (event.lengthComputable) {
+                const percentComplete = Math.round((event.loaded / event.total) * 60) + 20; // 20-80%
+                setUploadProgress(percentComplete);
+                setUploadStatus(`Uploading video... ${percentComplete - 20}%`);
+              }
+            });
+
+            const uploadPromise = new Promise((resolve, reject) => {
+              xhr.addEventListener("load", () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  console.log("✅ Video uploaded successfully to Bunny Stream");
+                  toast.success("Video uploaded! Now processing...");
+                  setUploadProgress(80);
+                  resolve();
+                } else {
+                  console.error("❌ Video upload failed:", xhr.status, xhr.statusText);
+                  reject(new Error(`Video upload failed: ${xhr.status} ${xhr.statusText}`));
+                }
+              });
+
+              xhr.addEventListener("error", () => {
+                reject(new Error("Network error during video upload"));
+              });
+            });
+
+            const uploadUrl = bunnyData.embedUrl.includes('/videos/')
+              ? bunnyData.embedUrl
+              : `https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`;
+            
+            xhr.open("PUT", uploadUrl);
+            
+            if (apiKey) {
+              xhr.setRequestHeader("AccessKey", apiKey);
+            } else if (libraryId) {
+              xhr.setRequestHeader("AccessKey", libraryId);
+            } else {
+              toast.error("Missing API Key for video upload");
+              setUploadingVideo(false);
+              isSubmittingRef.current = false;
+              return;
+            }
+
+            xhr.send(videoFile);
+            await uploadPromise;
+
+            // 🔥 Step 3: Wait for video processing to complete
+            setUploadStatus("Video uploaded! Waiting for processing...");
+            setProcessingStatus("Processing video...");
+            setUploadProgress(85);
+
+            try {
+              await checkVideoProcessingStatus(videoId, libraryId, apiKey);
+              console.log("✅ Video processing complete!");
+              toast.success("Video is ready!");
+            } catch (processingError) {
+              console.warn("⚠️ Processing check timeout:", processingError);
+              toast.warning("Video uploaded but still processing. It will be available shortly.");
+              // Continue anyway - video will process in background
+            }
+
+          } catch (uploadError) {
+            console.error("Video upload error:", uploadError);
+            toast.error("Failed to upload video: " + uploadError.message);
+            setUploadingVideo(false);
+            isSubmittingRef.current = false;
+            return;
+          }
+        }
       }
 
-      // Step 2: Prepare FormData with video file, thumbnail, and all data
-      const formDataToSend = new FormData();
-      
-      // Append video file if new file selected
-      if (videoFile) {
-        formDataToSend.append("video", videoFile);
+      if (!videoId) {
+        toast.error("Video ID is required");
+        setUploadingVideo(false);
+        isSubmittingRef.current = false;
+        return;
       }
-      
-      // Append thumbnail if new file selected
-      if (thumbnailFile) {
-        formDataToSend.append("thumbnail", thumbnailFile);
+
+      // Step 4: Upload thumbnail
+      if (thumbnailFile && videoId) {
+        setUploadStatus("Uploading thumbnail...");
+        setUploadProgress(92);
+        try {
+          const thumbnailFormData = new FormData();
+          thumbnailFormData.append("thumbnail", thumbnailFile);
+          
+          const token = localStorage.getItem("token");
+          const thumbnailResponse = await fetch(
+            `${API_BASE_URL}/video-management/${videoId}/thumbnail`,
+            {
+              method: "POST",
+              headers: {
+                ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+              },
+              body: thumbnailFormData,
+            }
+          );
+
+          if (thumbnailResponse.ok) {
+            const thumbnailResult = await thumbnailResponse.json();
+            thumbnailUrl = thumbnailResult.data?.result || 
+                         thumbnailResult.data?.thumbnail_url ||
+                         thumbnailResult.data?.thumbnailUrl ||
+                         thumbnailResult.data?.url ||
+                         thumbnailResult.thumbnailUrl || 
+                         thumbnailResult.thumbnail_url ||
+                         thumbnailResult.url;
+            
+            if (thumbnailUrl) {
+              toast.success("Thumbnail uploaded");
+            }
+          }
+        } catch (error) {
+          console.error("Thumbnail upload error:", error);
+          toast.warning("Thumbnail upload failed, but continuing...");
+        }
       }
-      
-      // Prepare submit data
+
+      // Step 5: Save data as JSON (not FormData)
       const submitData = {
         ...formData,
+        duration: duration || formData.duration || 0,
+        videoUrl: videoUrl || "",
+        videoId: videoId,
+        libraryId: libraryId || "",
+        thumbnailUrl: thumbnailUrl || "",
+        downloadUrls: downloadUrls,
       };
 
-      // Only include video data if we have video information
-      if (videoUrl) {
-        submitData.videoUrl = videoUrl;
-        submitData.video_url = videoUrl;
-      }
-      if (videoId) {
-        submitData.videoId = videoId;
-        submitData.video_id = videoId;
-      }
-      if (libraryId) {
-        submitData.libraryId = libraryId;
-        submitData.library_id = libraryId;
-      }
-      if (downloadUrls && Object.keys(downloadUrls).length > 0) {
-        submitData.downloadUrls = downloadUrls;
-        submitData.download_urls = downloadUrls;
-      }
+      setUploadStatus("Saving...");
+      setUploadProgress(95);
 
-      // Only include thumbnail if we have a valid CDN URL (not blob)
-      if (thumbnailUrl && !thumbnailUrl.startsWith("blob:")) {
-        submitData.thumbnailUrl = thumbnailUrl;
-        submitData.thumbnail_url = thumbnailUrl;
-      }
-
-      // Append all data fields to FormData
-      Object.keys(submitData).forEach((key) => {
-        const value = submitData[key];
-        if (value !== null && value !== undefined) {
-          if (typeof value === 'object') {
-            formDataToSend.append(key, JSON.stringify(value));
-          } else {
-            formDataToSend.append(key, value.toString());
-          }
-        }
-      });
-
-      setUploadStatus("Uploading...");
-
-      // Step 3: Upload everything to create/update endpoint using FormData
       const token = localStorage.getItem("token");
-      const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
       
-      // Determine endpoint based on mode and available mutations
+      // Determine endpoint dynamically from title prop
       let endpoint = "";
-      let method = "POST";
-      
-      if (isEditMode) {
-        const id = editingData._id || editingData.id;
-        // Try to get update endpoint from updateMutation if it exists
-        // Otherwise use default pattern
-        endpoint = `${API_BASE_URL}/trailer/update/${id}`;
-        method = "PATCH";
+      if (title.toLowerCase().includes("ad")) {
+        endpoint = isEditMode
+          ? `${API_BASE_URL}/ad/update/${editingData._id || editingData.id}`
+          : `${API_BASE_URL}/ad/create`;
+      } else if (title.toLowerCase().includes("trailer")) {
+        endpoint = isEditMode
+          ? `${API_BASE_URL}/trailer/update/${editingData._id || editingData.id}`
+          : `${API_BASE_URL}/trailer/create`;
       } else {
-        // Use create endpoint
-        endpoint = `${API_BASE_URL}/trailer/create`;
-        method = "POST";
+        // Default fallback
+        endpoint = isEditMode
+          ? `${API_BASE_URL}/video-management/update/${editingData._id || editingData.id}`
+          : `${API_BASE_URL}/video-management/create`;
       }
-      
-      const response = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(percentComplete);
-            setUploadStatus(`Uploading: ${percentComplete}%`);
-          }
-        });
 
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const result = JSON.parse(xhr.responseText);
-              resolve(result);
-            } catch {
-              resolve({ success: true });
-            }
-          } else {
-            try {
-              const errorResult = JSON.parse(xhr.responseText);
-              reject(new Error(errorResult.message || "Upload failed"));
-            } catch {
-              reject(new Error("Upload failed"));
-            }
-          }
-        });
-
-        xhr.addEventListener("error", () => {
-          reject(new Error("Network error during upload"));
-        });
-
-        xhr.open(method, endpoint);
-        if (token) {
-          xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        }
-        xhr.send(formDataToSend);
+      const response = await fetch(endpoint, {
+        method: isEditMode ? "PATCH" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(submitData),
       });
 
-      console.log("Upload response:", response);
-      setUploadStatus("Upload complete!");
-      setUploadProgress(100);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Operation failed");
+      }
 
-      toast.success(isEditMode ? "Updated successfully!" : "Created successfully!");
+      const result = await response.json();
+      setUploadProgress(100);
+      setUploadStatus("Complete!");
+
+      toast.success(
+        isEditMode 
+          ? "Updated successfully!" 
+          : "Created successfully! Video is ready to watch."
+      );
 
       setUploadingVideo(false);
       setUploadProgress(0);
       setUploadStatus("");
+      setProcessingStatus("");
       isSubmittingRef.current = false;
       onSave?.(submitData);
       onClose();
     } catch (error) {
       setUploadingVideo(false);
       setUploadStatus("");
+      setProcessingStatus("");
       isSubmittingRef.current = false;
       console.error("Upload error:", error);
-      const errorMessage = error?.data?.message || error?.message || "Operation failed";
-      toast.error(errorMessage);
+      toast.error(error?.message || "Operation failed");
     }
   };
 
   const removeFile = (fileType) => {
     if (fileType === "video") {
       setVideoFile(null);
+      setDuration(0);
     } else {
       setThumbnailFile(null);
       if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
@@ -528,16 +697,28 @@ const ReusableVideoUploadModal = ({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Upload Progress */}
+        {/* Upload Progress - Enhanced */}
         {uploadingVideo && (
-          <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl">
             <div className="flex items-center gap-3 mb-3">
-              <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
-              <span className="font-medium text-blue-300">{uploadStatus}</span>
+              {uploadProgress < 100 ? (
+                <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+              ) : (
+                <CheckCircle className="h-5 w-5 text-green-400" />
+              )}
+              <div className="flex-1">
+                <p className="font-medium text-blue-300">{uploadStatus}</p>
+                {processingStatus && (
+                  <p className="text-sm text-blue-400 mt-1 flex items-center gap-2">
+                    <Video className="h-4 w-4 animate-pulse" />
+                    {processingStatus}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="w-full bg-blue-900/50 rounded-full h-2.5">
+            <div className="w-full bg-blue-900/50 rounded-full h-2.5 overflow-hidden">
               <div
-                className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
@@ -761,10 +942,10 @@ const ReusableVideoUploadModal = ({
               className="px-6 py-5 bg-primary hover:bg-primary/80"
             >
               {uploadingVideo
-                ? `Uploading... ${uploadProgress}%`
+                ? `${uploadProgress < 80 ? 'Uploading' : uploadProgress < 100 ? 'Processing' : 'Saving'}... ${uploadProgress}%`
                 : isEditMode
-                  ? "Update"
-                  : "Upload"}
+                ? "Update"
+                : "Upload"}
             </Button>
           </div>
         </div>
