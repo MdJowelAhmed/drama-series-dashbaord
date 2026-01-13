@@ -505,7 +505,7 @@ const TrailerUploadModal = ({
         videoId: videoId,
         libraryId: libraryId || "",
         thumbnailUrl: thumbnailUrl || "",
-        downloadUrls: downloadUrls || {}, // Always include, even if empty
+        downloadUrls: downloadUrls,
       };
 
       console.log("📤 Submitting trailer data:", submitData);
