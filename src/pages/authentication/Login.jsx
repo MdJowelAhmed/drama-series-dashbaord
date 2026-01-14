@@ -8,17 +8,18 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { jwtDecode } from "jwt-decode";
+import { baseUrl } from "@/redux/base-url/baseUrlApi";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate=useNavigate()
+  const navigate = useNavigate();
 
-  const [login, { isLoading, isSuccess, error, data }] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation();
 
-  // Check if user is already logged in with valid SUPER_ADMIN token
+  // Check if user is already logged in with valid token
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -27,50 +28,96 @@ const LoginPage = () => {
         // Check if token is expired
         if (decoded.exp && decoded.exp * 1000 < Date.now()) {
           localStorage.removeItem('token');
+          localStorage.removeItem('userProfile');
           return;
         }
-        // If role is SUPER_ADMIN, redirect to home
-        if (decoded.role === 'SUPER_ADMIN') {
+        // If role is SUPER_ADMIN or ADMIN, redirect to home
+        if (decoded.role === 'SUPER_ADMIN' || decoded.role === 'ADMIN') {
           navigate("/");
         } else {
           // Remove invalid token
           localStorage.removeItem('token');
+          localStorage.removeItem('userProfile');
         }
       } catch (error) {
         // Invalid token, remove it
         localStorage.removeItem('token');
+        localStorage.removeItem('userProfile');
       }
     }
   }, [navigate]);
 
-const onFinish = async () => {
-  try {
-    const response = await login({
-      email,
-      password,
-    }).unwrap();
-    
-    if (response.success) {
-      const token = response.data.accessToken;
-      localStorage.setItem("token", token);
-      
-      // Decode token to check role
-      const decoded = jwtDecode(token);
-      
-      // Check if role is SUPER_ADMIN
-      if (decoded.role === "SUPER_ADMIN") {
-        navigate("/");
-      } else {
-        // If role is not SUPER_ADMIN, show error and remove token
-        localStorage.removeItem("token");
-        toast.error("Access denied. Only SUPER_ADMIN can access this application.");
+  // Function to fetch user profile for ADMIN users
+  const fetchUserProfile = async (token) => {
+    try {
+      const response = await fetch(`${baseUrl}/users/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        return data.data;
       }
+      return null;
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+      return null;
     }
-  } catch (err) {
-    console.error("Login failed:", err);
-    toast.error(err.data?.message || "Login failed. Please try again.");
-  }
-};
+  };
+
+  const onFinish = async () => {
+    try {
+      setLoading(true);
+      const response = await login({
+        email,
+        password,
+      }).unwrap();
+
+      if (response.success) {
+        const token = response.data.accessToken;
+        localStorage.setItem("token", token);
+
+        // Decode token to check role
+        const decoded = jwtDecode(token);
+
+        // Check if role is SUPER_ADMIN or ADMIN
+        if (decoded.role === "SUPER_ADMIN") {
+          // Store role info for sidebar
+          localStorage.setItem("userProfile", JSON.stringify({ role: "SUPER_ADMIN" }));
+          navigate("/");
+        } else if (decoded.role === "ADMIN") {
+          // Fetch profile to get pageAccess
+          const profileData = await fetchUserProfile(token);
+          if (profileData) {
+            // Store profile data with pageAccess
+            localStorage.setItem("userProfile", JSON.stringify({
+              role: "ADMIN",
+              pageAccess: profileData.pageAccess || [],
+              name: profileData.name,
+              email: profileData.email,
+            }));
+            navigate("/");
+          } else {
+            localStorage.removeItem("token");
+            toast.error("Failed to fetch user profile. Please try again.");
+          }
+        } else {
+          // If role is neither SUPER_ADMIN nor ADMIN, show error and remove token
+          localStorage.removeItem("token");
+          localStorage.removeItem("userProfile");
+          toast.error("Access denied. Only ADMIN or SUPER_ADMIN can access this application.");
+        }
+      }
+    } catch (err) {
+      console.error("Login failed:", err);
+      toast.error(err.data?.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 const handleForgotPassword = () => {

@@ -10,6 +10,7 @@ import {
   Square,
   Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
 import {
  
   useCreateBackUpAdminMutation,
@@ -43,11 +45,13 @@ export default function ControllerManagement() {
   const { data: adminData, isLoading } = useGetAllBackUpAdminQuery();
   const [createAdmin, { isLoading: isCreating }] = useCreateBackUpAdminMutation();
   const [updateAdmin, { isLoading: isUpdating }] = useUpdateBackUpAdminMutation();
-  const [deleteAdmin] = useDeleteBackUpAdminMutation();
+  const [deleteAdmin, { isLoading: isDeleting }] = useDeleteBackUpAdminMutation();
 
   const controllers = adminData?.data || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -137,13 +141,20 @@ console.log("payload", payload);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this controller?")) {
-      try {
-        await deleteAdmin(id).unwrap();
-      } catch (error) {
-        alert(error?.data?.message || "Failed to delete controller");
-      }
+  const handleDeleteClick = (controller) => {
+    setItemToDelete(controller);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await deleteAdmin(itemToDelete._id).unwrap();
+      toast.success("Controller deleted successfully");
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to delete controller");
     }
   };
 
@@ -259,7 +270,7 @@ console.log("payload", payload);
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(controller._id)}
+                          onClick={() => handleDeleteClick(controller)}
                           className="h-8 w-8 text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -391,6 +402,16 @@ console.log("payload", payload);
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <DeleteConfirmationModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          onConfirm={handleDelete}
+          isLoading={isDeleting}
+          itemName={itemToDelete?.name}
+          title="Delete Controller"
+          description={`Are you sure you want to delete "${itemToDelete?.name}"? This action cannot be undone.`}
+        />
       </div>
     </div>
   );

@@ -8,16 +8,7 @@ import {
   useDeletePackageMutation,
 } from "@/redux/feature/packageApi";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
 
 // Duration options that match the API's expected enum values
 const DURATION_OPTIONS = [
@@ -694,30 +685,14 @@ export default function SubscriptionPackagesManagement() {
         )}
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Are you sure you want to delete this subscription package?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setPackageToDelete(null)}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeletePackage}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={isDeleting}
-              >
-                {isDeleting ? "Deleting..." : "Yes, Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <DeleteConfirmationModal
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDeletePackage}
+          isLoading={isDeleting}
+          title="Delete Subscription Package"
+          description="Are you sure you want to delete this subscription package? This action cannot be undone."
+        />
       </div>
     </div>
   );
