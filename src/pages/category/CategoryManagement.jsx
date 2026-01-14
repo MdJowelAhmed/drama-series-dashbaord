@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import DeleteConfirmationModal from '@/components/share/DeleteConfirmationModal';
 import {
   useDeleteCategoryMutation,
   useGetAllCategoryQuery,
@@ -25,11 +26,13 @@ import {
 
 export default function CategoryManager() {
   const { data: categoryData, isLoading, isError } = useGetAllCategoryQuery();
-  const [deleteCategory] = useDeleteCategoryMutation();
+  const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
   const [createCategory] = useCreateCategoryMutation();
   const [updateCategory] = useUpdateCategoryMutation();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '' });
 
@@ -68,9 +71,17 @@ export default function CategoryManager() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDeleteClick = (category) => {
+    setItemToDelete(category);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
     try {
-      await deleteCategory(id).unwrap();
+      await deleteCategory(itemToDelete._id).unwrap();
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
     } catch (error) {
       console.error('Failed to delete category:', error);
     }
@@ -127,7 +138,7 @@ export default function CategoryManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDelete(category._id)}
+                    onClick={() => handleDeleteClick(category)}
                     className="h-8 w-8 text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="w-6 h-6" />
@@ -183,6 +194,16 @@ export default function CategoryManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+        itemName={itemToDelete?.name}
+        title="Delete Category"
+        description={`Are you sure you want to delete the category "${itemToDelete?.name}"? This action cannot be undone.`}
+      />
     </div>
   );
 }
