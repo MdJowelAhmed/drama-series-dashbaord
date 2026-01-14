@@ -10,6 +10,7 @@ import {
   Square,
   Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,10 +150,11 @@ console.log("payload", payload);
     if (!itemToDelete) return;
     try {
       await deleteAdmin(itemToDelete._id).unwrap();
+      toast.success("Controller deleted successfully");
       setDeleteModalOpen(false);
       setItemToDelete(null);
     } catch (error) {
-      alert(error?.data?.message || "Failed to delete controller");
+      toast.error(error?.data?.message || "Failed to delete controller");
     }
   };
 

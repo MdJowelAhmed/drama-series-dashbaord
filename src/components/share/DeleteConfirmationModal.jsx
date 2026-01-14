@@ -33,18 +33,18 @@ const DeleteConfirmationModal = ({
             <div className="p-2 rounded-full bg-red-100">
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
-            <AlertDialogTitle className="text-2xl font-bold text-slate-900">
+            <AlertDialogTitle className="text-2xl font-bold text-white">
               {title}
             </AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="text-slate-600 text-base pt-2">
+          <AlertDialogDescription className="text-white text-base pt-2">
             {description || defaultDescription}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="gap-2 mt-6">
           <AlertDialogCancel
             disabled={isLoading}
-            className="bg-white hover:bg-slate-50"
+            className=" border-none"
           >
             {cancelButtonText}
           </AlertDialogCancel>

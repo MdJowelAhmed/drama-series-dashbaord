@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Search, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import DeleteConfirmationModal from '@/components/share/DeleteConfirmationModal';
 import { useDeleteUserMutation, useGetAllUserQuery, useToggleUserStatusMutation } from '@/redux/feature/usersApi';
 // import { 
 //   useGetAllUserQuery, 
@@ -36,16 +38,17 @@ const UserManagement = () => {
   }
 
   const { data: usersData, isLoading, error } = useGetAllUserQuery(queryParams);
-  const [deleteUser] = useDeleteUserMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const [toggleUserStatus] = useToggleUserStatusMutation();
 
   const handleDelete = async () => {
     try {
       await deleteUser(selectedUser._id).unwrap();
+      toast.success("User deleted successfully");
       setDeleteDialogOpen(false);
       setSelectedUser(null);
     } catch (err) {
-      console.error('Failed to delete user:', err);
+      toast.error(err?.data?.message || "Failed to delete user");
     }
   };
 
@@ -360,33 +363,15 @@ const UserManagement = () => {
           </div>
         )}
 
-        {deleteDialogOpen && selectedUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Are you sure?</h2>
-              <p className="text-slate-600 mb-6">
-                This will permanently delete {selectedUser.name}'s account. This action cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setDeleteDialogOpen(false);
-                    setSelectedUser(null);
-                  }}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DeleteConfirmationModal
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDelete}
+          isLoading={isDeleting}
+          itemName={selectedUser?.name}
+          title="Delete User"
+          description={`This will permanently delete ${selectedUser?.name}'s account. This action cannot be undone.`}
+        />
       </div>
     </div>
   );

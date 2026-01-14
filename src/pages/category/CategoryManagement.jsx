@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,10 +81,11 @@ export default function CategoryManager() {
     if (!itemToDelete) return;
     try {
       await deleteCategory(itemToDelete._id).unwrap();
+      toast.success("Category deleted successfully");
       setDeleteModalOpen(false);
       setItemToDelete(null);
     } catch (error) {
-      console.error('Failed to delete category:', error);
+      toast.error(error?.data?.message || "Failed to delete category");
     }
   };
 

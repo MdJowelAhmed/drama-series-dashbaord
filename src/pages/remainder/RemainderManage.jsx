@@ -12,16 +12,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   useCreateRemainderMutation,
   useUpdateRemainderMutation,
   useDeleteRemainderMutation,
@@ -29,6 +19,7 @@ import {
   useToggleRemainderStatusMutation,
 } from "@/redux/feature/RemainderApi";
 import { toast } from "sonner";
+import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
 import { getImageUrl } from "@/components/share/imageUrl";
 import ReminderFormModal from "./components/ReminderFormModal";
 import ReminderDetailsModal from "./components/ReminderDetailsModal";
@@ -415,31 +406,15 @@ const RemainderManage = () => {
         )}
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Are you sure you want to delete this reminder?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete "{reminderToDelete?.name}". This action
-                cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setReminderToDelete(null)}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteReminder}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={isDeleting}
-              >
-                {isDeleting ? "Deleting..." : "Yes, Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <DeleteConfirmationModal
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDeleteReminder}
+          isLoading={isDeleting}
+          itemName={reminderToDelete?.name}
+          title="Delete Reminder"
+          description={`Are you sure you want to delete "${reminderToDelete?.name}"? This action cannot be undone.`}
+        />
       </div>
     </div>
   );

@@ -15,17 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
 
 // API Hooks
 import { useGetDramaByIdQuery } from "@/redux/feature/dramaManagement/dramaManagementApi";
@@ -569,34 +560,19 @@ const DramaDetails = () => {
         )}
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete "{itemToDelete?.name}".{" "}
-                {itemToDelete?.type === "season" &&
-                  "All episodes in this season will also be deleted. "}
-                This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeletingSeason || isDeletingVideo}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={isDeletingSeason || isDeletingVideo}
-              >
-                {(isDeletingSeason || isDeletingVideo) && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <DeleteConfirmationModal
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDelete}
+          isLoading={isDeletingSeason || isDeletingVideo}
+          itemName={itemToDelete?.name}
+          title="Delete Confirmation"
+          description={`This will permanently delete "${itemToDelete?.name}". ${
+            itemToDelete?.type === "season"
+              ? "All episodes in this season will also be deleted. "
+              : ""
+          }This action cannot be undone.`}
+        />
       </div>
     </div>
   );

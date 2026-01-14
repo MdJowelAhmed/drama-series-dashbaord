@@ -1,52 +1,16 @@
 import { useState } from 'react';
 import { Plus, Trash2, Edit2, Play, Clock, Eye, Film, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import TrailerUploadModal from '@/components/modals/TrailerUploadModal';
 import VideoDetailsModal from '@/components/videoUpload/VideoDetailsModal';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import DeleteConfirmationModal from '@/components/share/DeleteConfirmationModal';
 import {
   useVideoUrlGenerateMutation,
   useDeleteTrailerMutation,
   useGetAllTrailerQuery,
 } from '@/redux/feature/trailerApi';
 import { getVideoAndThumbnail } from '@/components/share/imageUrl';
-
-const DeleteDialog = ({ item, onClose, onConfirm, isLoading }) => {
-  return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-white">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold mb-3 text-slate-900">Are you sure?</DialogTitle>
-        </DialogHeader>
-        <p className="text-slate-600 mb-6">
-          This will permanently delete "<span className="font-semibold text-slate-900">{item?.name}</span>". This action cannot be undone.
-        </p>
-        <DialogFooter>
-          <Button 
-            onClick={onClose} 
-            disabled={isLoading}
-            variant="outline"
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={onConfirm} 
-            disabled={isLoading}
-            className="px-6 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 hover:shadow-lg hover:scale-105 font-medium transition-all disabled:opacity-50"
-          >
-            {isLoading ? 'Deleting...' : 'Delete'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 const TrailerManagement = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -82,10 +46,11 @@ const TrailerManagement = () => {
   const handleDeleteTrailer = async () => {
     try {
       await deleteTrailer(itemToDelete.id).unwrap();
+      toast.success("Trailer deleted successfully");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
     } catch (error) {
-      console.error('Delete failed:', error);
+      toast.error(error?.data?.message || "Failed to delete trailer");
     }
   };
 
@@ -222,14 +187,15 @@ const TrailerManagement = () => {
         )}
 
         {/* Delete Confirmation Dialog */}
-        {deleteDialogOpen && (
-          <DeleteDialog
-            item={itemToDelete}
-            onClose={() => setDeleteDialogOpen(false)}
-            onConfirm={handleDeleteTrailer}
-            isLoading={isDeleting}
-          />
-        )}
+        <DeleteConfirmationModal
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDeleteTrailer}
+          isLoading={isDeleting}
+          itemName={itemToDelete?.name}
+          title="Delete Trailer"
+          description={`Are you sure you want to delete "${itemToDelete?.name}"? This action cannot be undone.`}
+        />
       </div>
     </div>
   );
