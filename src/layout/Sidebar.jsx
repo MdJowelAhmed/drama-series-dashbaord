@@ -12,8 +12,22 @@ import {
   X,
   Bell,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+
+// Map sidebar paths to pageAccess values
+const PAGE_ACCESS_MAP = {
+  "/": "dashboard",
+  "/movies": "movie",
+  "/trailers": "trailer",
+  "/ad-management": "ad",
+  "/reports": "report",
+  "/categories": "category",
+  "/subscriptions": "subscription",
+  "/remainder": "remainder",
+  "/users": "user",
+  "/controllers": "controller", // Only SUPER_ADMIN should see this
+};
 
 const Sidebar = ({ onNavigate, showCloseButton = false }) => {
   const location = useLocation();
@@ -22,6 +36,7 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("userProfile");
     navigate("/login");
   };
 
@@ -30,7 +45,18 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
       onNavigate();
     }
   };
-  const navItems = [
+
+  // Get user profile from localStorage
+  const userProfile = useMemo(() => {
+    try {
+      const stored = localStorage.getItem("userProfile");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const allNavItems = [
     {
       name: "Overview",
       path: "/",
@@ -80,9 +106,36 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
       name: "Controller Management",
       path: "/controllers",
       icon: Users,
+      superAdminOnly: true, // Only SUPER_ADMIN can see this
     },
-
   ];
+
+  // Filter nav items based on user role and pageAccess
+  const navItems = useMemo(() => {
+    if (!userProfile) return allNavItems;
+
+    // SUPER_ADMIN can see all pages
+    if (userProfile.role === "SUPER_ADMIN") {
+      return allNavItems;
+    }
+
+    // ADMIN users - filter based on pageAccess
+    if (userProfile.role === "ADMIN" && userProfile.pageAccess) {
+      const accessiblePages = userProfile.pageAccess
+        .filter((page) => page.access)
+        .map((page) => page.name);
+
+      return allNavItems.filter((item) => {
+        // Hide superAdminOnly items from ADMIN users
+        if (item.superAdminOnly) return false;
+
+        const pageKey = PAGE_ACCESS_MAP[item.path];
+        return accessiblePages.includes(pageKey);
+      });
+    }
+
+    return allNavItems;
+  }, [userProfile]);
 
   const settingsItems = [
     { name: "Profile", path: "/settings/profile" },
