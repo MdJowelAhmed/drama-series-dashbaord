@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const VerifyOtpPage = () => {
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
 
@@ -44,7 +44,7 @@ const VerifyOtpPage = () => {
   const handleSubmit = async () => {
     const otpValue = otp.join("");
 
-    if (otpValue.length !== 4) {
+    if (otpValue.length !== 6) {
       toast.error("Please enter complete OTP");
       return;
     }
@@ -71,7 +71,7 @@ const VerifyOtpPage = () => {
 
       if (response.success) {
         toast.success(response.message || "OTP resent successfully");
-        setOtp(["", "", "", ""]);
+        setOtp(["", "", "", "", "", ""]);
       }
     } catch (error) {
       toast.error(error?.data?.message || "Failed to resend OTP");
@@ -107,7 +107,7 @@ const VerifyOtpPage = () => {
 
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || otp.join("").length !== 4}
+              disabled={isLoading || otp.join("").length !== 6}
               className="w-full text-white font-semibold rounded-md disabled:opacity-50"
             >
               {isLoading ? "Verifying..." : "Verify OTP"}
