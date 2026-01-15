@@ -140,8 +140,8 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
   const settingsItems = [
     { name: "Profile", path: "/settings/profile" },
     { name: "Change Password", path: "/settings/password" },
-    { name: "User Agreement", path: "/settings/agreement" },
-    { name: "Privacy Policy", path: "/settings/privacy" },
+    { name: "User Agreement", path: "/settings/agreement", superAdminOnly: true },
+    { name: "Privacy Policy", path: "/settings/privacy", superAdminOnly: true },
   ];
 
 

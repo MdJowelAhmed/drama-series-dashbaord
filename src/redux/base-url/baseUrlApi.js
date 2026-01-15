@@ -14,6 +14,7 @@ export const api = createApi({
       if (endpoint !== "resetPassword") {
         const token =
           localStorage.getItem("token") 
+          headers.set("token", `${token}`);
     
         if (token) {
           headers.set("authorization", `Bearer ${token}`);
