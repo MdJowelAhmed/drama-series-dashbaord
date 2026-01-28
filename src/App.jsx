@@ -23,6 +23,7 @@ import VerifyOtpPage from './pages/authentication/VerifyOtp';
 import ResetPasswordPage from './pages/authentication/ResetPassword';
 import PrivateRoute from './components/PrivateRoute';
 import RemainderManage from './pages/remainder/RemainderManage';
+import LoginImage from './pages/loginImage/LoginImage';
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
         <Route path="subscriptions" element={<SubscriptionPage />} />
         <Route path="reports" element={<DramaManagementDashboard />} />
         <Route path="remainder" element={<RemainderManage />} />
+        <Route path="login-image" element={<LoginImage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="controllers" element={<ControllerManagement />} />
         <Route path="settings/profile" element={<ProfilePage />} />

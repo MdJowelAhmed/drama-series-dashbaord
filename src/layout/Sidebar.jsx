@@ -11,6 +11,7 @@ import {
   LogOut,
   X,
   Bell,
+  Image,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,11 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
       name: "Remainder Management",
       path: "/remainder",
       icon: Bell,
+    },
+    {
+      name: "Login Image",
+      path: "/login-image",
+      icon: Image,
     },
     {
       name: "User Management",
