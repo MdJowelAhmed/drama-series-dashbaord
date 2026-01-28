@@ -37,14 +37,14 @@ const authSlice = api.injectEndpoints({
 
     resetPassword: builder.mutation({
       query: (data) => {
-        // const resetToken = localStorage.getItem("resetToken");
+        const resetToken = localStorage.getItem("resetToken");
     
         return {
           url: "/auth/reset-password",
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            resetToken: localStorage.getItem("resetToken"),
+            "Accept": "application/json",
+            token: `${resetToken}`
           },
           body: data,
         };

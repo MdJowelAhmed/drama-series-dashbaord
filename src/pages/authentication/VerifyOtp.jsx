@@ -30,7 +30,7 @@ const VerifyOtpPage = () => {
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
 
-    if (value && index < 3) {
+    if (value && index < 5) {
       document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
@@ -39,6 +39,36 @@ const VerifyOtpPage = () => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       document.getElementById(`otp-${index - 1}`)?.focus();
     }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").trim();
+    
+    // Only process if pasted data contains only digits
+    if (!/^\d+$/.test(pastedData)) {
+      toast.error("Please paste only numbers");
+      return;
+    }
+
+    // Take first 6 digits if more are pasted
+    const digits = pastedData.slice(0, 6).split("");
+    const newOtp = [...otp];
+    
+    // Fill the OTP array with pasted digits
+    digits.forEach((digit, idx) => {
+      if (idx < 6) {
+        newOtp[idx] = digit;
+      }
+    });
+
+    setOtp(newOtp);
+
+    // Focus on the next empty field or the last field
+    const nextEmptyIndex = digits.length < 6 ? digits.length : 5;
+    setTimeout(() => {
+      document.getElementById(`otp-${nextEmptyIndex}`)?.focus();
+    }, 0);
   };
 
   const handleSubmit = async () => {

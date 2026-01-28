@@ -39,7 +39,7 @@ const ForgotPasswordPage = () => {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Reset Password</h1>
             <p className="text-gray-300 text-sm">
-              Enter your email to receive a reset link
+              Enter your email to receive a OTP
             </p>
           </div>
 
@@ -67,7 +67,7 @@ const ForgotPasswordPage = () => {
               disabled={isLoading}
               className="w-full py-6 text-white font-semibold rounded-lg"
             >
-              {isLoading ? "Sending..." : "Send Reset Link"}
+              {isLoading ? "Sending..." : "Send OTP"}
             </Button>
           </div>
         </div>

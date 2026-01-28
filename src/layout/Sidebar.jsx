@@ -11,6 +11,7 @@ import {
   LogOut,
   X,
   Bell,
+  Image,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -98,6 +99,11 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
       icon: Bell,
     },
     {
+      name: "Login Image",
+      path: "/login-image",
+      icon: Image,
+    },
+    {
       name: "User Management",
       path: "/users",
       icon: Users,
@@ -140,8 +146,8 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
   const settingsItems = [
     { name: "Profile", path: "/settings/profile" },
     { name: "Change Password", path: "/settings/password" },
-    { name: "User Agreement", path: "/settings/agreement" },
-    { name: "Privacy Policy", path: "/settings/privacy" },
+    { name: "User Agreement", path: "/settings/agreement", superAdminOnly: true },
+    { name: "Privacy Policy", path: "/settings/privacy", superAdminOnly: true },
   ];
 
 
