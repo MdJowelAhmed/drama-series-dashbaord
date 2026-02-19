@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil, X, Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   useGetAllPackageQuery,
@@ -10,6 +10,23 @@ import {
 import { toast } from "sonner";
 import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Duration options that match the API's expected enum values
 const DURATION_OPTIONS = [
@@ -394,296 +411,282 @@ export default function SubscriptionPackagesManagement() {
         </div>
 
         {/* Add/Edit Subscription Package Modal */}
-        {showPackageModal && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70"
-            onClick={() => {
-              setShowPackageModal(false);
-              resetForm();
-            }}
-          >
-            <div
-              className="w-full max-w-3xl overflow-hidden bg-[#FFFFFF3B]  backdrop-blur-lg rounded-lg shadow-lg max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-2xl font-bold text-red-500">
-                  {editingPackageId !== null
-                    ? "Edit Package"
-                    : "Add New Package"}
-                </h2>
-                <Button
-                  onClick={() => {
-                    setShowPackageModal(false);
-                    resetForm();
-                  }}
-                  className="hover:bg-gray-100 rounded p-1"
-                >
-                  <X size={24} />
-                </Button>
+        <Dialog open={showPackageModal} onOpenChange={(open) => {
+          setShowPackageModal(open);
+          if (!open) resetForm();
+        }}>
+          <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto bg-[#FFFFFF3B]  backdrop-blur-lg">
+            <DialogHeader>
+              <DialogTitle>
+                {editingPackageId !== null ? "Edit Package" : "Add New Package"}
+              </DialogTitle>
+              <DialogDescription>
+                {editingPackageId !== null
+                  ? "Update package information and settings."
+                  : "Create a new subscription package for your users."}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">
+                    Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={currentPackage.name}
+                    onChange={handlePackageChange}
+                    placeholder="e.g. Basic Plan, Premium Plan"
+                  />
+                </div>
+
+                {/* Duration */}
+                <div className="space-y-2">
+                  <Label htmlFor="duration">
+                    Duration <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={currentPackage.duration}
+                    onValueChange={(value) =>
+                      setCurrentPackage((prev) => ({ ...prev, duration: value }))
+                    }
+                  >
+                    <SelectTrigger className="py-[22px] border border-white/50 ">
+                      <SelectValue placeholder="Select duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DURATION_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Price */}
+                <div className="space-y-2">
+                  <Label htmlFor="price">
+                    Original Price <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    value={currentPackage.price}
+                    onChange={handlePackageChange}
+                    placeholder="e.g. 60.99"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                {/* Payment Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="paymentType">
+                    Payment Type <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={currentPackage.paymentType}
+                    onValueChange={(value) =>
+                      setCurrentPackage((prev) => ({ ...prev, paymentType: value }))
+                    }
+                   
+                  >
+                    <SelectTrigger className="py-[22px] border border-white/50 ">
+                      <SelectValue placeholder="Select payment type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {/* Modal Body */}
-              <div className="p-4">
-                <form className="space-y-4">
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* Title */}
-                    <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-700">
-                        Name <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        type="text"
-                        name="name"
-                        value={currentPackage.name}
-                        onChange={handlePackageChange}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        placeholder="e.g. Basic Plan, Premium Plan"
-                        required
-                      />
-                    </div>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Discount Section */}
+                <div className="space-y-2 p-4 border rounded-md border-white/50">
+                  <Label htmlFor="discountPercentage">
+                    Discount Percentage (%)
+                  </Label>
+                  <Input
+                    id="discountPercentage"
+                    name="discountPercentage"
+                    type="number"
+                    value={currentPackage.discountPercentage}
+                    onChange={(e) => {
+                      const value = e.target.value;
 
-                    {/* Duration */}
-                    <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-700">
-                        Duration <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="duration"
-                        value={currentPackage.duration}
-                        onChange={handlePackageChange}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        required
-                      >
-                        {DURATION_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      if (!/^\d*$/.test(value)) {
+                        toast.error(
+                          "Fractional numbers (decimals) are not allowed."
+                        );
+                        return;
+                      }
 
-                    {/* Price */}
-                    <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-700">
-                        Original Price <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        name="price"
-                        value={currentPackage.price}
-                        onChange={handlePackageChange}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        placeholder="e.g. 60.99"
-                        min="0"
-                        step="0.01"
-                        required
-                      />
-                    </div>
-                    {/* Payment Type */}
-                    <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-700">
-                        Payment Type <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="paymentType"
-                        value={currentPackage.paymentType}
-                        onChange={handlePackageChange}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        required
-                      >
-                        {PAYMENT_TYPE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                      if (value.length > 2) {
+                        toast.error(
+                          "Discount can only be up to 2 digits (1-99)."
+                        );
+                        return;
+                      }
 
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* Discount Section */}
-                    <div className="p-4 border rounded-md bg-gray-50">
-                      {/* Discount Percentage */}
-                      <div className="">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
-                          Discount Percentage (%)
-                        </label>
-                        <input
-                          type="number"
-                          name="discountPercentage"
-                          value={currentPackage.discountPercentage}
-                          onChange={(e) => {
-                            const value = e.target.value;
-
-                            if (!/^\d*$/.test(value)) {
-                              toast.error(
-                                "Fractional numbers (decimals) are not allowed."
-                              );
-                              return;
-                            }
-
-                            if (value.length > 2) {
-                              toast.error(
-                                "Discount can only be up to 2 digits (1-99)."
-                              );
-                              return;
-                            }
-
-                            setCurrentPackage((prev) => ({
-                              ...prev,
-                              discountPercentage: value,
-                            }));
-                          }}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                          placeholder="e.g. 20 (for 20% off)"
-                          min="0"
-                          max="99"
-                        />
-
-                        <p className="mt-1 text-xs text-gray-500">
-                          Enter a discount percentage from 1-99. The final price
-                          will be calculated automatically.
-                        </p>
-                      </div>
-                    </div>
-                    {/* Description */}
-                    <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-700">
-                        Description <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        name="description"
-                        value={currentPackage.description}
-                        onChange={handlePackageChange}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        rows="4"
-                        placeholder="Enter package description"
-                        required
-                      ></textarea>
-                    </div>
-                  </div>
-
-                  {/* App Configuration - Always shown */}
-                  <div className="p-4 border rounded-md bg-blue-50">
-                      <h3 className="mb-3 text-lg font-semibold text-gray-700">
-                        App Configuration
-                      </h3>
-
-                      {/* Platform Selection */}
-                      <div className="mb-4">
-                        <label className="block mb-2 text-sm font-medium text-gray-700">
-                          Platform <span className="text-red-500">*</span>
-                        </label>
-                        <div className="flex items-center gap-6">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="isGoogle"
-                              checked={currentPackage.isGoogle === true}
-                              onChange={() =>
-                                setCurrentPackage((prev) => ({
-                                  ...prev,
-                                  isGoogle: true,
-                                }))
-                              }
-                              className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
-                            />
-                            <span className="text-sm text-gray-700">
-                              Google Play
-                            </span>
-                          </label>
-
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="isGoogle"
-                              checked={currentPackage.isGoogle === false}
-                              onChange={() =>
-                                setCurrentPackage((prev) => ({
-                                  ...prev,
-                                  isGoogle: false,
-                                }))
-                              }
-                              className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
-                            />
-                            <span className="text-sm text-gray-700">
-                              Apple App Store
-                            </span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Product ID Input */}
-                      <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
-                          {currentPackage.isGoogle
-                            ? "Google Product ID"
-                            : "Apple Product ID"}{" "}
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={
-                            currentPackage.isGoogle
-                              ? currentPackage.googleProductId
-                              : currentPackage.appleProductId
-                          }
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setCurrentPackage((prev) => ({
-                              ...prev,
-                              // Update the field corresponding to the current platform selection
-                              [prev.isGoogle
-                                ? "googleProductId"
-                                : "appleProductId"]: val,
-                            }));
-                          }}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                          placeholder={
-                            currentPackage.isGoogle
-                              ? "e.g. basic_03"
-                              : "e.g. com.app.basic"
-                          }
-                          required
-                        />
-                        <p className="mt-1 text-xs text-gray-500">
-                          This ID must match the product ID configured in{" "}
-                          {currentPackage.isGoogle
-                            ? "Google Play Console"
-                            : "App Store Connect"}
-                          .
-                        </p>
-                      </div>
-                    </div>
-                </form>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="p-4">
-                <button
-                  className={`w-full py-3 font-medium text-white rounded-md transition-colors ${
-                    !isFormValid() || isCreating || isUpdating
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-red-500 hover:bg-red-600"
-                  }`}
-                  onClick={savePackage}
-                  disabled={!isFormValid() || isCreating || isUpdating}
-                >
-                  {isCreating || isUpdating ? "Saving..." : "Save"}
-                </button>
-
-                {/* Validation message */}
-                {!isFormValid() && (
-                  <p className="mt-2 text-sm text-red-600 text-center">
-                    Please fill in all required fields with valid values
+                      setCurrentPackage((prev) => ({
+                        ...prev,
+                        discountPercentage: value,
+                      }));
+                    }}
+                    placeholder="e.g. 20 (for 20% off)"
+                    min="0"
+                    max="99"
+                  />
+                  <p className="text-xs ">
+                    Enter a discount percentage from 1-99. The final price will
+                    be calculated automatically.
                   </p>
-                )}
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description">
+                    Description <span className="text-red-500">*</span>
+                  </Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={currentPackage.description}
+                    onChange={handlePackageChange}
+                    placeholder="Enter package description"
+                    rows={5}
+                  />
+                </div>
+              </div>
+
+              {/* App Configuration */}
+              <div className="space-y-4 p-4 border rounded-md border-white/50">
+                <h3 className="text-lg font-semibold ">
+                  App Configuration
+                </h3>
+
+                {/* Platform Selection */}
+                <div className="space-y-2">
+                  <Label>
+                    Platform <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isGoogle"
+                        checked={currentPackage.isGoogle === true}
+                        onChange={() =>
+                          setCurrentPackage((prev) => ({
+                            ...prev,
+                            isGoogle: true,
+                          }))
+                        }
+                        className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                      />
+                      <span className="text-sm ">
+                        Google Play
+                      </span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isGoogle"
+                        checked={currentPackage.isGoogle === false}
+                        onChange={() =>
+                          setCurrentPackage((prev) => ({
+                            ...prev,
+                            isGoogle: false,
+                          }))
+                        }
+                        className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                      />
+                      <span className="text-sm ">
+                        Apple App Store
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Product ID Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="productId">
+                    {currentPackage.isGoogle
+                      ? "Google Product ID"
+                      : "Apple Product ID"}{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="productId"
+                    type="text"
+                    value={
+                      currentPackage.isGoogle
+                        ? currentPackage.googleProductId
+                        : currentPackage.appleProductId
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCurrentPackage((prev) => ({
+                        ...prev,
+                        [prev.isGoogle ? "googleProductId" : "appleProductId"]:
+                          val,
+                      }));
+                    }}
+                    placeholder={
+                      currentPackage.isGoogle
+                        ? "e.g. basic_03"
+                        : "e.g. com.app.basic"
+                    }
+                  />
+                  <p className="text-xs ">
+                    This ID must match the product ID configured in{" "}
+                    {currentPackage.isGoogle
+                      ? "Google Play Console"
+                      : "App Store Connect"}
+                    .
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowPackageModal(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={savePackage}
+                disabled={!isFormValid() || isCreating || isUpdating}
+              >
+                {isCreating || isUpdating ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+
+            {/* Validation message */}
+            {!isFormValid() && (
+              <p className="text-sm text-red-600 text-center">
+                Please fill in all required fields with valid values
+              </p>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Delete Confirmation Dialog */}
         <DeleteConfirmationModal
