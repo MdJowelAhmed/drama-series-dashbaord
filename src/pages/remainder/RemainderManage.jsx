@@ -88,7 +88,7 @@ const RemainderManage = () => {
       // data: JSON string with {name, description, reminderTime}
       const submitData = new FormData();
 
-      // Add thumbnail if present
+      // Add thumbnail if a new file is selected
       if (formData.thumbnail) {
         submitData.append("thumbnail", formData.thumbnail);
       }
@@ -99,6 +99,11 @@ const RemainderManage = () => {
         description: formData.description,
         reminderTime: new Date(formData.reminderTime).toISOString(),
       };
+
+      // If editing and no new thumbnail selected, preserve existing thumbnail
+      if (editingId && !formData.thumbnail && formData.existingThumbnail) {
+        dataObject.thumbnail = formData.existingThumbnail;
+      }
 
       submitData.append("data", JSON.stringify(dataObject));
 

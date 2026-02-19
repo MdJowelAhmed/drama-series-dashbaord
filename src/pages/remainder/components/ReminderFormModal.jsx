@@ -40,6 +40,7 @@ const ReminderFormModal = ({
           thumbnailPreview: editingReminder.thumbnail
             ? getImageUrl(editingReminder.thumbnail)
             : null,
+          existingThumbnail: editingReminder.thumbnail || null, // Store existing thumbnail path
         });
       } else {
         setFormData(initialFormState);
@@ -104,6 +105,7 @@ const ReminderFormModal = ({
       ...prev,
       thumbnail: null,
       thumbnailPreview: null,
+      existingThumbnail: null, // Clear existing thumbnail when removed
     }));
   };
 
