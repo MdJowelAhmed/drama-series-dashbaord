@@ -9,6 +9,7 @@ import {
 } from "@/redux/feature/packageApi";
 import { toast } from "sonner";
 import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
+import { Input } from "@/components/ui/input";
 
 // Duration options that match the API's expected enum values
 const DURATION_OPTIONS = [
@@ -395,14 +396,14 @@ export default function SubscriptionPackagesManagement() {
         {/* Add/Edit Subscription Package Modal */}
         {showPackageModal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70"
             onClick={() => {
               setShowPackageModal(false);
               resetForm();
             }}
           >
             <div
-              className="w-full max-w-3xl overflow-hidden bg-white rounded-lg shadow-lg max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-3xl overflow-hidden bg-[#FFFFFF3B]  backdrop-blur-lg rounded-lg shadow-lg max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
@@ -412,7 +413,7 @@ export default function SubscriptionPackagesManagement() {
                     ? "Edit Package"
                     : "Add New Package"}
                 </h2>
-                <button
+                <Button
                   onClick={() => {
                     setShowPackageModal(false);
                     resetForm();
@@ -420,7 +421,7 @@ export default function SubscriptionPackagesManagement() {
                   className="hover:bg-gray-100 rounded p-1"
                 >
                   <X size={24} />
-                </button>
+                </Button>
               </div>
 
               {/* Modal Body */}
@@ -432,7 +433,7 @@ export default function SubscriptionPackagesManagement() {
                       <label className="block mb-1 text-sm font-medium text-gray-700">
                         Name <span className="text-red-500">*</span>
                       </label>
-                      <input
+                      <Input
                         type="text"
                         name="name"
                         value={currentPackage.name}

@@ -82,7 +82,7 @@ const SubscriptionModal = ({ open, onOpenChange, editingSubscription = null, onS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md ">
         <DialogHeader>
           <DialogTitle>
             {editingSubscription ? 'Edit Subscription Plan' : 'Create New Plan'}
