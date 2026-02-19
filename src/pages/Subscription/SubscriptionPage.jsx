@@ -309,7 +309,7 @@ export default function SubscriptionPackagesManagement() {
         {/* Add Button */}
         <div className="flex items-center justify-end mb-6">
           <Button
-            className="flex items-center gap-2 px-4 py-2 text-white bg-red-500 hover:bg-red-600 rounded-md"
+            className="flex items-center gap-2 px-4 py-6 text-white"
             onClick={() => openPackageModal()}
           >
             <Plus size={18} />
