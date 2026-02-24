@@ -114,7 +114,7 @@ const VideoDetailsModal = ({ video, onClose }) => {
             )}
 
             {/* Technical Details */}
-            <div className="bg-slate-50 rounded-xl p-4">
+            {/* <div className="bg-slate-50 rounded-xl p-4">
               <h4 className="text-lg font-bold text-slate-900 mb-3">Technical Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 {video.videoId && (
@@ -142,7 +142,7 @@ const VideoDetailsModal = ({ video, onClose }) => {
                   </div>
                 )}
               </div>
-            </div>
+            </div> */}
 
             {/* Timestamps */}
             <div className="flex items-center gap-3 text-slate-600 pt-2 border-t border-slate-200">
