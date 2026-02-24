@@ -535,43 +535,93 @@ const ReusableVideoUploadModal = ({
         downloadUrls: downloadUrls,
       };
 
+      // Debug: Log submitData to verify title is included
+      console.log("Submitting data:", submitData);
+      console.log("Form data:", formData);
+      console.log("Title field:", formData.title);
+
       setUploadStatus("Saving...");
       setUploadProgress(95);
 
       const token = localStorage.getItem("token");
       
-      // Determine endpoint dynamically from title prop
-      let endpoint = "";
+      // Use RTK Query mutations if provided, otherwise fallback to fetch
+      let result;
+      
       if (title.toLowerCase().includes("ad")) {
-        endpoint = isEditMode
-          ? `${API_BASE_URL}/ad/update/${editingData._id || editingData.id}`
-          : `${API_BASE_URL}/ad/create`;
+        // Use RTK Query mutations for Ad
+        if (isEditMode && updateMutation) {
+          result = await updateMutation({
+            id: editingData._id || editingData.id,
+            updatedData: submitData,
+          }).unwrap();
+        } else if (createMutation) {
+          result = await createMutation(submitData).unwrap();
+        } else {
+          // Fallback to fetch if mutations not provided
+          const endpoint = isEditMode
+            ? `${API_BASE_URL}/ad-management/update/${editingData._id || editingData.id}`
+            : `${API_BASE_URL}/ad-management/create`;
+          
+          const response = await fetch(endpoint, {
+            method: isEditMode ? "PATCH" : "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(submitData),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Operation failed");
+          }
+
+          result = await response.json();
+        }
       } else if (title.toLowerCase().includes("trailer")) {
-        endpoint = isEditMode
+        // Trailer endpoints
+        const endpoint = isEditMode
           ? `${API_BASE_URL}/trailer/update/${editingData._id || editingData.id}`
           : `${API_BASE_URL}/trailer/create`;
+        
+        const response = await fetch(endpoint, {
+          method: isEditMode ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(submitData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Operation failed");
+        }
+
+        result = await response.json();
       } else {
         // Default fallback
-        endpoint = isEditMode
+        const endpoint = isEditMode
           ? `${API_BASE_URL}/video-management/update/${editingData._id || editingData.id}`
           : `${API_BASE_URL}/video-management/create`;
+        
+        const response = await fetch(endpoint, {
+          method: isEditMode ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(submitData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Operation failed");
+        }
+
+        result = await response.json();
       }
-
-      const response = await fetch(endpoint, {
-        method: isEditMode ? "PATCH" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(submitData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Operation failed");
-      }
-
-      const result = await response.json();
       setUploadProgress(100);
       setUploadStatus("Complete!");
 
