@@ -152,12 +152,12 @@ const VideoDetailsModal = ({ video, onClose }) => {
                 )}
                 
                 {/* Views */}
-                {video.views !== undefined && (
+                {/* {video.views !== undefined && (
                   <span className="flex items-center gap-1">
                     <Eye className="h-4 w-4" />
                     {video.views} views
                   </span>
-                )}
+                )} */}
                 
                 {/* Type Badge */}
                 {video.type && (
@@ -170,22 +170,25 @@ const VideoDetailsModal = ({ video, onClose }) => {
                 {video.color && (
                   <div className="flex items-center gap-2">
                     <div 
-                      className="w-4 h-4 rounded-full border border-white/30" 
+                      className="px-3 w-full rounded-full border border-white/30" 
                       style={{ backgroundColor: video.color }} 
-                    />
-                    <span className="text-white/50">{video.color}</span>
+
+                    >
+                      {video.contentName}
+                    </div>
+                      
                   </div>
                 )}
               </div>
             </div>
 
             {/* Content Name */}
-            {video.contentName && (
+            {/* {video.contentName && (
               <div className="bg-white/5 rounded-lg p-4 border border-white/10">
                 <h5 className="font-semibold text-white/80 mb-1 text-sm uppercase tracking-wide">Content Name</h5>
                 <p className="text-white/90">{video.contentName}</p>
               </div>
-            )}
+            )} */}
 
             {/* Description */}
             {(video.description || video.content) && (
@@ -233,7 +236,7 @@ const VideoDetailsModal = ({ video, onClose }) => {
             )}
 
             {/* Video Info (for debugging/admin) */}
-            {hasVideoData && (
+            {/* {hasVideoData && (
               <div className="bg-white/5 rounded-lg p-4 border border-white/10">
                 <h5 className="font-semibold text-white/80 mb-2 text-sm uppercase tracking-wide">Video Info</h5>
                 <div className="text-white/50 text-sm space-y-1">
@@ -241,7 +244,7 @@ const VideoDetailsModal = ({ video, onClose }) => {
                   <p>Library ID: {videoData.libraryId}</p>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Date Info */}
             <div className="flex items-center gap-2 text-sm text-white/50 pt-2 border-t border-white/10">
