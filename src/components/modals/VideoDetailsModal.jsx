@@ -30,7 +30,7 @@ const VideoDetailsModal = ({ video, onClose }) => {
 
         <div className="p-6 space-y-6">
           {/* Video Player */}
-          <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl aspect-video">
+          <div className="relative bg-black rounded-2xl overflow-hidden shadow-md aspect-video">
             {isEmbedUrl ? (
               <iframe
                 src={video.videoUrl}
@@ -70,12 +70,12 @@ const VideoDetailsModal = ({ video, onClose }) => {
                   e.target.style.display = "none";
                 }}
               />
-              <div>
+              {/* <div>
                 <p className="text-sm text-slate-500">Thumbnail</p>
                 <p className="text-xs text-slate-400 truncate max-w-xs">
                   {video.thumbnailUrl || video.thumbnail_url}
                 </p>
-              </div>
+              </div> */}
             </div>
           )}
 
