@@ -20,7 +20,6 @@ const adApi = api.injectEndpoints({
           body: videoUrl,
         };
       },
-      invalidatesTags: ["Ad"],
     }),
     updateAd: builder.mutation({
       query: ({ id, updatedData }) => {
@@ -42,13 +41,17 @@ const adApi = api.injectEndpoints({
       invalidatesTags: ["Ad"],
     }),
     getAllAd: builder.query({
-      query: () => {
-        return {
-          url: "/ad-management",
-          method: "GET",
-        };
-      },
-      providesTags: ["Ad"],
+      query: () => ({
+        url: "/ad-management",
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result?.data
+          ? [
+              ...result.data.map(({ id }) => ({ type: "Ad", id })),
+              { type: "Ad", id: "LIST" },
+            ]
+          : [{ type: "Ad", id: "LIST" }],
     }),
   
   }),

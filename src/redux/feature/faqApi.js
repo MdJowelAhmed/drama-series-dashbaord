@@ -8,6 +8,7 @@ const faqApi = api.injectEndpoints({
         method: "POST",
         body: faq,
       }),
+      invalidatesTags: ["Faq"],
     }),
     getAllFaq: builder.query({
       query: () => ({
@@ -17,10 +18,10 @@ const faqApi = api.injectEndpoints({
       providesTags: ["Faq"],
     }),
     updateFaq: builder.mutation({
-      query: (faq) => ({
-        url: "/faq",
-        method: "PUT",
-        body: faq,
+      query: ({ id, updatedData }) => ({
+        url: `/faq/${id}`,
+        method: "PATCH",
+        body: updatedData,
       }),
       invalidatesTags: ["Faq"],
     }),

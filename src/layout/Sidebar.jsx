@@ -12,6 +12,7 @@ import {
   X,
   Bell,
   Image,
+  HelpCircle,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,11 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
       name: "Subscription Package",
       path: "/subscriptions",
       icon: CreditCard,
+    },
+    {
+      name: "FAQ Management",
+      path: "/faq",
+      icon: HelpCircle,
     },
     {
       name: "Remainder Management",

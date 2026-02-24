@@ -9,6 +9,8 @@ import {
   CheckSquare,
   Square,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -53,6 +55,7 @@ export default function ControllerManagement() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -63,6 +66,7 @@ export default function ControllerManagement() {
 
   const openCreateModal = () => {
     setEditingId(null);
+    setShowPassword(false);
     setFormData({
       name: "",
       email: "",
@@ -75,6 +79,7 @@ export default function ControllerManagement() {
 
   const openEditModal = (controller) => {
     setEditingId(controller._id);
+    setShowPassword(false);
     const pageAccessArray = controller.pageAccess
       .filter((page) => page.access)
       .map((page) => page.name);
@@ -337,21 +342,33 @@ console.log("payload", payload);
                     onChange={handleChange}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">
-                    Password {editingId && "(Leave blank to keep current)"}
-                  </Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder={
-                      editingId ? "Enter new password" : "Enter password"
-                    }
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
-                </div>
+                {!editingId && (
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus:outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="space-y-3">
                 <Label>Page Access Permissions</Label>

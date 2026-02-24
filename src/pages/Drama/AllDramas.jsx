@@ -260,9 +260,9 @@ const AllDramas = () => {
                       )}
                     </div>
                   )}
-                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 justify-between">
+                  <div className="flex items-center gap-4 mt-2 text-xs text- justify-between">
                     <span>Views: {drama.totalViews || 0}</span>
-                    <span>Rating: {drama.rating || 0}</span>
+                    {/* <span>Rating: {drama.rating || 0}</span> */}
                   </div>
                 </CardContent>
                 <div className="flex justify-between gap-10 px-4 pb-2">

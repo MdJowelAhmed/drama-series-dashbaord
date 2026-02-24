@@ -106,14 +106,16 @@ const TrailerManagement = () => {
                     className="w-full h-full object-cover" 
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Play className="h-12 w-12 text-white" />
+                    {/* <Play className="h-12 w-12 text-white" /> */}
                   </div>
-                  <div className="absolute top-3 right-3 bg-white/30 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-semibold flex items-center gap-1">
+                  {/* <div className="absolute top-3 right-3 bg-white/30 backdrop-blur-sm px-3 py-1 rounded-full text-white text-xs font-semibold flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {formatDuration(trailer.duration)}
-                  </div>
+                  </div> */}
                   {trailer.color && (
-                    <div className="absolute top-3 left-3 w-6 h-6 rounded-full shadow-lg" style={{ backgroundColor: trailer.color }} />
+                    <div className="absolute top-3 left-3 px-2 rounded-full shadow-lg" style={{ backgroundColor: trailer.color }} >
+                      {trailer.contentName}
+                    </div>
                   )}
                 </div>
                 
@@ -128,8 +130,8 @@ const TrailerManagement = () => {
                   
                   <div className="flex items-center justify-between text-sm text-accent">
                     <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      {trailer.views || "0"}
+                    <Clock className="h-3 w-3" />
+                    {formatDuration(trailer.duration)}
                     </span>
                     <span>{trailer.created_at || trailer.createdAt ? new Date(trailer.created_at || trailer.createdAt).toLocaleDateString() : ''}</span>
                   </div>
