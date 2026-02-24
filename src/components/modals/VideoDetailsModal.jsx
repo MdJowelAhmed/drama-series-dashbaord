@@ -1,4 +1,5 @@
 import { X, Clock, Calendar, Eye, Play, Film } from "lucide-react";
+import { useState } from "react";
 import { getVideoAndThumbnail } from "@/components/share/imageUrl";
 import {
   Dialog,
@@ -8,6 +9,8 @@ import {
 } from "@/components/ui/dialog";
 
 const VideoDetailsModal = ({ video, onClose }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+
   // Helper to format duration
   const formatDuration = (seconds) => {
     if (!seconds) return "0:00";
@@ -18,6 +21,11 @@ const VideoDetailsModal = ({ video, onClose }) => {
 
   // Check if videoUrl is an embed URL (iframe) or direct video URL
   const isEmbedUrl = video.videoUrl?.includes("iframe.mediadelivery.net/embed");
+  const thumbnailSrc =
+    video.thumbnailUrl || video.thumbnail_url
+      ? getVideoAndThumbnail(video.thumbnailUrl || video.thumbnail_url)
+      : null;
+  const hasVideo = Boolean(video.videoUrl || video.video_url);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -29,26 +37,50 @@ const VideoDetailsModal = ({ video, onClose }) => {
         </DialogHeader>
 
         <div className="p-6 space-y-6">
-          {/* Video Player */}
+          {/* Video Player with Thumbnail Overlay */}
           <div className="relative bg-black rounded-2xl overflow-hidden shadow-md aspect-video">
-            {isEmbedUrl ? (
-              <iframe
-                src={video.videoUrl}
-                className="w-full h-full"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title={video.title}
-              />
-            ) : video.videoUrl ? (
-              <video
-                controls
-                className="w-full h-full"
-                poster={getVideoAndThumbnail(video.thumbnailUrl || video.thumbnail_url)}
+            {!isPlaying && thumbnailSrc ? (
+              <button
+                type="button"
+                onClick={() => setIsPlaying(true)}
+                className="group relative w-full h-full"
               >
-                <source src={video.videoUrl || video.video_url} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+                <img
+                  src={thumbnailSrc}
+                  alt={`${video.title} thumbnail`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/80 group-hover:bg-white shadow-lg">
+                    <Play className="h-8 w-8 text-slate-900" />
+                  </div>
+                </div>
+              </button>
+            ) : hasVideo ? (
+              isEmbedUrl ? (
+                <iframe
+                  src={video.videoUrl}
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={video.title}
+                />
+              ) : (
+                <video
+                  controls
+                  className="w-full h-full"
+                  poster={thumbnailSrc || undefined}
+                  autoPlay
+                >
+                  <source src={video.videoUrl || video.video_url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              )
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-slate-900">
                 <div className="text-center">
@@ -58,26 +90,6 @@ const VideoDetailsModal = ({ video, onClose }) => {
               </div>
             )}
           </div>
-
-          {/* Thumbnail Preview */}
-          {(video.thumbnailUrl || video.thumbnail_url) && (
-            <div className="flex items-center gap-4">
-              <img
-                src={getVideoAndThumbnail(video.thumbnailUrl || video.thumbnail_url)}
-                alt={`${video.title} thumbnail`}
-                className="w-32 h-20 object-cover rounded-lg shadow-md"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                }}
-              />
-              {/* <div>
-                <p className="text-sm text-slate-500">Thumbnail</p>
-                <p className="text-xs text-slate-400 truncate max-w-xs">
-                  {video.thumbnailUrl || video.thumbnail_url}
-                </p>
-              </div> */}
-            </div>
-          )}
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
