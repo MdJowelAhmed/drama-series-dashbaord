@@ -35,6 +35,7 @@ export const api = createApi({
     "DramaVideo",
     "Package",
     "Remainder",
+    "Dashboard",
   ],
   endpoints: () => ({}),
 });
