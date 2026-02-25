@@ -4,21 +4,21 @@ const dashboardApi = api.injectEndpoints({
     endpoints: (builder) => ({
         userGrowthData: builder.query({
             query: () => ({
-                url: "/dashboard",
+                url: "/dashboard/user-growth",
                 method: "GET",
             }),
             providesTags: ["Dashboard"],
         }),
         topWatchData: builder.query({
             query: () => ({
-                url: "/top-watch-dramas",
+                url: "/dashboard/top-watched",
                 method: "GET",
             }),
             providesTags: ["Dashboard"],
         }),
         dashboardStats: builder.query({
             query: () => ({
-                url: "/dashboard-stats",
+                url: "/dashboard/overview",
                 method: "GET",
             }),
             providesTags: ["Dashboard"],
