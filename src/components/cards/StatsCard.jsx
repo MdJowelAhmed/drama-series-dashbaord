@@ -9,14 +9,14 @@ const StatsCard = ({ title, value, icon: Icon, iconBgColor, iconColor, trend }) 
           <div>
             <p className="text-sm font-medium text-accent">{title}</p>
             <h3 className="text-3xl text-accent font-bold mt-2">{value}</h3>
-            {trend && (
+            {/* {trend && (
               <p className={cn(
                 "text-sm mt-2",
                 trend > 0 ? "text-accent" : "text-red-600"
               )}>
                 {trend > 0 ? '+' : ''}{trend}% from last month
               </p>
-            )}
+            )} */}
           </div>
           <div className={cn(
             "h-12 w-12 rounded-lg flex items-center justify-center",
