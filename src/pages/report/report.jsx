@@ -5,6 +5,7 @@ import {
   BarChart,
   Legend,
   ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -332,6 +333,17 @@ const DramaManagementDashboard = () => {
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: "#fff", fontSize: 12 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
+                        borderRadius: "8px",
+                        color: "#fff",
+                      }}
+                      labelStyle={{ color: "#fff", fontWeight: "bold" }}
+                      itemStyle={{ color: "#fff" }}
+                      cursor={{ fill: "rgba(255, 255, 255, 0.1)" }}
                     />
                     <Legend />
 
