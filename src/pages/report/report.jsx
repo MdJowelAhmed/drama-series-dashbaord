@@ -10,30 +10,21 @@ import {
 } from "recharts";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
+import { useReportAnalyticsQuery } from "@/redux/base-url/dashboardApi";
 
-const dramaProductionData = [
-  { month: "Jan", audience: 45, subscription: 60, view: 25 },
-  { month: "Feb", audience: 55, subscription: 70, view: 30 },
-  { month: "Mar", audience: 40, subscription: 55, view: 35 },
-  { month: "Apr", audience: 60, subscription: 75, view: 40 },
-  { month: "May", audience: 50, subscription: 65, view: 45 },
-  { month: "Jun", audience: 35, subscription: 50, view: 30 },
-  { month: "Jul", audience: 70, subscription: 85, view: 50 },
-  { month: "Aug", audience: 65, subscription: 80, view: 55 },
-  { month: "Sep", audience: 75, subscription: 90, view: 60 },
-  { month: "Oct", audience: 80, subscription: 95, view: 65 },
-  { month: "Nov", audience: 55, subscription: 70, view: 40 },
-  { month: "Dec", audience: 40, subscription: 60, view: 35 },
-];
-
-const monthOptions = [...new Set(dramaProductionData.map((d) => d.month))];
-const categoryOptions = ["All", "audience", "subscription", "view"];
-
-const maxValues = {
-  audience: Math.max(...dramaProductionData.map((d) => d.audience)),
-  subscription: Math.max(...dramaProductionData.map((d) => d.subscription)),
-  view: Math.max(...dramaProductionData.map((d) => d.view)),
+// Generate year options: past 3 years, current year, future 1 year
+const getYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let i = -3; i <= 1; i++) {
+    years.push(currentYear + i);
+  }
+  return years;
 };
+
+const yearOptions = getYearOptions();
+const categoryOptions = ["All", "audience", "subscription", "view"];
+const monthOptions = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const Custom3DBarWithWatermark = ({
   x = 0,
@@ -43,10 +34,12 @@ const Custom3DBarWithWatermark = ({
   fill = "#000",
   dataKey,
   payload,
+  maxValues,
 }) => {
   const depth = 10;
-  const maxValue = maxValues[dataKey];
-  const scale = maxValue / payload[dataKey];
+  const maxValue = maxValues?.[dataKey] || 1;
+  const currentValue = payload[dataKey] || 0;
+  const scale = maxValue > 0 && currentValue > 0 ? maxValue / currentValue : 1;
   const watermarkHeight = height * scale;
   const watermarkY = y - (watermarkHeight - height);
 
@@ -128,18 +121,33 @@ const StatsCard = ({ value, text }) => (
 );
 
 const DramaManagementDashboard = () => {
-  const [fromMonth, setFromMonth] = useState(monthOptions[0]);
-  const [toMonth, setToMonth] = useState(monthOptions[monthOptions.length - 1]);
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const filteredData = useMemo(() => {
-    return dramaProductionData.filter((d) => {
-      const monthIndex = monthOptions.indexOf(d.month);
-      const fromIndex = monthOptions.indexOf(fromMonth);
-      const toIndex = monthOptions.indexOf(toMonth);
-      return monthIndex >= fromIndex && monthIndex <= toIndex;
-    });
-  }, [fromMonth, toMonth]);
+  // Fetch data from API
+  const { data: reportData, isLoading, isError } = useReportAnalyticsQuery([
+    { name: "year", value: selectedYear.toString() },
+  ]);
+
+  // Extract data from API response
+  const dramaProductionData = reportData?.data?.productionPipeline || [];
+  const statistics = reportData?.data?.statistics || {};
+
+  // Calculate max values for watermark effect
+  const maxValues = useMemo(() => {
+    if (!dramaProductionData || dramaProductionData.length === 0) {
+      return { audience: 1, subscription: 1, view: 1 };
+    }
+    return {
+      audience: Math.max(...dramaProductionData.map((d) => d.audience || 0), 1),
+      subscription: Math.max(...dramaProductionData.map((d) => d.subscription || 0), 1),
+      view: Math.max(...dramaProductionData.map((d) => d.view || 0), 1),
+    };
+  }, [dramaProductionData]);
+
+  // Use data directly - category filtering is handled by conditional Bar rendering
+  const filteredData = dramaProductionData;
 
   const exportToPDF = () => {
     const doc = new jsPDF();
@@ -150,7 +158,7 @@ const DramaManagementDashboard = () => {
     
     // Add filter info
     doc.setFontSize(11);
-    doc.text(`Period: ${fromMonth} - ${toMonth}`, 14, 30);
+    doc.text(`Year: ${selectedYear}`, 14, 30);
     doc.text(`Category: ${selectedCategory}`, 14, 37);
     
     // Add table headers
@@ -185,13 +193,14 @@ const DramaManagementDashboard = () => {
     doc.text("Production Statistics", 14, yPos);
     yPos += 10;
     doc.setFontSize(10);
-    doc.text("Active Productions: 24 (18% increase)", 14, yPos);
+    const activeMovie = statistics?.activeMovie || {};
+    const totalTrailer = statistics?.totalTrailer || {};
+    const totalView = statistics?.totalView || {};
+    doc.text(`Active Movie: ${activeMovie.total || 0} (${activeMovie.growth || "0%"})`, 14, yPos);
     yPos += 7;
-    doc.text("Cast Members: 156 (22% increase)", 14, yPos);
+    doc.text(`Total Trailer: ${totalTrailer.total || 0} (${totalTrailer.growth || "0%"})`, 14, yPos);
     yPos += 7;
-    doc.text("Completed Shows: 8 (5% decrease)", 14, yPos);
-    yPos += 7;
-    doc.text("Attendance Rate: 94.5% (8% increase)", 14, yPos);
+    doc.text(`Total View: ${totalView.total || 0} (${totalView.growth || "0%"})`, 14, yPos);
     
     doc.save("drama-production-report.pdf");
   };
@@ -200,17 +209,19 @@ const DramaManagementDashboard = () => {
     // Prepare data for Excel
     const excelData = filteredData.map((row) => ({
       Month: row.month,
-      audience: row.audience,
-      subscription: row.subscription,
-      view: row.view,
+      audience: row.audience || 0,
+      subscription: row.subscription || 0,
+      view: row.view || 0,
     }));
     
     // Add statistics as separate sheet data
+    const activeMovie = statistics?.activeMovie || {};
+    const totalTrailer = statistics?.totalTrailer || {};
+    const totalView = statistics?.totalView || {};
     const statsData = [
-      { Metric: "Active Productions", Value: 24, Change: "↑18%" },
-      { Metric: "Cast Members", Value: 156, Change: "↑22%" },
-      { Metric: "Completed Shows", Value: 8, Change: "↓5%" },
-      { Metric: "Attendance Rate", Value: "94.5%", Change: "↑8%" },
+      { Metric: "Active Movie", Value: activeMovie.total || 0, Change: activeMovie.growth || "0%" },
+      { Metric: "Total Trailer", Value: totalTrailer.total || 0, Change: totalTrailer.growth || "0%" },
+      { Metric: "Total View", Value: totalView.total || 0, Change: totalView.growth || "0%" },
     ];
     
     // Create workbook
@@ -257,30 +268,15 @@ const DramaManagementDashboard = () => {
             
             <div className="flex gap-4 flex-wrap items-center">
               <div className="flex items-center gap-2">
-                <label className="font-semibold text-white">From:</label>
+                <label className="font-semibold text-white">Year:</label>
                 <select
-                  value={fromMonth}
-                  onChange={(e) => setFromMonth(e.target.value)}
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
                 >
-                  {monthOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="font-semibold text-white">To:</label>
-                <select
-                  value={toMonth}
-                  onChange={(e) => setToMonth(e.target.value)}
-                  className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
-                >
-                  {monthOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
                     </option>
                   ))}
                 </select>
@@ -311,70 +307,83 @@ const DramaManagementDashboard = () => {
               </h4>
               <div className="border-b-2 border-white/30 mb-4" />
             </div>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={filteredData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#fff", fontSize: 12 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#fff", fontSize: 12 }}
-                  />
-                  <Legend />
+            {isLoading ? (
+              <div className="h-80 flex items-center justify-center">
+                <div className="text-white">Loading...</div>
+              </div>
+            ) : isError ? (
+              <div className="h-80 flex items-center justify-center">
+                <div className="text-red-500">Error loading data</div>
+              </div>
+            ) : (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={filteredData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <XAxis
+                      dataKey="month"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#fff", fontSize: 12 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#fff", fontSize: 12 }}
+                    />
+                    <Legend />
 
-                  {(selectedCategory === "All" ||
-                    selectedCategory === "audience") && (
-                    <Bar
-                      dataKey="audience"
-                      fill="#CA8A04"
-                      name="audience"
-                      shape={(props) => (
-                        <Custom3DBarWithWatermark
-                          {...props}
-                          dataKey="audience"
-                        />
-                      )}
-                    />
-                  )}
-                  {(selectedCategory === "All" ||
-                    selectedCategory === "subscription") && (
-                    <Bar
-                      dataKey="subscription"
-                      fill="#3b82f6"
-                      name="subscription"
-                      shape={(props) => (
-                        <Custom3DBarWithWatermark
-                          {...props}
-                          dataKey="subscription"
-                        />
-                      )}
-                    />
-                  )}
-                  {(selectedCategory === "All" ||
-                    selectedCategory === "view") && (
-                    <Bar
-                      dataKey="view"
-                      fill="#10b981"
-                      name="view"
-                      shape={(props) => (
-                        <Custom3DBarWithWatermark
-                          {...props}
-                          dataKey="view"
-                        />
-                      )}
-                    />
-                  )}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                    {(selectedCategory === "All" ||
+                      selectedCategory === "audience") && (
+                      <Bar
+                        dataKey="audience"
+                        fill="#CA8A04"
+                        name="audience"
+                        shape={(props) => (
+                          <Custom3DBarWithWatermark
+                            {...props}
+                            dataKey="audience"
+                            maxValues={maxValues}
+                          />
+                        )}
+                      />
+                    )}
+                    {(selectedCategory === "All" ||
+                      selectedCategory === "subscription") && (
+                      <Bar
+                        dataKey="subscription"
+                        fill="#3b82f6"
+                        name="subscription"
+                        shape={(props) => (
+                          <Custom3DBarWithWatermark
+                            {...props}
+                            dataKey="subscription"
+                            maxValues={maxValues}
+                          />
+                        )}
+                      />
+                    )}
+                    {(selectedCategory === "All" ||
+                      selectedCategory === "view") && (
+                      <Bar
+                        dataKey="view"
+                        fill="#10b981"
+                        name="view"
+                        shape={(props) => (
+                          <Custom3DBarWithWatermark
+                            {...props}
+                            dataKey="view"
+                            maxValues={maxValues}
+                          />
+                        )}
+                      />
+                    )}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </Card>
 
           {/* Metrics Cards */}
@@ -382,32 +391,60 @@ const DramaManagementDashboard = () => {
             <h4 className="text-lg text-white font-semibold mb-3">
               Production Statistics
             </h4>
-            <div className="grid grid-cols-4 gap-4">
-              <MetricsCards
-                value="24"
-                label="Active Movie"
-                icons={<ChevronUp className="w-4 h-4 text-green-500" />}
-                percentage="18"
-              />
-              {/* <MetricsCards
-                value="156"
-                label="Cast Members"
-                icons={<ChevronUp className="w-4 h-4 text-green-500" />}
-                percentage="22"
-              /> */}
-              <MetricsCards
-                value="8"
-                label="Total Trailer"
-                icons={<ChevronDown className="w-4 h-4 text-red-500" />}
-                percentage="5"
-              />
-              <MetricsCards
-                value="94.5%"
-                label="Total View"
-                icons={<ChevronUp className="w-4 h-4 text-green-500" />}
-                percentage="8"
-              />
-            </div>
+            {isLoading ? (
+              <div className="text-white">Loading statistics...</div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                <MetricsCards
+                  value={statistics?.activeMovie?.total?.toString() || "0"}
+                  label="Active Movie"
+                  icons={
+                    statistics?.activeMovie?.growth?.startsWith("-") ? (
+                      <ChevronDown className="w-4 h-4 text-red-500" />
+                    ) : (
+                      <ChevronUp className="w-4 h-4 text-green-500" />
+                    )
+                  }
+                  percentage={
+                    statistics?.activeMovie?.growth
+                      ? Math.abs(parseFloat(statistics.activeMovie.growth)).toFixed(1)
+                      : "0"
+                  }
+                />
+                <MetricsCards
+                  value={statistics?.totalTrailer?.total?.toString() || "0"}
+                  label="Total Trailer"
+                  icons={
+                    statistics?.totalTrailer?.growth?.startsWith("-") ? (
+                      <ChevronDown className="w-4 h-4 text-red-500" />
+                    ) : (
+                      <ChevronUp className="w-4 h-4 text-green-500" />
+                    )
+                  }
+                  percentage={
+                    statistics?.totalTrailer?.growth
+                      ? Math.abs(parseFloat(statistics.totalTrailer.growth)).toFixed(1)
+                      : "0"
+                  }
+                />
+                <MetricsCards
+                  value={statistics?.totalView?.total?.toString() || "0"}
+                  label="Total View"
+                  icons={
+                    statistics?.totalView?.growth?.startsWith("-") ? (
+                      <ChevronDown className="w-4 h-4 text-red-500" />
+                    ) : (
+                      <ChevronUp className="w-4 h-4 text-green-500" />
+                    )
+                  }
+                  percentage={
+                    statistics?.totalView?.growth
+                      ? Math.abs(parseFloat(statistics.totalView.growth)).toFixed(1)
+                      : "0"
+                  }
+                />
+              </div>
+            )}
           </Card>
         </div>
       </div>
