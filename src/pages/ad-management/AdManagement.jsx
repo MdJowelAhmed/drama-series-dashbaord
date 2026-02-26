@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Edit2, Play, Film, ExternalLink, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, Play, Film } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import ReusableVideoUploadModal from '@/components/videoUpload/ReusableVideoUploadModal';
@@ -19,18 +19,6 @@ import {
   useGetAllAdQuery,
 } from '@/redux/feature/adApi';
 
-// Field configuration for Ad upload
-const AD_FIELDS = [
-  {
-    name: "title",
-    label: "Ad Title",
-    type: "text",
-    placeholder: "Enter ad title",
-    required: true,
-    gridCols: 2,
-  },
-];
-
 const VideoPlayerModal = ({ ad, onClose }) => {
   const videoUrl = ad?.videoUrl || ad?.video_url;
   const downloadUrls = ad?.downloadUrls || ad?.download_urls || {};
@@ -40,7 +28,7 @@ const VideoPlayerModal = ({ ad, onClose }) => {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-[#FFFFFF3B] border-white/10" onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-accent">{ad?.title || ad?.name || 'Video Player'}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-accent">Video Player</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -208,33 +196,6 @@ const AdManagement = () => {
                       </div>
                     )}
                   </div>
-                  
-                  <div className="p-4 flex-1">
-                    <h3 className="font-semibold text-accent text-lg mb-2 line-clamp-2">{ad.title || ad.name}</h3>
-                    {ad.link_url && (
-                      <div className="flex items-center gap-2 text-sm text-accent mb-3">
-                        <ExternalLink className="h-4 w-4" />
-                        <a 
-                          href={ad.link_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="hover:underline truncate"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {ad.link_url}
-                        </a>
-                      </div>
-                    )}
-                    
-                    <div className="text-sm text-accent">
-                      <span>
-                        {ad.created_at || ad.createdAt 
-                          ? new Date(ad.created_at || ad.createdAt).toLocaleDateString()
-                          : ''
-                        }
-                      </span>
-                    </div>
-                  </div>
 
                   <div className="flex justify-between gap-2 p-4">
                     <Button
@@ -252,7 +213,7 @@ const AdManagement = () => {
                       className="py-5"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setItemToDelete({ id: ad._id || ad.id, name: ad.title || ad.name });
+                        setItemToDelete({ id: ad._id || ad.id, name: "Ad" });
                         setDeleteDialogOpen(true);
                       }}
                     >
@@ -272,7 +233,7 @@ const AdManagement = () => {
           onSave={handleSaveAd}
           editingData={editingAd}
           title="Upload Ad"
-          fields={AD_FIELDS}
+          fields={[]}
           generateUploadUrl={generateUploadUrl}
           createMutation={createAd}
           updateMutation={updateAd}
@@ -299,7 +260,7 @@ const AdManagement = () => {
           isLoading={isDeleting}
           itemName={itemToDelete?.name}
           title="Delete Ad"
-          description={`Are you sure you want to delete "${itemToDelete?.name}"? This action cannot be undone.`}
+          description="Are you sure you want to delete this ad? This action cannot be undone."
         />
       </div>
     </div>

@@ -23,6 +23,22 @@ const dashboardApi = api.injectEndpoints({
             }),
             providesTags: ["Dashboard"],
         }),
+        reportAnalytics: builder.query({
+            query: (args) => {
+                const params = new URLSearchParams();
+                if (args) {
+                    args.forEach((arg) => {
+                        params.append(arg.name, arg.value);
+                    });
+                }
+                return {
+                url: "/dashboard/production-report",
+                method: "GET",
+                params,
+            };
+        },
+            providesTags: ["Dashboard"],
+        }),
     }),
 })
 
@@ -30,4 +46,5 @@ export const {
     useUserGrowthDataQuery,
     useTopWatchDataQuery,
     useDashboardStatsQuery,
+    useReportAnalyticsQuery,
 } = dashboardApi;
