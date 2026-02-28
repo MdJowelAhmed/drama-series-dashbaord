@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -39,6 +39,7 @@ import SeasonFormModal from "@/components/modals/SeasonFormModal";
 import EpisodeUploadModal from "@/components/modals/EpisodeUploadModal";
 import VideoDetailsModal from "@/components/modals/VideoDetailsModal";
 import { getImageUrl, getVideoAndThumbnail } from "@/components/share/imageUrl";
+import ReusablePagination from "@/components/share/ReusablePagination";
 
 // SeasonCard Component - Fetches and displays videos for a season
 const SeasonCard = ({
@@ -52,14 +53,37 @@ const SeasonCard = ({
   onViewDetails,
   formatDuration,
 }) => {
+  const [currentVideoPage, setCurrentVideoPage] = useState(1);
+  const videosPerPage = 10;
+
   // Fetch videos for this specific season
   const {
     data: videosData,
     isLoading: isVideosLoading,
     refetch: refetchVideos,
-  } = useGetVideosBySeasonIdQuery(season._id || season.id);
+  } = useGetVideosBySeasonIdQuery({
+    seasonId: season._id || season.id,
+    page: currentVideoPage,
+    limit: videosPerPage,
+  });
 
   const videos = videosData?.data || [];
+  const videosMeta = videosData?.meta || {
+    page: currentVideoPage,
+    limit: videosPerPage,
+    total: videos.length,
+    totalPage: 1,
+  };
+
+  useEffect(() => {
+    setCurrentVideoPage(1);
+  }, [season._id, season.id]);
+
+  useEffect(() => {
+    if (videosMeta.totalPage > 0 && currentVideoPage > videosMeta.totalPage) {
+      setCurrentVideoPage(videosMeta.totalPage);
+    }
+  }, [currentVideoPage, videosMeta.totalPage]);
 
   return (
     <div className="bg-secondary rounded-3xl shadow-xl overflow-hidden border border-white/20 hover:shadow-2xl transition-all">
@@ -74,7 +98,7 @@ const SeasonCard = ({
               <p className="text-white/60 mt-1 text-sm">{season.description}</p>
             )}
             <p className="text-white/40 text-xs mt-1">
-              {videos.length} episode{videos.length !== 1 ? "s" : ""}
+              {videosMeta.total} episode{videosMeta.total !== 1 ? "s" : ""}
             </p>
           </div>
           <div className="flex gap-3">
@@ -112,83 +136,96 @@ const SeasonCard = ({
             <p className="text-slate-500 font-medium">No episodes uploaded yet</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-            {videos.map((video) => (
-              <Card
-                key={video._id || video.id}
-                className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col"
-              >
-                <div className="relative h-72 overflow-hidden bg-slate-200">
-                  <img
-                    src={getVideoAndThumbnail(video.thumbnailUrl || video.thumbnail_url)}
-                    alt={video.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400";
-                    }}
-                  />
-                
-                  <div className="absolute top-2 right-2">
-                    <Badge className="bg-black/70 backdrop-blur-sm text-white text-xs font-semibold flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {formatDuration(video.duration)}
-                    </Badge>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+              {videos.map((video) => (
+                <Card
+                  key={video._id || video.id}
+                  className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col"
+                >
+                  <div className="relative h-72 overflow-hidden bg-slate-200">
+                    <img
+                      src={getVideoAndThumbnail(video.thumbnailUrl || video.thumbnail_url)}
+                      alt={video.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src =
+                          "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400";
+                      }}
+                    />
+
+                    <div className="absolute top-2 right-2">
+                      <Badge className="bg-black/70 backdrop-blur-sm text-white text-xs font-semibold flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {formatDuration(video.duration)}
+                      </Badge>
+                    </div>
+                    <div className="absolute top-2 left-2">
+                      <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold">
+                        EP {video.episodeNumber || 0}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="absolute top-2 left-2">
-                    <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold">
-                      EP {video.episodeNumber || 0}
-                    </Badge>
-                  </div>
-                </div>
-                <CardContent className="p-4 flex-1">
-                  <h3 className="font-semibold text-accent  line-clamp-2">
-                    {video.title}
-                  </h3>
-                  <div className="flex items-center justify-between text-sm text-accent ">
-                    <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      {video.views || 0} views
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {video.createdAt
-                        ? new Date(video.createdAt).toLocaleDateString()
-                        : "N/A"}
-                    </span>
-                  </div>
-                </CardContent>
-                <div className="flex justify-between gap-2 px-4 pb-2">
-                  <Button
-                    size="sm"
-                    className="flex-1 py-5"
-                    onClick={() => onViewDetails(video)}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
-                  <div className="flex gap-2">
+                  <CardContent className="p-4 flex-1">
+                    <h3 className="font-semibold text-accent  line-clamp-2">
+                      {video.title}
+                    </h3>
+                    <div className="flex items-center justify-between text-sm text-accent ">
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {video.views || 0} views
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {video.createdAt
+                          ? new Date(video.createdAt).toLocaleDateString()
+                          : "N/A"}
+                      </span>
+                    </div>
+                  </CardContent>
+                  <div className="flex justify-between gap-2 px-4 pb-2">
                     <Button
                       size="sm"
-                      variant="outline"
-                      className="py-5"
-                      onClick={() => onEditVideo(video, season._id || season.id, refetchVideos)}
+                      className="flex-1 py-5"
+                      onClick={() => onViewDetails(video)}
                     >
-                      <Edit2 className="h-4 w-4" />
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="py-5 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => onDeleteVideo(video, refetchVideos)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="py-5"
+                        onClick={() =>
+                          onEditVideo(video, season._id || season.id, refetchVideos)
+                        }
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="py-5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => onDeleteVideo(video, refetchVideos)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+            <ReusablePagination
+              page={videosMeta.page}
+              totalPage={videosMeta.totalPage}
+              total={videosMeta.total}
+              limit={videosMeta.limit}
+              onPageChange={setCurrentVideoPage}
+              itemLabel="episodes"
+              className="px-0 pb-0 border-t-0 mt-4"
+            />
+          </>
         )}
       </div>
     </div>
@@ -212,6 +249,8 @@ const DramaDetails = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [refetchVideosCallback, setRefetchVideosCallback] = useState(null);
+  const [seasonPage, setSeasonPage] = useState(1);
+  const seasonsPerPage = 5;
 
   // API Queries
   const {
@@ -225,7 +264,10 @@ const DramaDetails = () => {
     data: seasonsData,
     isLoading: isSeasonsLoading,
     refetch: refetchSeasons,
-  } = useGetSeasonsByMovieIdQuery(movieId, { skip: !movieId });
+  } = useGetSeasonsByMovieIdQuery(
+    { movieId, page: seasonPage, limit: seasonsPerPage },
+    { skip: !movieId }
+  );
 
   // API Mutations
   const [createSeason, { isLoading: isCreatingSeason }] = useCreateDramaSeasonMutation();
@@ -239,6 +281,22 @@ const DramaDetails = () => {
   // Extract data
   const drama = dramaData?.data || null;
   const seasons = seasonsData?.data || [];
+  const seasonsMeta = seasonsData?.meta || {
+    page: seasonPage,
+    limit: seasonsPerPage,
+    total: seasons.length,
+    totalPage: 1,
+  };
+
+  useEffect(() => {
+    if (seasonsMeta.totalPage > 0 && seasonPage > seasonsMeta.totalPage) {
+      setSeasonPage(seasonsMeta.totalPage);
+    }
+  }, [seasonPage, seasonsMeta.totalPage]);
+
+  useEffect(() => {
+    setSeasonPage(1);
+  }, [movieId]);
 
   // Format duration helper
   const formatDuration = (seconds) => {
@@ -517,6 +575,15 @@ const DramaDetails = () => {
                 formatDuration={formatDuration}
               />
             ))}
+            <ReusablePagination
+              page={seasonsMeta.page}
+              totalPage={seasonsMeta.totalPage}
+              total={seasonsMeta.total}
+              limit={seasonsMeta.limit}
+              onPageChange={setSeasonPage}
+              itemLabel="seasons"
+              className="px-0"
+            />
           </div>
         )}
 
@@ -530,7 +597,7 @@ const DramaDetails = () => {
           onSave={handleSaveSeason}
           editingData={editingSeason}
           movieId={movieId}
-          nextSeasonNumber={seasons.length + 1}
+          nextSeasonNumber={(seasonsMeta.total || 0) + 1}
           isLoading={isCreatingSeason || isUpdatingSeason}
         />
 
