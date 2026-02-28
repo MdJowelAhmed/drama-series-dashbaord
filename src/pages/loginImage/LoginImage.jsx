@@ -38,14 +38,6 @@ const LoginImage = () => {
 
   const images = data?.data?.[0]?.images || [];
 
-  if (!images.length) {
-    return (
-      <div className="flex items-center justify-center w-full h-full">
-        <span className="text-sm text-gray-400">No login images found.</span>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full h-full overflow-hidden">
       <div className="mb-3">
@@ -53,23 +45,30 @@ const LoginImage = () => {
           type="button"
           onClick={() => setIsModalOpen(true)}
         >
-          Update Login Image
+          {images.length ? "Update Login Image" : "Add Login Image"}
         </Button>
       </div>
-      <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-3">
-        {images.map((imgPath, index) => (
-          <img
-            key={imgPath || index}
-            src={buildImageUrl(imgPath)}
-            alt={`Login visual ${index + 1}`}
-            className="w-full h-80 rounded-lg object-cover"
-          />
-        ))}
-      </div>
+      {images.length ? (
+        <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-3">
+          {images.map((imgPath, index) => (
+            <img
+              key={imgPath || index}
+              src={buildImageUrl(imgPath)}
+              alt={`Login visual ${index + 1}`}
+              className="w-full h-80 rounded-lg object-cover"
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex items-center justify-center w-full py-16">
+          <span className="text-sm text-gray-400">No login images found. Click the button above to add.</span>
+        </div>
+      )}
       <LoginImageModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={refetch}
+        existingImages={images}
       />
     </div>
   );
