@@ -26,7 +26,7 @@ const AllDramas = () => {
   const [selectedDrama, setSelectedDrama] = useState(null);
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const limit = 2;
+  const limit = 10;
 
   const queryArgs = [
     { name: "page", value: page },
