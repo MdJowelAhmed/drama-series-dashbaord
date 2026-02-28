@@ -41,10 +41,20 @@ const adApi = api.injectEndpoints({
       invalidatesTags: ["Ad"],
     }),
     getAllAd: builder.query({
-      query: () => ({
-        url: "/ad-management",
-        method: "GET",
-      }),
+      query: (args) => {
+        const params = new URLSearchParams();
+
+        if (args) {
+          if (args.page) params.append("page", String(args.page));
+          if (args.limit) params.append("limit", String(args.limit));
+        }
+
+        return {
+          url: "/ad-management",
+          method: "GET",
+          params,
+        };
+      },
       providesTags: (result) =>
         result?.data
           ? [

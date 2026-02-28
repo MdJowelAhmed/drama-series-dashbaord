@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import ReusableVideoUploadModal from '@/components/videoUpload/ReusableVideoUploadModal';
 import DeleteConfirmationModal from '@/components/share/DeleteConfirmationModal';
+import ReusablePagination from '@/components/share/ReusablePagination';
 import {
   Dialog,
   DialogContent,
@@ -69,15 +70,26 @@ const AdManagement = () => {
   const [editingAd, setEditingAd] = useState(null);
   const [selectedAd, setSelectedAd] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   // RTK Query hooks
-  const { data: adsData, isLoading: isLoadingAds, refetch } = useGetAllAdQuery();
+  const { data: adsData, isLoading: isLoadingAds, refetch } = useGetAllAdQuery({
+    page,
+    limit,
+  });
   const [createAd] = useCreateAdMutation();
   const [generateUploadUrl] = useVideoUrlGenerateAdMutation();
   const [updateAd] = useUpdateAdMutation();
   const [deleteAd, { isLoading: isDeleting }] = useDeleteAdMutation();
 
   const ads = Array.isArray(adsData?.data) ? adsData.data : [];
+  const meta = adsData?.meta || {
+    page,
+    limit,
+    total: ads.length,
+    totalPage: 1,
+  };
 
   const handleUploadAd = () => {
     setEditingAd(null);
@@ -138,92 +150,103 @@ const AdManagement = () => {
             <p className="text-white/70 text-lg font-medium">No ads found. Upload your first ad to get started!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {ads.map((ad) => {
-              const videoUrl = ad?.videoUrl || ad?.video_url;
-              const downloadUrls = ad?.downloadUrls || ad?.download_urls || {};
-              const videoSource = downloadUrls?.hd || downloadUrls?.sd || downloadUrls?.mobile || downloadUrls?.original || videoUrl;
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {ads.map((ad) => {
+                const videoUrl = ad?.videoUrl || ad?.video_url;
+                const downloadUrls = ad?.downloadUrls || ad?.download_urls || {};
+                const videoSource = downloadUrls?.hd || downloadUrls?.sd || downloadUrls?.mobile || downloadUrls?.original || videoUrl;
 
-              return (
-                <div key={ad._id || ad.id} className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col rounded-2xl border border-white/20">
-                  <div className="relative h-48 overflow-hidden bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
-                    {videoUrl && videoUrl.includes('iframe.mediadelivery.net') ? (
-                      <div className="relative w-full h-full">
-                        <iframe
-                          src={videoUrl}
-                          className="w-full h-full pointer-events-none"
-                          allow="accelerometer; gyroscope; encrypted-media; picture-in-picture;"
-                          allowFullScreen
-                        />
-                        <div 
-                          className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
-                          onClick={() => handlePlayVideo(ad)}
-                        >
-                          <div className="bg-red-500 backdrop-blur-sm rounded-full p-1  transition-all hover:scale-110">
-                            <Play className="h-10 w-10 text-white" fill="white" />
+                return (
+                  <div key={ad._id || ad.id} className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col rounded-2xl border border-white/20">
+                    <div className="relative h-48 overflow-hidden bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                      {videoUrl && videoUrl.includes('iframe.mediadelivery.net') ? (
+                        <div className="relative w-full h-full">
+                          <iframe
+                            src={videoUrl}
+                            className="w-full h-full pointer-events-none"
+                            allow="accelerometer; gyroscope; encrypted-media; picture-in-picture;"
+                            allowFullScreen
+                          />
+                          <div 
+                            className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
+                            onClick={() => handlePlayVideo(ad)}
+                          >
+                            <div className="bg-red-500 backdrop-blur-sm rounded-full p-1  transition-all hover:scale-110">
+                              <Play className="h-10 w-10 text-white" fill="white" />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ) : videoSource ? (
-                      <>
-                        <video
-                          className="w-full h-full object-cover pointer-events-none"
-                          muted
-                          playsInline
-                        >
-                          <source src={videoSource} type="video/mp4" />
-                        </video>
+                      ) : videoSource ? (
+                        <>
+                          <video
+                            className="w-full h-full object-cover pointer-events-none"
+                            muted
+                            playsInline
+                          >
+                            <source src={videoSource} type="video/mp4" />
+                          </video>
+                          <div 
+                            className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
+                            onClick={() => handlePlayVideo(ad)}
+                          >
+                            <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-all hover:scale-110">
+                              <Play className="h-12 w-12 text-white" fill="white" />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
                         <div 
-                          className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
+                          className="absolute inset-0 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
                           onClick={() => handlePlayVideo(ad)}
                         >
-                          <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-all hover:scale-110">
-                            <Play className="h-12 w-12 text-white" fill="white" />
+                          <Film className="h-20 w-20 text-white/30 mb-4" />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-all hover:scale-110">
+                              <Play className="h-12 w-12 text-white" fill="white" />
+                            </div>
                           </div>
                         </div>
-                      </>
-                    ) : (
-                      <div 
-                        className="absolute inset-0 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-all"
-                        onClick={() => handlePlayVideo(ad)}
+                      )}
+                    </div>
+
+                    <div className="flex justify-between gap-2 p-4">
+                      <Button
+                        size="sm"
+                        className="py-5"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditAd(ad);
+                        }}
                       >
-                        <Film className="h-20 w-20 text-white/30 mb-4" />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 hover:bg-white/30 transition-all hover:scale-110">
-                            <Play className="h-12 w-12 text-white" fill="white" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="py-5"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setItemToDelete({ id: ad._id || ad.id, name: "Ad" });
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-
-                  <div className="flex justify-between gap-2 p-4">
-                    <Button
-                      size="sm"
-                      className="py-5"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditAd(ad);
-                      }}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="py-5"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setItemToDelete({ id: ad._id || ad.id, name: "Ad" });
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            <ReusablePagination
+              page={meta.page}
+              totalPage={meta.totalPage}
+              total={meta.total}
+              limit={meta.limit}
+              onPageChange={setPage}
+              itemLabel="ads"
+              className="px-0"
+            />
+          </>
         )}
 
         {/* Reusable Video Upload Modal */}
