@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Search, Eye, Trash2, Edit, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 import { getImageUrl } from "@/components/share/imageUrl";
 import CommonFormModal from "@/components/modals/CommonFormModal";
 import { useGetAllCategoryQuery } from "@/redux/feature/categoryApi";
+import ReusablePagination from "@/components/share/ReusablePagination";
 
 const AllDramas = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,22 +25,36 @@ const AllDramas = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDrama, setSelectedDrama] = useState(null);
   const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const limit = 2;
+
+  const queryArgs = [
+    { name: "page", value: page },
+    { name: "limit", value: limit },
+  ];
+
+  if (searchQuery.trim()) {
+    queryArgs.push({ name: "searchTerm", value: searchQuery.trim() });
+  }
 
   // RTK Query hooks
-  const { data: dramasData, isLoading, isError, refetch } = useGetAllDramaQuery([
-    { name: "searchTerm", value: searchQuery },
-  ]);
+  const { data: dramasData, isLoading, isError, refetch } = useGetAllDramaQuery(queryArgs);
   const [createDrama, { isLoading: isCreating }] = useCreateDramaMutation();
   const [updateDrama, { isLoading: isUpdating }] = useUpdateDramaMutation();
   const [deleteDrama, { isLoading: isDeleting }] = useDeleteDramaMutation();
-  const {data:categoryData} = useGetAllCategoryQuery();
+  const { data: categoryData } = useGetAllCategoryQuery();
   const categories = categoryData?.data || [];
-  console.log(categories);
   const dramas = dramasData?.data || [];
+  const meta = dramasData?.meta || {
+    page,
+    limit,
+    total: dramas.length,
+    totalPage: 1,
+  };
 
-  const filteredDramas = dramas.filter((drama) =>
-    drama.title?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   const handleDelete = async () => {
     if (!selectedDrama?._id) return;
@@ -187,13 +202,13 @@ const AllDramas = () => {
           </div> */}
         </div>
 
-        {filteredDramas.length === 0 ? (
+        {dramas.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-slate-600">No dramas found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-            {filteredDramas.map((drama) => (
+            {dramas.map((drama) => (
               <Card
                 key={drama._id}
                 className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col"
@@ -301,6 +316,14 @@ const AllDramas = () => {
             ))}
           </div>
         )}
+        <ReusablePagination
+          page={meta.page}
+          totalPage={meta.totalPage}
+          total={meta.total}
+          limit={meta.limit}
+          onPageChange={setPage}
+          itemLabel="dramas"
+        />
 
         {/* Create Drama Modal */}
         {createModalOpen && (

@@ -30,13 +30,24 @@ const dramaDetailsApi = api.injectEndpoints({
       providesTags: ["Drama", "Season"],
     }),
 
-    // Get seasons by movie/drama ID
+    // Get seasons by movie/drama ID with optional pagination
     getSeasonsByMovieId: builder.query({
-      query: (movieId) => ({
-        url: `/season-management/get-seasons`,
-        method: "GET",
-        params: { movieId },
-      }),
+      query: (args) => {
+        const params = new URLSearchParams();
+        if (typeof args === "string") {
+          params.append("movieId", args);
+        } else if (args) {
+          if (args.movieId) params.append("movieId", args.movieId);
+          if (args.page) params.append("page", String(args.page));
+          if (args.limit) params.append("limit", String(args.limit));
+        }
+
+        return {
+          url: `/season-management/get-seasons`,
+          method: "GET",
+          params,
+        };
+      },
       providesTags: ["Drama", "Season"],
     }),
 

@@ -60,12 +60,23 @@ const dramaVideoUploadApi = api.injectEndpoints({
       providesTags: ["DramaVideo"],
     }),
 
-    // Get videos by season ID (path param)
+    // Get videos by season ID with optional pagination
     getVideosBySeasonId: builder.query({
-      query: (seasonId) => ({
-        url: `/video-management/get-all-videos/${seasonId}`,
-        method: "GET",
-      }),
+      query: (args) => {
+        const seasonId = typeof args === "string" ? args : args?.seasonId;
+        const params = new URLSearchParams();
+
+        if (typeof args === "object" && args) {
+          if (args.page) params.append("page", String(args.page));
+          if (args.limit) params.append("limit", String(args.limit));
+        }
+
+        return {
+          url: `/video-management/get-all-videos/${seasonId}`,
+          method: "GET",
+          params,
+        };
+      },
       providesTags: ["DramaVideo"],
     }),
 
