@@ -17,7 +17,7 @@ const packageApi = api.injectEndpoints({
       query: ({ id, updatedData }) => {
         return {
           url: `/package/${id}`,
-          method: "PUT",
+          method: "PATCH",
           body: updatedData,
         };
       },
