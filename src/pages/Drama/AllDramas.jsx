@@ -172,10 +172,10 @@ const AllDramas = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-accent">
-              Drama Management
+              Series Management
             </h1>
             <p className="text-accent mt-1">
-              Manage all your dramas and series
+              Manage all your series and series
             </p>
           </div>
           <Button
@@ -183,7 +183,7 @@ const AllDramas = () => {
             className="bg-primary py-6 text-accent shadow hover:bg-primary-foreground"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add New Drama
+            Add New Series
           </Button>
         </div>
 
@@ -191,7 +191,7 @@ const AllDramas = () => {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search dramas..."
+              placeholder="Search series..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -204,7 +204,7 @@ const AllDramas = () => {
 
         {dramas.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-600">No dramas found</p>
+            <p className="text-slate-600">No series found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
@@ -322,13 +322,13 @@ const AllDramas = () => {
           total={meta.total}
           limit={meta.limit}
           onPageChange={setPage}
-          itemLabel="dramas"
+          itemLabel="series"
         />
 
         {/* Create Drama Modal */}
         {createModalOpen && (
           <CommonFormModal
-            title="Create New Drama"
+            title="Create New Series"
             data={null}
             onClose={() => setCreateModalOpen(false)}
             categories={categories}
@@ -341,7 +341,7 @@ const AllDramas = () => {
         {/* Edit Drama Modal */}
         {editModalOpen && selectedDrama && (
           <CommonFormModal
-            title="Edit Drama"
+            title="Edit Series"
             categories={categories}
             data={{
               ...selectedDrama,
@@ -364,7 +364,7 @@ const AllDramas = () => {
           onConfirm={handleDelete}
           isLoading={isDeleting}
           itemName={selectedDrama?.title}
-          title="Delete Drama"
+          title="Delete Series"
           description={`This will permanently delete "${selectedDrama?.title}" and all its series and videos. This action cannot be undone.`}
         />
       </div>

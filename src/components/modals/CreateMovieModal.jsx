@@ -50,17 +50,17 @@ const CreateMovieModal = ({ open, onOpenChange, editingMovie = null, onSuccess }
 
       if (editingMovie) {
         await movieService.updateMovie(editingMovie.id, data);
-        toast.success('Movie updated successfully!');
+        toast.success('Series updated successfully!');
       } else {
         await movieService.createMovie(data);
-        toast.success('Movie created successfully!');
+        toast.success('Series created successfully!');
       }
 
       reset();
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error) {
-      toast.error('Failed to save movie');
+      toast.error('Failed to save Series');
       console.error(error);
     } finally {
       setLoading(false);
@@ -72,7 +72,7 @@ const CreateMovieModal = ({ open, onOpenChange, editingMovie = null, onSuccess }
       <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {editingMovie ? 'Edit Movie' : 'Create New Movie'}
+                {editingSeries ? 'Edit Series' : 'Create New Series'}
           </DialogTitle>
         </DialogHeader>
 
@@ -82,7 +82,7 @@ const CreateMovieModal = ({ open, onOpenChange, editingMovie = null, onSuccess }
             <Input
               id="title"
               {...register('title')}
-              placeholder="Enter movie title"
+              placeholder="Enter Series title"
             />
             {errors.title && (
               <p className="text-sm text-red-600 mt-1">{errors.title.message}</p>
@@ -94,7 +94,7 @@ const CreateMovieModal = ({ open, onOpenChange, editingMovie = null, onSuccess }
             <Textarea
               id="description"
               {...register('description')}
-              placeholder="Enter movie description"
+              placeholder="Enter Series description"
               rows={3}
             />
             {errors.description && (
@@ -161,7 +161,7 @@ const CreateMovieModal = ({ open, onOpenChange, editingMovie = null, onSuccess }
               Cancel
             </Button>
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Saving...' : editingMovie ? 'Update' : 'Create'}
+              {loading ? 'Saving...' : editingSeries ? 'Update' : 'Create'}
             </Button>
           </div>
         </form>
