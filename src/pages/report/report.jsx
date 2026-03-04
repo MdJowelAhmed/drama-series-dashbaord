@@ -344,6 +344,9 @@ const DramaManagementDashboard = () => {
                       labelStyle={{ color: "#fff", fontWeight: "bold" }}
                       itemStyle={{ color: "#fff" }}
                       cursor={{ fill: "rgba(255, 255, 255, 0.1)" }}
+                      formatter={(value, name) =>
+                        name === "subscription" ? `$${value}` : value
+                      }
                     />
                     <Legend />
 
