@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 // Map sidebar paths to pageAccess values
 const PAGE_ACCESS_MAP = {
   "/": "dashboard",
-  "/movies": "movie",
+  "/series": "series",
   "/trailers": "trailer",
   "/ad-management": "ad",
   "/reports": "report",
@@ -65,8 +65,8 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
       icon: LayoutDashboard,
     },
     {
-      name: "Movies Management",
-      path: "/movies",
+      name: "Series Management",
+      path: "/series",
       icon: Film,
     },
     {

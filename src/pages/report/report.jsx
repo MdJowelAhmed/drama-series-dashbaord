@@ -244,7 +244,7 @@ const DramaManagementDashboard = () => {
     <div className="min-h-screen">
       <div className="mx-auto">
         <h1 className="text-4xl font-bold text-white mb-8">
-          Drama Production Management
+          Series Production Management
         </h1>
 
         <div className="rounded-lg mb-6">

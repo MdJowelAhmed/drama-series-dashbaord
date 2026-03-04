@@ -46,7 +46,7 @@ function App() {
         }
       >
         <Route index element={<OverviewPage />} />
-        <Route path="movies" element={<AllDramas />} />
+        <Route path="series" element={<AllDramas />} />
         <Route path="movies/:id" element={<DramaDetails />} />
         {/* <Route path="movies/:id" element={<DramaDetails />} /> */}
         {/* <Route path="movies" element={<AllMovies />} /> */}

@@ -27,7 +27,7 @@ const OverviewPage = () => {
 
   const stats = [
     {
-      title: 'Total Movies',
+      title: 'Total Series',
       value: statsData?.data?.totalMovies || 0,
       icon: Video,
       iconBgColor: 'bg-green-100',
