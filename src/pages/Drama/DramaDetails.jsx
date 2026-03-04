@@ -439,17 +439,17 @@ const DramaDetails = () => {
   }
 
   // Error state
-  if (isDramaError || !drama) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-red-600">Failed to load drama details</p>
-        <Button onClick={() => refetchDrama()}>Try Again</Button>
-        <Button variant="outline" onClick={() => navigate("/dramas")}>
-          Back to Dramas
-        </Button>
-      </div>
-    );
-  }
+  // if (isDramaError || !drama) {
+  //   return (
+  //     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+  //       <p className="text-red-600">Failed to load drama details</p>
+  //       <Button onClick={() => refetchDrama()}>Try Again</Button>
+  //       <Button variant="outline" onClick={() => navigate("/dramas")}>
+  //         Back to Dramas
+  //       </Button>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen">
@@ -457,11 +457,11 @@ const DramaDetails = () => {
         {/* Back Button */}
         <Button
           variant="outline"
-          onClick={() => navigate("/dramas")}
+          onClick={() => navigate("/series")}
           className="flex items-center gap-2 py-5 font-medium hover:gap-3 transition-all group"
         >
           <ArrowLeft className="h-5 w-5 group-hover:scale-110 transition-transform" />
-          Back to Dramas
+          Back to Series
         </Button>
 
         {/* Drama Info Card */}
