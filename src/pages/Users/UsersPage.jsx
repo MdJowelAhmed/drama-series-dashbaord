@@ -205,15 +205,15 @@ const UserManagement = () => {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {/* <Button
+                            <Button
                               onClick={() => {
                                 setSelectedUser(user);
                                 setDeleteDialogOpen(true);
                               }}
-                              className="p-2 text-accent rounded-lg transition-colors"
+                              className="p-2 text-white rounded-lg transition-colors "
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button> */}
+                            </Button>
                           </div>
                         </td>
                       </tr>
