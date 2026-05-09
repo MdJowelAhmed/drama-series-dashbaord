@@ -13,16 +13,16 @@ const OverviewPage = () => {
   const { data: userGrowthData, isLoading: userGrowthLoading } = useUserGrowthDataQuery();
   const { data: topWatchData, isLoading: topWatchLoading } = useTopWatchDataQuery();
 
-  // Transform user growth data: API returns {month, count} but chart expects {month, users}
-  const transformedUserGrowth = userGrowthData?.data?.map(item => ({
-    month: item.month,
-    users: item.count
+  // Transform user growth data: API returns data.growthData with {label, count}
+  const transformedUserGrowth = userGrowthData?.data?.growthData?.map(item => ({
+    month: item?.label,
+    users: item?.count
   })) || [];
 
   // Transform top watched data: API returns {title, views} but chart expects {name, views}
-  const transformedTopWatch = topWatchData?.data?.map(item => ({
-    name: item.title,
-    views: item.views
+  const transformedTopWatch = topWatchData?.data?.data?.map(item => ({
+    name: item?.title,
+    views: item?.views
   })) || [];
 
   const stats = [
