@@ -39,6 +39,14 @@ export default function CategoryManager() {
 
   const categories = categoryData?.data || [];
 
+  const getErrorMessage = (error, fallbackMessage) => {
+    return (
+      error?.data?.message ||
+      error?.data?.error?.[0]?.message ||
+      fallbackMessage
+    );
+  };
+
   const openCreateModal = () => {
     setEditingId(null);
     setFormData({ name: '' });
@@ -60,8 +68,10 @@ export default function CategoryManager() {
           id: editingId, 
           categoryData: { name: formData.name } 
         }).unwrap();
+        toast.success("Category updated successfully");
       } else {
         await createCategory({ name: formData.name }).unwrap();
+        toast.success("Category created successfully");
       }
       
       setIsModalOpen(false);
@@ -69,6 +79,7 @@ export default function CategoryManager() {
       setEditingId(null);
     } catch (error) {
       console.error('Failed to save category:', error);
+      toast.error(getErrorMessage(error, "Failed to save category"));
     }
   };
 
@@ -85,7 +96,7 @@ export default function CategoryManager() {
       setDeleteModalOpen(false);
       setItemToDelete(null);
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to delete category");
+      toast.error(getErrorMessage(error, "Failed to delete category"));
     }
   };
 
