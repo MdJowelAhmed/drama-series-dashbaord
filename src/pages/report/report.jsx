@@ -51,6 +51,13 @@ const buildMonthViewQueryArgs = (year, monthFullName) => [
   { name: "month", value: monthFullName.toLowerCase() },
 ];
 
+/** Month API `period` like "2026-04-05" → axis label "05" only */
+function formatMonthViewDayLabel(period) {
+  if (typeof period !== "string") return period;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(period.trim());
+  return m ? m[3] : period;
+}
+
 /** Week/day charts: only `view` — no year/month query params */
 const WEEK_VIEW_QUERY_ARGS = [{ name: "view", value: "week" }];
 const DAY_VIEW_QUERY_ARGS = [{ name: "view", value: "day" }];
@@ -83,17 +90,14 @@ const Custom3DBarWithWatermark = ({
           fill={fill}
         />
         <polygon
-          points={`${x},${watermarkY} ${x + depth},${watermarkY - depth} ${
-            x + width + depth
-          },${watermarkY - depth} ${x + width},${watermarkY}`}
+          points={`${x},${watermarkY} ${x + depth},${watermarkY - depth} ${x + width + depth
+            },${watermarkY - depth} ${x + width},${watermarkY}`}
           fill={fill}
         />
         <polygon
-          points={`${x + width},${watermarkY} ${x + width + depth},${
-            watermarkY - depth
-          } ${x + width + depth},${watermarkY + watermarkHeight} ${x + width},${
-            watermarkY + watermarkHeight
-          }`}
+          points={`${x + width},${watermarkY} ${x + width + depth},${watermarkY - depth
+            } ${x + width + depth},${watermarkY + watermarkHeight} ${x + width},${watermarkY + watermarkHeight
+            }`}
           fill={fill}
         />
       </g>
@@ -106,16 +110,14 @@ const Custom3DBarWithWatermark = ({
         opacity={0.4}
       />
       <polygon
-        points={`${x},${y} ${x + depth},${y - depth} ${x + width + depth},${
-          y - depth
-        } ${x + width},${y}`}
+        points={`${x},${y} ${x + depth},${y - depth} ${x + width + depth},${y - depth
+          } ${x + width},${y}`}
         fill={fill}
         opacity={0.6}
       />
       <polygon
-        points={`${x + width},${y} ${x + width + depth},${y - depth} ${
-          x + width + depth
-        },${y + height} ${x + width},${y + height}`}
+        points={`${x + width},${y} ${x + width + depth},${y - depth} ${x + width + depth
+          },${y + height} ${x + width},${y + height}`}
         fill={fill}
         opacity={0.7}
       />
@@ -161,6 +163,8 @@ function ProductionBreakdownChart({
   isError,
   selectedCategory,
   maxValues,
+  xAxisDataKey = "period",
+  tooltipLabelKey,
   xAxisAngle = 0,
   xAxisHeight = 30,
 }) {
@@ -169,13 +173,19 @@ function ProductionBreakdownChart({
   return (
     <Card className="bg-secondary rounded-lg mb-6 p-6">
       <div className="mb-4">
-        <h4 className="text-lg font-semibold text-accent">{title}</h4>
-        {subtitle ? (
-          <p className="text-sm text-white/60 mt-1">{subtitle}</p>
-        ) : null}
-        {filterSlot ? (
-          <div className="mt-3 flex flex-wrap gap-4 items-center">{filterSlot}</div>
-        ) : null}
+        <div className="flex flex-row justify-between items-start gap-4">
+          <div className="min-w-0 flex-1">
+            <h4 className="text-lg font-semibold text-accent">{title}</h4>
+            {subtitle ? (
+              <p className="text-sm text-white/60 mt-1">{subtitle}</p>
+            ) : null}
+          </div>
+          {filterSlot ? (
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-4">
+              {filterSlot}
+            </div>
+          ) : null}
+        </div>
         <div className="border-b-2 border-white/30 mb-4 mt-2" />
       </div>
       {isLoading ? (
@@ -198,7 +208,7 @@ function ProductionBreakdownChart({
               margin={{ top: 16, right: 24, left: 8, bottom: xAxisAngle ? 48 : 8 }}
             >
               <XAxis
-                dataKey="period"
+                dataKey={xAxisDataKey}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#fff", fontSize: 11 }}
@@ -222,6 +232,11 @@ function ProductionBreakdownChart({
                 labelStyle={{ color: "#fff", fontWeight: "bold" }}
                 itemStyle={{ color: "#fff" }}
                 cursor={{ fill: "rgba(255, 255, 255, 0.08)" }}
+                labelFormatter={(_label, payload) =>
+                  tooltipLabelKey && payload?.length
+                    ? payload[0].payload?.[tooltipLabelKey] ?? _label
+                    : _label
+                }
                 formatter={(value, name) =>
                   name === "revenue" ? `$${value}` : value
                 }
@@ -344,6 +359,15 @@ const DramaManagementDashboard = () => {
 
   const maxYear = useBreakdownMaxValues(yearBreakdown);
   const maxMonth = useBreakdownMaxValues(monthBreakdown);
+
+  const monthBreakdownForChart = useMemo(
+    () =>
+      monthBreakdown.map((row) => ({
+        ...row,
+        periodAxis: formatMonthViewDayLabel(row.period),
+      })),
+    [monthBreakdown]
+  );
   const maxWeek = useBreakdownMaxValues(weekBreakdown);
   const maxDay = useBreakdownMaxValues(dayBreakdown);
 
@@ -563,11 +587,13 @@ const DramaManagementDashboard = () => {
                 </select>
               </>
             }
-            breakdown={monthBreakdown}
+            breakdown={monthBreakdownForChart}
             isLoading={monthLoading}
             isError={monthError}
             selectedCategory={selectedCategory}
             maxValues={maxMonth}
+            xAxisDataKey="periodAxis"
+            tooltipLabelKey="period"
             xAxisAngle={-35}
             xAxisHeight={70}
           />
