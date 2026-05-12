@@ -62,6 +62,8 @@ function formatMonthViewDayLabel(period) {
 const WEEK_VIEW_QUERY_ARGS = [{ name: "view", value: "week" }];
 const DAY_VIEW_QUERY_ARGS = [{ name: "view", value: "day" }];
 
+const EXPORT_FILE_BASE = "C-S-drama production-report";
+
 const Custom3DBarWithWatermark = ({
   x = 0,
   y = 0,
@@ -230,7 +232,7 @@ function downloadProductionViewPdf({ chartTitle, subtitle, metaLines, rows, file
       y = 16;
     }
   });
-  doc.save(`production-report-${sanitizeFileStem(fileStem)}.pdf`);
+  doc.save(`${EXPORT_FILE_BASE}-${sanitizeFileStem(fileStem)}.pdf`);
 }
 
 function downloadProductionViewExcel({ rows, statistics, sheetName, fileStem }) {
@@ -241,7 +243,7 @@ function downloadProductionViewExcel({ rows, statistics, sheetName, fileStem }) 
   if (statRows?.length) {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statRows), "Statistics");
   }
-  XLSX.writeFile(wb, `production-report-${sanitizeFileStem(fileStem)}.xlsx`);
+  XLSX.writeFile(wb, `${EXPORT_FILE_BASE}-${sanitizeFileStem(fileStem)}.xlsx`);
 }
 
 const exportBtnClass =
