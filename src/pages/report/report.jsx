@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, FileDown } from "lucide-react";
 import {
   Bar,
@@ -13,7 +13,21 @@ import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import { useReportAnalyticsQuery } from "@/redux/base-url/dashboardApi";
 
-// Generate year options: past 3 years, current year, future 1 year
+const MONTH_NAMES_FULL = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 const getYearOptions = () => {
   const currentYear = new Date().getFullYear();
   const years = [];
@@ -24,8 +38,22 @@ const getYearOptions = () => {
 };
 
 const yearOptions = getYearOptions();
-const categoryOptions = ["All", "audience", "subscription", "view"];
-const monthOptions = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const categoryOptions = ["All", "movies", "trailers", "views", "revenue"];
+
+const buildYearViewQueryArgs = (year) => [
+  { name: "view", value: "year" },
+  { name: "year", value: String(year) },
+];
+
+const buildMonthViewQueryArgs = (year, monthFullName) => [
+  { name: "view", value: "month" },
+  { name: "year", value: String(year) },
+  { name: "month", value: monthFullName.toLowerCase() },
+];
+
+/** Week/day charts: only `view` — no year/month query params */
+const WEEK_VIEW_QUERY_ARGS = [{ name: "view", value: "week" }];
+const DAY_VIEW_QUERY_ARGS = [{ name: "view", value: "day" }];
 
 const Custom3DBarWithWatermark = ({
   x = 0,
@@ -99,146 +127,338 @@ const Card = ({ children, className }) => (
   <div className={className}>{children}</div>
 );
 
-const CardContent = ({ children, className }) => (
-  <div className={className}>{children}</div>
-);
-
-const MetricsCards = ({ value, label, icons, percentage }) => (
+const MetricsCards = ({ value, label, icons, growth }) => (
   <div className="bg-white/30 backdrop-blur-sm rounded-lg p-4">
     <div className="text-2xl font-bold text-white mb-1">{value}</div>
     <div className="text-sm text-white/80 mb-2">{label}</div>
     <div className="flex items-center gap-1">
       {icons}
-      <span className="text-sm text-white/70">{percentage}%</span>
+      <span className="text-sm text-white/70">{growth ?? "0%"}</span>
     </div>
   </div>
 );
 
-const StatsCard = ({ value, text }) => (
-  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
-    <div className="text-2xl font-bold text-white mb-1">{value}</div>
-    <div className="text-xs text-white/70 uppercase">{text}</div>
-  </div>
-);
+function useBreakdownMaxValues(breakdown) {
+  return useMemo(() => {
+    if (!breakdown?.length) {
+      return { movies: 1, trailers: 1, views: 1, revenue: 1 };
+    }
+    return {
+      movies: Math.max(...breakdown.map((d) => d.movies ?? 0), 1),
+      trailers: Math.max(...breakdown.map((d) => d.trailers ?? 0), 1),
+      views: Math.max(...breakdown.map((d) => d.views ?? 0), 1),
+      revenue: Math.max(...breakdown.map((d) => d.revenue ?? 0), 1),
+    };
+  }, [breakdown]);
+}
+
+function ProductionBreakdownChart({
+  title,
+  subtitle,
+  filterSlot,
+  breakdown,
+  isLoading,
+  isError,
+  selectedCategory,
+  maxValues,
+  xAxisAngle = 0,
+  xAxisHeight = 30,
+}) {
+  const data = breakdown ?? [];
+
+  return (
+    <Card className="bg-secondary rounded-lg mb-6 p-6">
+      <div className="mb-4">
+        <h4 className="text-lg font-semibold text-accent">{title}</h4>
+        {subtitle ? (
+          <p className="text-sm text-white/60 mt-1">{subtitle}</p>
+        ) : null}
+        {filterSlot ? (
+          <div className="mt-3 flex flex-wrap gap-4 items-center">{filterSlot}</div>
+        ) : null}
+        <div className="border-b-2 border-white/30 mb-4 mt-2" />
+      </div>
+      {isLoading ? (
+        <div className="h-72 flex items-center justify-center">
+          <div className="text-white">Loading...</div>
+        </div>
+      ) : isError ? (
+        <div className="h-72 flex items-center justify-center">
+          <div className="text-red-400">Error loading data</div>
+        </div>
+      ) : !data.length ? (
+        <div className="h-72 flex items-center justify-center">
+          <div className="text-white/70">No breakdown data</div>
+        </div>
+      ) : (
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              margin={{ top: 16, right: 24, left: 8, bottom: xAxisAngle ? 48 : 8 }}
+            >
+              <XAxis
+                dataKey="period"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#fff", fontSize: 11 }}
+                angle={xAxisAngle}
+                textAnchor={xAxisAngle ? "end" : "middle"}
+                height={xAxisHeight}
+                interval={0}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#fff", fontSize: 11 }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "rgba(0, 0, 0, 0.85)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  borderRadius: "8px",
+                  color: "#fff",
+                }}
+                labelStyle={{ color: "#fff", fontWeight: "bold" }}
+                itemStyle={{ color: "#fff" }}
+                cursor={{ fill: "rgba(255, 255, 255, 0.08)" }}
+                formatter={(value, name) =>
+                  name === "revenue" ? `$${value}` : value
+                }
+              />
+              <Legend />
+
+              {(selectedCategory === "All" || selectedCategory === "movies") && (
+                <Bar
+                  dataKey="movies"
+                  fill="#CA8A04"
+                  name="movies"
+                  shape={(props) => (
+                    <Custom3DBarWithWatermark
+                      {...props}
+                      dataKey="movies"
+                      maxValues={maxValues}
+                    />
+                  )}
+                />
+              )}
+              {(selectedCategory === "All" || selectedCategory === "trailers") && (
+                <Bar
+                  dataKey="trailers"
+                  fill="#3b82f6"
+                  name="trailers"
+                  shape={(props) => (
+                    <Custom3DBarWithWatermark
+                      {...props}
+                      dataKey="trailers"
+                      maxValues={maxValues}
+                    />
+                  )}
+                />
+              )}
+              {(selectedCategory === "All" || selectedCategory === "views") && (
+                <Bar
+                  dataKey="views"
+                  fill="#10b981"
+                  name="views"
+                  shape={(props) => (
+                    <Custom3DBarWithWatermark
+                      {...props}
+                      dataKey="views"
+                      maxValues={maxValues}
+                    />
+                  )}
+                />
+              )}
+              {(selectedCategory === "All" || selectedCategory === "revenue") && (
+                <Bar
+                  dataKey="revenue"
+                  fill="#a855f7"
+                  name="revenue"
+                  shape={(props) => (
+                    <Custom3DBarWithWatermark
+                      {...props}
+                      dataKey="revenue"
+                      maxValues={maxValues}
+                    />
+                  )}
+                />
+              )}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+const selectFilterClass =
+  "px-6 py-2 border border-gray-300 rounded-md bg-gray-500 text-white min-w-[7rem]";
 
 const DramaManagementDashboard = () => {
   const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const currentMonthIdx = new Date().getMonth();
+  const [yearViewYear, setYearViewYear] = useState(currentYear);
+  const [monthViewYear, setMonthViewYear] = useState(currentYear);
+  const [monthViewMonthIndex, setMonthViewMonthIndex] = useState(currentMonthIdx);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Fetch data from API
-  const { data: reportData, isLoading, isError } = useReportAnalyticsQuery([
-    { name: "year", value: selectedYear.toString() },
-  ]);
+  const monthViewMonthName = MONTH_NAMES_FULL[monthViewMonthIndex];
 
-  // Extract data from API response
-  const dramaProductionData = reportData?.data?.productionPipeline || [];
-  const statistics = reportData?.data?.statistics || {};
+  const yearQueryArgs = useMemo(
+    () => buildYearViewQueryArgs(yearViewYear),
+    [yearViewYear]
+  );
+  const monthQueryArgs = useMemo(
+    () => buildMonthViewQueryArgs(monthViewYear, monthViewMonthName),
+    [monthViewYear, monthViewMonthName]
+  );
 
-  // Calculate max values for watermark effect
-  const maxValues = useMemo(() => {
-    if (!dramaProductionData || dramaProductionData.length === 0) {
-      return { audience: 1, subscription: 1, view: 1 };
+  const {
+    data: yearReport,
+    isLoading: yearLoading,
+    isError: yearError,
+  } = useReportAnalyticsQuery(yearQueryArgs);
+  const {
+    data: monthReport,
+    isLoading: monthLoading,
+    isError: monthError,
+  } = useReportAnalyticsQuery(monthQueryArgs);
+  const {
+    data: weekReport,
+    isLoading: weekLoading,
+    isError: weekError,
+  } = useReportAnalyticsQuery(WEEK_VIEW_QUERY_ARGS);
+  const {
+    data: dayReport,
+    isLoading: dayLoading,
+    isError: dayError,
+  } = useReportAnalyticsQuery(DAY_VIEW_QUERY_ARGS);
+
+  const yearBreakdown = yearReport?.data?.breakdown ?? [];
+  const monthBreakdown = monthReport?.data?.breakdown ?? [];
+  const weekBreakdown = weekReport?.data?.breakdown ?? [];
+  const dayBreakdown = dayReport?.data?.breakdown ?? [];
+
+  const yearStats = yearReport?.data?.statistics ?? {};
+
+  const maxYear = useBreakdownMaxValues(yearBreakdown);
+  const maxMonth = useBreakdownMaxValues(monthBreakdown);
+  const maxWeek = useBreakdownMaxValues(weekBreakdown);
+  const maxDay = useBreakdownMaxValues(dayBreakdown);
+
+  const formatFilterSubtitle = (filter) => {
+    if (!filter) return "";
+    const { view, year, month, range } = filter;
+    const parts = [`${view} · ${year}`];
+    if (month && view !== "year") parts.push(month);
+    if (range?.start && range?.end) {
+      parts.push(`${range.start.slice(0, 10)} → ${range.end.slice(0, 10)}`);
     }
-    return {
-      audience: Math.max(...dramaProductionData.map((d) => d.audience || 0), 1),
-      subscription: Math.max(...dramaProductionData.map((d) => d.subscription || 0), 1),
-      view: Math.max(...dramaProductionData.map((d) => d.view || 0), 1),
-    };
-  }, [dramaProductionData]);
-
-  // Use data directly - category filtering is handled by conditional Bar rendering
-  const filteredData = dramaProductionData;
+    return parts.join(" · ");
+  };
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    
-    // Add title
-    doc.setFontSize(18);
-    doc.text("Drama Production Management Report", 14, 20);
-    
-    // Add filter info
-    doc.setFontSize(11);
-    doc.text(`Year: ${selectedYear}`, 14, 30);
-    doc.text(`Category: ${selectedCategory}`, 14, 37);
-    
-    // Add table headers
+    doc.setFontSize(16);
+    doc.text("Production report (all views)", 14, 18);
     doc.setFontSize(10);
-    let yPos = 50;
-    doc.text("Month", 14, yPos);
-    doc.text("audience", 50, yPos);
-    doc.text("subscription", 90, yPos);
-    doc.text("view", 130, yPos);
-    
-    // Add line
-    doc.line(14, yPos + 2, 195, yPos + 2);
-    yPos += 10;
-    
-    // Add data
-    filteredData.forEach((row) => {
-      doc.text(row.month, 14, yPos);
-      doc.text(row.audience.toString(), 50, yPos);
-      doc.text(row.subscription.toString(), 90, yPos);
-      doc.text(row.view.toString(), 130, yPos);
-      yPos += 8;
-      
-      if (yPos > 270) {
-        doc.addPage();
-        yPos = 20;
-      }
+    doc.text(`Year view year: ${yearViewYear}`, 14, 28);
+    doc.text(
+      `Month view: ${monthViewYear} / ${monthViewMonthName} · Week/Day: direct (no query filters)`,
+      14,
+      35
+    );
+    doc.text(`Category bars: ${selectedCategory}`, 14, 42);
+
+    const sections = [
+      { label: "Year (by month)", rows: yearBreakdown },
+      { label: "Month (by day)", rows: monthBreakdown },
+      { label: "Week (by weekday)", rows: weekBreakdown },
+      { label: "Day (by hour)", rows: dayBreakdown },
+    ];
+
+    let y = 52;
+    sections.forEach(({ label, rows }) => {
+      doc.setFontSize(11);
+      doc.text(label, 14, y);
+      y += 7;
+      doc.setFontSize(8);
+      rows.slice(0, 18).forEach((row) => {
+        doc.text(
+          `${row.period} | m:${row.movies} t:${row.trailers} v:${row.views} $:${row.revenue}`,
+          14,
+          y
+        );
+        y += 5;
+        if (y > 280) {
+          doc.addPage();
+          y = 16;
+        }
+      });
+      y += 6;
     });
-    
-    // Add statistics
-    yPos += 10;
-    doc.setFontSize(12);
-    doc.text("Production Statistics", 14, yPos);
-    yPos += 10;
-    doc.setFontSize(10);
-    const activeMovie = statistics?.activeMovie || {};
-    const totalTrailer = statistics?.totalTrailer || {};
-    const totalView = statistics?.totalView || {};
-    doc.text(`Active Movie: ${activeMovie.total || 0} (${activeMovie.growth || "0%"})`, 14, yPos);
-    yPos += 7;
-    doc.text(`Total Trailer: ${totalTrailer.total || 0} (${totalTrailer.growth || "0%"})`, 14, yPos);
-    yPos += 7;
-    doc.text(`Total View: ${totalView.total || 0} (${totalView.growth || "0%"})`, 14, yPos);
-    
-    doc.save("drama-production-report.pdf");
+
+    doc.save("production-report.pdf");
   };
 
   const exportToExcel = () => {
-    // Prepare data for Excel
-    const excelData = filteredData.map((row) => ({
-      Month: row.month,
-      audience: row.audience || 0,
-      subscription: row.subscription || 0,
-      view: row.view || 0,
-    }));
-    
-    // Add statistics as separate sheet data
-    const activeMovie = statistics?.activeMovie || {};
-    const totalTrailer = statistics?.totalTrailer || {};
-    const totalView = statistics?.totalView || {};
-    const statsData = [
-      { Metric: "Active Movie", Value: activeMovie.total || 0, Change: activeMovie.growth || "0%" },
-      { Metric: "Total Trailer", Value: totalTrailer.total || 0, Change: totalTrailer.growth || "0%" },
-      { Metric: "Total View", Value: totalView.total || 0, Change: totalView.growth || "0%" },
-    ];
-    
-    // Create workbook
     const wb = XLSX.utils.book_new();
-    
-    // Add production data sheet
-    const ws1 = XLSX.utils.json_to_sheet(excelData);
-    XLSX.utils.book_append_sheet(wb, ws1, "Production Data");
-    
-    // Add statistics sheet
-    const ws2 = XLSX.utils.json_to_sheet(statsData);
-    XLSX.utils.book_append_sheet(wb, ws2, "Statistics");
-    
-    // Save file
-    XLSX.writeFile(wb, "drama-production-report.xlsx");
+    const addSheet = (name, rows) => {
+      const sheet = XLSX.utils.json_to_sheet(
+        (rows || []).map((r) => ({
+          period: r.period,
+          revenue: r.revenue,
+          views: r.views,
+          movies: r.movies,
+          trailers: r.trailers,
+        }))
+      );
+      XLSX.utils.book_append_sheet(wb, sheet, name.slice(0, 31));
+    };
+    addSheet("Year", yearBreakdown);
+    addSheet("Month", monthBreakdown);
+    addSheet("Week", weekBreakdown);
+    addSheet("Day", dayBreakdown);
+
+    const stats = yearStats;
+    const statsRows = [
+      {
+        metric: "activeMovie",
+        total: stats?.activeMovie?.total,
+        period: stats?.activeMovie?.periodCount,
+        growth: stats?.activeMovie?.growth,
+      },
+      {
+        metric: "totalTrailer",
+        total: stats?.totalTrailer?.total,
+        period: stats?.totalTrailer?.periodCount,
+        growth: stats?.totalTrailer?.growth,
+      },
+      {
+        metric: "totalView",
+        total: stats?.totalView?.total,
+        period: stats?.totalView?.periodCount,
+        growth: stats?.totalView?.growth,
+      },
+      {
+        metric: "totalRevenue",
+        total: stats?.totalRevenue?.total,
+        period: stats?.totalRevenue?.periodAmount,
+        growth: stats?.totalRevenue?.growth,
+      },
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statsRows), "Year stats");
+
+    XLSX.writeFile(wb, "production-report.xlsx");
   };
+
+  const growthIcon = (growthStr) =>
+    String(growthStr || "").trim().startsWith("-") ? (
+      <ChevronDown className="w-4 h-4 text-red-500" />
+    ) : (
+      <ChevronUp className="w-4 h-4 text-green-500" />
+    );
 
   return (
     <div className="min-h-screen">
@@ -248,10 +468,10 @@ const DramaManagementDashboard = () => {
         </h1>
 
         <div className="rounded-lg mb-6">
-          {/* Filter Controls */}
           <div className="flex gap-4 mb-4 flex-wrap items-center justify-between">
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={exportToPDF}
                 className="flex items-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
               >
@@ -259,6 +479,7 @@ const DramaManagementDashboard = () => {
                 Export PDF
               </button>
               <button
+                type="button"
                 onClick={exportToExcel}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
               >
@@ -266,29 +487,14 @@ const DramaManagementDashboard = () => {
                 Export Excel
               </button>
             </div>
-            
+
             <div className="flex gap-4 flex-wrap items-center">
               <div className="flex items-center gap-2">
-                <label className="font-semibold text-white">Year:</label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
-                >
-                  {yearOptions.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="font-semibold text-white">Category:</label>
+                <label className="font-semibold text-white">Bars:</label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-10 py-3 border border-gray-300 rounded-md bg-gray-500 text-white"
+                  className={selectFilterClass}
                 >
                   {categoryOptions.map((option) => (
                     <option key={option} value={option}>
@@ -300,163 +506,125 @@ const DramaManagementDashboard = () => {
             </div>
           </div>
 
-          {/* Chart */}
-          <Card className="bg-secondary rounded-lg mb-6 p-6">
-            <div className="mb-4">
-              <h4 className="text-lg font-semibold text-accent">
-                Production Pipeline
-              </h4>
-              <div className="border-b-2 border-white/30 mb-4" />
-            </div>
-            {isLoading ? (
-              <div className="h-80 flex items-center justify-center">
-                <div className="text-white">Loading...</div>
-              </div>
-            ) : isError ? (
-              <div className="h-80 flex items-center justify-center">
-                <div className="text-red-500">Error loading data</div>
-              </div>
-            ) : (
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={filteredData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <XAxis
-                      dataKey="month"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#fff", fontSize: 12 }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#fff", fontSize: 12 }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "rgba(0, 0, 0, 0.8)",
-                        border: "1px solid rgba(255, 255, 255, 0.2)",
-                        borderRadius: "8px",
-                        color: "#fff",
-                      }}
-                      labelStyle={{ color: "#fff", fontWeight: "bold" }}
-                      itemStyle={{ color: "#fff" }}
-                      cursor={{ fill: "rgba(255, 255, 255, 0.1)" }}
-                      formatter={(value, name) =>
-                        name === "subscription" ? `$${value}` : value
-                      }
-                    />
-                    <Legend />
+          <ProductionBreakdownChart
+            title="Production breakdown — Year view"
+            subtitle={formatFilterSubtitle(yearReport?.data?.filter)}
+            filterSlot={
+              <>
+                <label className="text-sm font-semibold text-white">Year:</label>
+                <select
+                  value={yearViewYear}
+                  onChange={(e) => setYearViewYear(Number(e.target.value))}
+                  className={selectFilterClass}
+                >
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </>
+            }
+            breakdown={yearBreakdown}
+            isLoading={yearLoading}
+            isError={yearError}
+            selectedCategory={selectedCategory}
+            maxValues={maxYear}
+          />
 
-                    {(selectedCategory === "All" ||
-                      selectedCategory === "audience") && (
-                      <Bar
-                        dataKey="audience"
-                        fill="#CA8A04"
-                        name="audience"
-                        shape={(props) => (
-                          <Custom3DBarWithWatermark
-                            {...props}
-                            dataKey="audience"
-                            maxValues={maxValues}
-                          />
-                        )}
-                      />
-                    )}
-                    {(selectedCategory === "All" ||
-                      selectedCategory === "subscription") && (
-                      <Bar
-                        dataKey="subscription"
-                        fill="#3b82f6"
-                        name="subscription"
-                        shape={(props) => (
-                          <Custom3DBarWithWatermark
-                            {...props}
-                            dataKey="subscription"
-                            maxValues={maxValues}
-                          />
-                        )}
-                      />
-                    )}
-                    {(selectedCategory === "All" ||
-                      selectedCategory === "view") && (
-                      <Bar
-                        dataKey="view"
-                        fill="#10b981"
-                        name="view"
-                        shape={(props) => (
-                          <Custom3DBarWithWatermark
-                            {...props}
-                            dataKey="view"
-                            maxValues={maxValues}
-                          />
-                        )}
-                      />
-                    )}
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </Card>
+          <ProductionBreakdownChart
+            title="Production breakdown — Month view"
+            subtitle={formatFilterSubtitle(monthReport?.data?.filter)}
+            filterSlot={
+              <>
+                <label className="text-sm font-semibold text-white">Year:</label>
+                <select
+                  value={monthViewYear}
+                  onChange={(e) => setMonthViewYear(Number(e.target.value))}
+                  className={selectFilterClass}
+                >
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+                <label className="text-sm font-semibold text-white">Month:</label>
+                <select
+                  value={monthViewMonthIndex}
+                  onChange={(e) => setMonthViewMonthIndex(Number(e.target.value))}
+                  className={selectFilterClass}
+                >
+                  {MONTH_NAMES_FULL.map((name, idx) => (
+                    <option key={name} value={idx}>
+                      {name.slice(0, 3)}
+                    </option>
+                  ))}
+                </select>
+              </>
+            }
+            breakdown={monthBreakdown}
+            isLoading={monthLoading}
+            isError={monthError}
+            selectedCategory={selectedCategory}
+            maxValues={maxMonth}
+            xAxisAngle={-35}
+            xAxisHeight={70}
+          />
 
-          {/* Metrics Cards */}
-          <Card className="mb-6 backdrop-blur-md  p-6 rounded-lg">
+          <ProductionBreakdownChart
+            title="Production breakdown — Week view"
+            subtitle={formatFilterSubtitle(weekReport?.data?.filter)}
+            breakdown={weekBreakdown}
+            isLoading={weekLoading}
+            isError={weekError}
+            selectedCategory={selectedCategory}
+            maxValues={maxWeek}
+          />
+
+          <ProductionBreakdownChart
+            title="Production breakdown — Day view"
+            subtitle={formatFilterSubtitle(dayReport?.data?.filter)}
+            breakdown={dayBreakdown}
+            isLoading={dayLoading}
+            isError={dayError}
+            selectedCategory={selectedCategory}
+            maxValues={maxDay}
+            xAxisAngle={-45}
+            xAxisHeight={72}
+          />
+
+          <Card className="mb-6 backdrop-blur-md p-6 rounded-lg">
             <h4 className="text-lg text-white font-semibold mb-3">
-              Production Statistics
+              Production statistics (year scope)
             </h4>
-            {isLoading ? (
+            {yearLoading ? (
               <div className="text-white">Loading statistics...</div>
             ) : (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <MetricsCards
-                  value={statistics?.activeMovie?.total?.toString() || "0"}
-                  label="Active Movie"
-                  icons={
-                    statistics?.activeMovie?.growth?.startsWith("-") ? (
-                      <ChevronDown className="w-4 h-4 text-red-500" />
-                    ) : (
-                      <ChevronUp className="w-4 h-4 text-green-500" />
-                    )
-                  }
-                  percentage={
-                    statistics?.activeMovie?.growth
-                      ? Math.abs(parseFloat(statistics.activeMovie.growth)).toFixed(1)
-                      : "0"
-                  }
+                  value={yearStats?.activeMovie?.total?.toString() ?? "0"}
+                  label="Active movie"
+                  icons={growthIcon(yearStats?.activeMovie?.growth)}
+                  growth={yearStats?.activeMovie?.growth ?? "0%"}
                 />
                 <MetricsCards
-                  value={statistics?.totalTrailer?.total?.toString() || "0"}
-                  label="Total Trailer"
-                  icons={
-                    statistics?.totalTrailer?.growth?.startsWith("-") ? (
-                      <ChevronDown className="w-4 h-4 text-red-500" />
-                    ) : (
-                      <ChevronUp className="w-4 h-4 text-green-500" />
-                    )
-                  }
-                  percentage={
-                    statistics?.totalTrailer?.growth
-                      ? Math.abs(parseFloat(statistics.totalTrailer.growth)).toFixed(1)
-                      : "0"
-                  }
+                  value={yearStats?.totalTrailer?.total?.toString() ?? "0"}
+                  label="Total trailer"
+                  icons={growthIcon(yearStats?.totalTrailer?.growth)}
+                  growth={yearStats?.totalTrailer?.growth ?? "0%"}
                 />
                 <MetricsCards
-                  value={statistics?.totalView?.total?.toString() || "0"}
-                  label="Total View"
-                  icons={
-                    statistics?.totalView?.growth?.startsWith("-") ? (
-                      <ChevronDown className="w-4 h-4 text-red-500" />
-                    ) : (
-                      <ChevronUp className="w-4 h-4 text-green-500" />
-                    )
-                  }
-                  percentage={
-                    statistics?.totalView?.growth
-                      ? Math.abs(parseFloat(statistics.totalView.growth)).toFixed(1)
-                      : "0"
-                  }
+                  value={yearStats?.totalView?.total?.toString() ?? "0"}
+                  label="Total views"
+                  icons={growthIcon(yearStats?.totalView?.growth)}
+                  growth={yearStats?.totalView?.growth ?? "0%"}
+                />
+                <MetricsCards
+                  value={yearStats?.totalRevenue?.total?.toString() ?? "0"}
+                  label="Total revenue"
+                  icons={growthIcon(yearStats?.totalRevenue?.growth)}
+                  growth={yearStats?.totalRevenue?.growth ?? "0%"}
                 />
               </div>
             )}
