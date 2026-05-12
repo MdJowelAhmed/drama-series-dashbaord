@@ -154,11 +154,109 @@ function useBreakdownMaxValues(breakdown) {
   }, [breakdown]);
 }
 
+function buildBreakdownTableRows(rows) {
+  return (rows || []).map((r) => ({
+    period: r.period,
+    revenue: r.revenue ?? 0,
+    views: r.views ?? 0,
+    movies: r.movies ?? 0,
+    trailers: r.trailers ?? 0,
+  }));
+}
+
+function buildStatisticsTableRows(stats) {
+  if (!stats || typeof stats !== "object") return null;
+  return [
+    {
+      metric: "activeMovie",
+      total: stats.activeMovie?.total,
+      periodCount: stats.activeMovie?.periodCount,
+      growth: stats.activeMovie?.growth,
+    },
+    {
+      metric: "totalTrailer",
+      total: stats.totalTrailer?.total,
+      periodCount: stats.totalTrailer?.periodCount,
+      growth: stats.totalTrailer?.growth,
+    },
+    {
+      metric: "totalView",
+      total: stats.totalView?.total,
+      periodCount: stats.totalView?.periodCount,
+      growth: stats.totalView?.growth,
+    },
+    {
+      metric: "totalRevenue",
+      total: stats.totalRevenue?.total,
+      periodCount: stats.totalRevenue?.periodAmount,
+      growth: stats.totalRevenue?.growth,
+    },
+  ];
+}
+
+function sanitizeFileStem(stem) {
+  const s = String(stem)
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-");
+  return s.slice(0, 120) || "export";
+}
+
+function downloadProductionViewPdf({ chartTitle, subtitle, metaLines, rows, fileStem }) {
+  const doc = new jsPDF();
+  let y = 16;
+  doc.setFontSize(14);
+  const titleLines = doc.splitTextToSize(chartTitle, 180);
+  doc.text(titleLines, 14, y);
+  y += 6 * titleLines.length + 4;
+  doc.setFontSize(10);
+  if (subtitle) {
+    const subLines = doc.splitTextToSize(subtitle, 180);
+    doc.text(subLines, 14, y);
+    y += 6 * subLines.length + 2;
+  }
+  (metaLines || []).forEach((line) => {
+    doc.text(line, 14, y);
+    y += 5;
+  });
+  y += 4;
+  doc.setFontSize(8);
+  (rows || []).forEach((row) => {
+    const line = `${row.period} | movies:${row.movies ?? 0} trailers:${row.trailers ?? 0} views:${row.views ?? 0} revenue:${row.revenue ?? 0}`;
+    const wrapped = doc.splitTextToSize(line, 180);
+    doc.text(wrapped, 14, y);
+    y += 4 * wrapped.length + 1;
+    if (y > 280) {
+      doc.addPage();
+      y = 16;
+    }
+  });
+  doc.save(`production-report-${sanitizeFileStem(fileStem)}.pdf`);
+}
+
+function downloadProductionViewExcel({ rows, statistics, sheetName, fileStem }) {
+  const wb = XLSX.utils.book_new();
+  const wsMain = XLSX.utils.json_to_sheet(buildBreakdownTableRows(rows));
+  XLSX.utils.book_append_sheet(wb, wsMain, sheetName.replace(/[:\\/?*[\]]/g, "").slice(0, 31));
+  const statRows = buildStatisticsTableRows(statistics);
+  if (statRows?.length) {
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statRows), "Statistics");
+  }
+  XLSX.writeFile(wb, `production-report-${sanitizeFileStem(fileStem)}.xlsx`);
+}
+
+const exportBtnClass =
+  "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md text-white transition-colors";
+
 function ProductionBreakdownChart({
   title,
   subtitle,
   filterSlot,
   breakdown,
+  exportRows,
+  statistics,
+  exportMetaLines = [],
+  fileStem,
+  excelSheetName = "Breakdown",
   isLoading,
   isError,
   selectedCategory,
@@ -169,9 +267,43 @@ function ProductionBreakdownChart({
   xAxisHeight = 30,
 }) {
   const data = breakdown ?? [];
+  const rowsForExport = exportRows ?? breakdown;
 
   return (
     <Card className="bg-secondary rounded-lg mb-6 p-6">
+      <div className="flex flex-wrap justify-end gap-2 mb-3">
+        <button
+          type="button"
+          onClick={() =>
+            downloadProductionViewPdf({
+              chartTitle: title,
+              subtitle,
+              metaLines: exportMetaLines,
+              rows: rowsForExport,
+              fileStem,
+            })
+          }
+          className={`${exportBtnClass} bg-red-600 hover:bg-red-700`}
+        >
+          <FileDown className="w-3.5 h-3.5 shrink-0" />
+          PDF
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            downloadProductionViewExcel({
+              rows: rowsForExport,
+              statistics,
+              sheetName: excelSheetName,
+              fileStem,
+            })
+          }
+          className={`${exportBtnClass} bg-green-600 hover:bg-green-700`}
+        >
+          <FileDown className="w-3.5 h-3.5 shrink-0" />
+          Excel
+        </button>
+      </div>
       <div className="mb-4">
         <div className="flex flex-row justify-between items-start gap-4">
           <div className="min-w-0 flex-1">
@@ -356,6 +488,9 @@ const DramaManagementDashboard = () => {
   const dayBreakdown = dayReport?.data?.breakdown ?? [];
 
   const yearStats = yearReport?.data?.statistics ?? {};
+  const monthStats = monthReport?.data?.statistics;
+  const weekStats = weekReport?.data?.statistics;
+  const dayStats = dayReport?.data?.statistics;
 
   const maxYear = useBreakdownMaxValues(yearBreakdown);
   const maxMonth = useBreakdownMaxValues(monthBreakdown);
@@ -382,101 +517,6 @@ const DramaManagementDashboard = () => {
     return parts.join(" · ");
   };
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Production report (all views)", 14, 18);
-    doc.setFontSize(10);
-    doc.text(`Year view year: ${yearViewYear}`, 14, 28);
-    doc.text(
-      `Month view: ${monthViewYear} / ${monthViewMonthName} · Week/Day: direct (no query filters)`,
-      14,
-      35
-    );
-    doc.text(`Category bars: ${selectedCategory}`, 14, 42);
-
-    const sections = [
-      { label: "Year (by month)", rows: yearBreakdown },
-      { label: "Month (by day)", rows: monthBreakdown },
-      { label: "Week (by weekday)", rows: weekBreakdown },
-      { label: "Day (by hour)", rows: dayBreakdown },
-    ];
-
-    let y = 52;
-    sections.forEach(({ label, rows }) => {
-      doc.setFontSize(11);
-      doc.text(label, 14, y);
-      y += 7;
-      doc.setFontSize(8);
-      rows.slice(0, 18).forEach((row) => {
-        doc.text(
-          `${row.period} | m:${row.movies} t:${row.trailers} v:${row.views} $:${row.revenue}`,
-          14,
-          y
-        );
-        y += 5;
-        if (y > 280) {
-          doc.addPage();
-          y = 16;
-        }
-      });
-      y += 6;
-    });
-
-    doc.save("production-report.pdf");
-  };
-
-  const exportToExcel = () => {
-    const wb = XLSX.utils.book_new();
-    const addSheet = (name, rows) => {
-      const sheet = XLSX.utils.json_to_sheet(
-        (rows || []).map((r) => ({
-          period: r.period,
-          revenue: r.revenue,
-          views: r.views,
-          movies: r.movies,
-          trailers: r.trailers,
-        }))
-      );
-      XLSX.utils.book_append_sheet(wb, sheet, name.slice(0, 31));
-    };
-    addSheet("Year", yearBreakdown);
-    addSheet("Month", monthBreakdown);
-    addSheet("Week", weekBreakdown);
-    addSheet("Day", dayBreakdown);
-
-    const stats = yearStats;
-    const statsRows = [
-      {
-        metric: "activeMovie",
-        total: stats?.activeMovie?.total,
-        period: stats?.activeMovie?.periodCount,
-        growth: stats?.activeMovie?.growth,
-      },
-      {
-        metric: "totalTrailer",
-        total: stats?.totalTrailer?.total,
-        period: stats?.totalTrailer?.periodCount,
-        growth: stats?.totalTrailer?.growth,
-      },
-      {
-        metric: "totalView",
-        total: stats?.totalView?.total,
-        period: stats?.totalView?.periodCount,
-        growth: stats?.totalView?.growth,
-      },
-      {
-        metric: "totalRevenue",
-        total: stats?.totalRevenue?.total,
-        period: stats?.totalRevenue?.periodAmount,
-        growth: stats?.totalRevenue?.growth,
-      },
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statsRows), "Year stats");
-
-    XLSX.writeFile(wb, "production-report.xlsx");
-  };
-
   const growthIcon = (growthStr) =>
     String(growthStr || "").trim().startsWith("-") ? (
       <ChevronDown className="w-4 h-4 text-red-500" />
@@ -492,47 +532,33 @@ const DramaManagementDashboard = () => {
         </h1>
 
         <div className="rounded-lg mb-6">
-          <div className="flex gap-4 mb-4 flex-wrap items-center justify-between">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={exportToPDF}
-                className="flex items-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+          <div className="flex gap-4 mb-4 flex-wrap items-center justify-end">
+            <div className="flex items-center gap-2">
+              <label className="font-semibold text-white">Bars:</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className={selectFilterClass}
               >
-                <FileDown className="w-4 h-4" />
-                Export PDF
-              </button>
-              <button
-                type="button"
-                onClick={exportToExcel}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
-              >
-                <FileDown className="w-4 h-4" />
-                Export Excel
-              </button>
-            </div>
-
-            <div className="flex gap-4 flex-wrap items-center">
-              <div className="flex items-center gap-2">
-                <label className="font-semibold text-white">Bars:</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className={selectFilterClass}
-                >
-                  {categoryOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                {categoryOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           <ProductionBreakdownChart
             title="Production breakdown — Year view"
             subtitle={formatFilterSubtitle(yearReport?.data?.filter)}
+            fileStem={`year-${yearViewYear}`}
+            excelSheetName="Year"
+            exportMetaLines={[
+              `Bars: ${selectedCategory}`,
+              `Year filter: ${yearViewYear}`,
+            ]}
+            statistics={yearStats}
             filterSlot={
               <>
                 <label className="text-sm font-semibold text-white">Year:</label>
@@ -559,6 +585,15 @@ const DramaManagementDashboard = () => {
           <ProductionBreakdownChart
             title="Production breakdown — Month view"
             subtitle={formatFilterSubtitle(monthReport?.data?.filter)}
+            fileStem={`month-${monthViewYear}-${monthViewMonthName}`}
+            excelSheetName="Month"
+            exportRows={monthBreakdown}
+            exportMetaLines={[
+              `Bars: ${selectedCategory}`,
+              `Year: ${monthViewYear}`,
+              `Month: ${monthViewMonthName}`,
+            ]}
+            statistics={monthStats}
             filterSlot={
               <>
                 <label className="text-sm font-semibold text-white">Year:</label>
@@ -601,6 +636,10 @@ const DramaManagementDashboard = () => {
           <ProductionBreakdownChart
             title="Production breakdown — Week view"
             subtitle={formatFilterSubtitle(weekReport?.data?.filter)}
+            fileStem="week"
+            excelSheetName="Week"
+            exportMetaLines={[`Bars: ${selectedCategory}`]}
+            statistics={weekStats}
             breakdown={weekBreakdown}
             isLoading={weekLoading}
             isError={weekError}
@@ -611,6 +650,10 @@ const DramaManagementDashboard = () => {
           <ProductionBreakdownChart
             title="Production breakdown — Day view"
             subtitle={formatFilterSubtitle(dayReport?.data?.filter)}
+            fileStem="day"
+            excelSheetName="Day"
+            exportMetaLines={[`Bars: ${selectedCategory}`]}
+            statistics={dayStats}
             breakdown={dayBreakdown}
             isLoading={dayLoading}
             isError={dayError}
