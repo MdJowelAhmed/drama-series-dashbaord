@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -29,13 +30,15 @@ export default function CategoryManager() {
   const { data: categoryData, isLoading, isError } = useGetAllCategoryQuery();
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
   const [createCategory] = useCreateCategoryMutation();
-  const [updateCategory] = useUpdateCategoryMutation();
+  const [updateCategory, { isLoading: isUpdatingStatus }] = useUpdateCategoryMutation();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '' });
+  const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(null);
 
   const categories = categoryData?.data || [];
 
@@ -104,6 +107,38 @@ export default function CategoryManager() {
     setFormData({ name: e.target.value });
   };
 
+  const isCategoryActive = (category) =>
+    (category.status ?? 'active').toLowerCase() === 'active';
+
+  const requestStatusChange = (category, checked) => {
+    const nextStatus = checked ? 'active' : 'inactive';
+    if (isCategoryActive(category) === checked) return;
+    setPendingStatus({ category, nextStatus });
+    setStatusConfirmOpen(true);
+  };
+
+  const closeStatusConfirm = () => {
+    setStatusConfirmOpen(false);
+    setPendingStatus(null);
+  };
+
+  const confirmStatusChange = async () => {
+    if (!pendingStatus) return;
+    const { category, nextStatus } = pendingStatus;
+    try {
+      await updateCategory({
+        id: category._id,
+        categoryData: { status: nextStatus },
+      }).unwrap();
+      toast.success(
+        nextStatus === 'active' ? 'Category activated' : 'Category deactivated'
+      );
+      closeStatusConfirm();
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to update status'));
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen p-8 flex items-center justify-center">
@@ -137,9 +172,25 @@ export default function CategoryManager() {
         {categories.map((category) => (
           <Card key={category._id} className="hover:shadow-lg transition-shadow backdrop-blur-md bg-white/30">
             <CardHeader>
-              <CardTitle className="flex justify-between items-start">
-                <span>{category.name}</span>
-                <div className="flex gap-2">
+              <CardTitle className="flex justify-between items-start gap-2">
+                <span className="min-w-0 break-words">{category.name}</span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <div
+                    className="flex items-center gap-1.5"
+                    title={isCategoryActive(category) ? 'Active' : 'Inactive'}
+                  >
+                    <span className="text-xs font-normal text-muted-foreground whitespace-nowrap hidden sm:inline">
+                      {/* {isCategoryActive(category) ? 'Active' : 'Inactive'} */}
+                    </span>
+                    <Switch
+                      checked={isCategoryActive(category)}
+                      disabled={isUpdatingStatus && pendingStatus?.category._id === category._id}
+                      onCheckedChange={(checked) =>
+                        requestStatusChange(category, checked)
+                      }
+                      aria-label={`Toggle status for ${category.name}`}
+                    />
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -148,14 +199,14 @@ export default function CategoryManager() {
                   >
                     <Pencil className="w-6 h-6" />
                   </Button>
-                  <Button
+                  {/* <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDeleteClick(category)}
                     className="h-8 w-8 text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="w-6 h-6" />
-                  </Button>
+                  </Button> */}
                 </div>
               </CardTitle>
             </CardHeader>
@@ -203,6 +254,41 @@ export default function CategoryManager() {
             </Button>
             <Button onClick={handleSubmit}>
               {editingId ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={statusConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) closeStatusConfirm();
+        }}
+      >
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle>Confirm status change</DialogTitle>
+            <DialogDescription>
+              {pendingStatus?.nextStatus === 'active'
+                ? `Activate category "${pendingStatus?.category?.name}"? It will be marked as active.`
+                : `Deactivate category "${pendingStatus?.category?.name}"? It will be marked as inactive.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isUpdatingStatus}
+              onClick={closeStatusConfirm}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={isUpdatingStatus}
+              onClick={confirmStatusChange}
+            >
+              {isUpdatingStatus ? 'Updating…' : 'Confirm'}
             </Button>
           </DialogFooter>
         </DialogContent>

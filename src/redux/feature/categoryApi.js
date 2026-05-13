@@ -40,7 +40,7 @@ const categoryApi = api.injectEndpoints({
           });
         }
         return {
-          url: "/category",
+          url: "/category/all",
           method: "GET",
           params,
         };
