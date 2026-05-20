@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { X, Tag, Upload } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { X, Tag, Upload, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -18,28 +18,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-// const VIDEO_TYPES = [
-//   "Science Fiction",
-//   "Romantic",
-//   "War",
-//   "History",
-//   "Action",
-//   "Comedy",
-//   "Drama",
-//   "Thriller",
-//   "Horror",
-//   "Mystery",
-//   "Fantasy",
-//   "Adventure",
-//   "Crime",
-//   "Biography",
-//   "Documentary",
-//   "Animation",
-//   "Musical",
-//   "Western",
-//   "Superhero",
-//   "Noir",
-// ];
+const getInitialCategoryIds = (data) => {
+  if (data?.categoryIds?.length) {
+    return data.categoryIds.map((c) =>
+      typeof c === "object" ? c._id : c
+    );
+  }
+  if (data?.categories?.length) {
+    return data.categories.map((c) => c._id || c);
+  }
+  if (data?.categoryId) {
+    const id = data.categoryId?._id || data.categoryId;
+    return id ? [id] : [];
+  }
+  return [];
+};
 
 const CommonFormModal = ({
   title,
@@ -51,8 +44,9 @@ const CommonFormModal = ({
   showGenre = false,
   showVideoFields = false,
 }) => {
-  const [categoryId, setCategoryId] = useState(data?.categoryId?._id || data?.categoryId || "");
-  console.log(categories);
+  const [categoryIds, setCategoryIds] = useState(() =>
+    getInitialCategoryIds(data)
+  );
   const [formData, setFormData] = useState({
     title: data?.title || "",
     description: data?.description || "",
@@ -63,15 +57,23 @@ const CommonFormModal = ({
     thumbnail: data?.thumbnail || data?.thumbnail_url || null,
     thumbnailFile: null, // Store actual file for API upload
     contentName: data?.contentName || "",
-    categoryId: data?.categoryId?._id || data?.categoryId || "",
+    categoryIds: getInitialCategoryIds(data),
   });
 
   const [tagInput, setTagInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
+  const categoryTriggerRef = useRef(null);
+  const [categoryMenuWidth, setCategoryMenuWidth] = useState(undefined);
 
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, categoryId }));
-  }, [categoryId]);
+    setFormData((prev) => ({ ...prev, categoryIds }));
+  }, [categoryIds]);
+
+  const handleCategoryToggle = (catId, checked) => {
+    setCategoryIds((prev) =>
+      checked ? [...prev, catId] : prev.filter((id) => id !== catId)
+    );
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -123,9 +125,24 @@ const CommonFormModal = ({
   };
 
   const handleSave = () => {
-    if (!formData.title.trim()) return;
+    if (!formData.title.trim() || categoryIds.length === 0) return;
     onSave(formData);
   };
+
+  const selectedCategories =
+    categories?.filter((cat) => categoryIds.includes(cat._id)) || [];
+
+  const categoryDisplayLabel = (() => {
+    if (selectedCategories.length === 0) return "Select categories";
+    if (selectedCategories.length === 1) return selectedCategories[0].name;
+    if (selectedCategories.length === 2) {
+      return selectedCategories.map((c) => c.name).join(", ");
+    }
+    return `${selectedCategories
+      .slice(0, 2)
+      .map((c) => c.name)
+      .join(", ")} +${selectedCategories.length - 2}`;
+  })();
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -162,23 +179,64 @@ const CommonFormModal = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text- mb-1">
-                Category *
-              </label>
-
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger className="w-full px-4 py-[22px] border border-white/40 rounded-md focus:ring-4 focus:ring-accent-foreground focus:border-blue-500 outline-none transition-all  text-white">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories?.map((cat) => (
-                    <SelectItem key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div ref={categoryTriggerRef} className="relative w-full">
+              <Label>Categories *</Label>
+              <DropdownMenu
+                modal={false}
+                onOpenChange={(open) => {
+                  if (open && categoryTriggerRef.current) {
+                    setCategoryMenuWidth(
+                      categoryTriggerRef.current.offsetWidth
+                    );
+                  }
+                }}
+              >
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "mt-1 flex h-12 w-full items-center justify-between gap-2 rounded-md border border-white/40 bg-transparent px-3 text-sm shadow-sm outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
+                      categoryIds.length === 0
+                        ? "text-accent/50"
+                        : "text-accent"
+                    )}
+                  >
+                    <span className="truncate text-left">
+                      {categoryDisplayLabel}
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  sideOffset={4}
+                  style={{ width: categoryMenuWidth }}
+                  className={cn(
+                    "z-[200] max-h-52 overflow-y-auto",
+                    "border-white/20 bg-[#1a1a2e] p-1 text-accent shadow-xl"
+                  )}
+                >
+                  {categories?.length ? (
+                    categories.map((cat) => (
+                      <DropdownMenuCheckboxItem
+                        key={cat._id}
+                        checked={categoryIds.includes(cat._id)}
+                        onCheckedChange={(checked) =>
+                          handleCategoryToggle(cat._id, checked === true)
+                        }
+                        onSelect={(e) => e.preventDefault()}
+                        className="cursor-pointer text-accent focus:bg-white/10 focus:text-accent"
+                      >
+                        {cat.name}
+                      </DropdownMenuCheckboxItem>
+                    ))
+                  ) : (
+                    <p className="px-2 py-2 text-sm text-accent/60">
+                      No categories available
+                    </p>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <div>
               <Label>Tags</Label>
@@ -346,7 +404,10 @@ const CommonFormModal = ({
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={!formData.title.trim()}>
+            <Button
+              onClick={handleSave}
+              disabled={!formData.title.trim() || categoryIds.length === 0}
+            >
               {data ? "Update" : "Create"}
             </Button>
           </div>

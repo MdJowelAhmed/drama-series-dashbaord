@@ -88,7 +88,7 @@ const AllDramas = () => {
         accentColor: formData.color,
         status: formData.status || "Ongoing",
         contentName: formData.contentName,
-        categoryId: formData.categoryId,
+        categoryIds: formData.categoryIds || [],
       };
 
       // Add data as JSON string
@@ -117,7 +117,7 @@ const AllDramas = () => {
       const dataObject = {
         title: formData.title,
         // type: formData.type,
-        categoryId: formData.categoryId,
+        categoryIds: formData.categoryIds || [],
         genre: formData.genre,
         tags: formData.tags || [],
         description: formData.description,
