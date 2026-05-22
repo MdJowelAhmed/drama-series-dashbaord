@@ -78,17 +78,22 @@ const AllDramas = () => {
         submitData.append("thumbnail", formData.thumbnailFile);
       }
 
+      const subCategoryIds = formData.subCategoryIds || [];
+      const isLibrary = subCategoryIds.length > 0;
+
       // Prepare data object
       const dataObject = {
         title: formData.title,
         // type: formData.type,
         genre: formData.genre,
-        tags: formData.tags || [],
+        tags: isLibrary ? [] : formData.tags || [],
         description: formData.description,
         accentColor: formData.color,
         status: formData.status || "Ongoing",
         contentName: formData.contentName,
         categoryIds: formData.categoryIds || [],
+        subCategoryIds,
+        subCategories: subCategoryIds,
       };
 
       // Add data as JSON string
@@ -113,13 +118,18 @@ const AllDramas = () => {
         submitData.append("thumbnail", formData.thumbnailFile);
       }
 
+      const subCategoryIds = formData.subCategoryIds || [];
+      const isLibrary = subCategoryIds.length > 0;
+
       // Prepare data object
       const dataObject = {
         title: formData.title,
         // type: formData.type,
         categoryIds: formData.categoryIds || [],
+        subCategoryIds,
+        subCategories: subCategoryIds,
         genre: formData.genre,
-        tags: formData.tags || [],
+        tags: isLibrary ? [] : formData.tags || [],
         description: formData.description,
         accentColor: formData.color,
         status: formData.status || "Ongoing",

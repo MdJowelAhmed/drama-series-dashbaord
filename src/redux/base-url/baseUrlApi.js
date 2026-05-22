@@ -36,6 +36,8 @@ export const api = createApi({
     "Package",
     "Remainder",
     "Dashboard",
+    "Category",
+    "Subcategory",
   ],
   endpoints: () => ({}),
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { X, Tag, Upload, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useGetSubcategoriesByCategoryQuery } from "@/redux/feature/subcategoryApi";
+
+const isLibraryCategory = (category) =>
+  (category?.name || "").trim().toLowerCase() === "library";
 
 const getInitialCategoryIds = (data) => {
   if (data?.categoryIds?.length) {
@@ -34,6 +38,18 @@ const getInitialCategoryIds = (data) => {
   return [];
 };
 
+const getInitialSubCategoryIds = (data) => {
+  if (data?.subCategoryIds?.length) {
+    return data.subCategoryIds.map((s) =>
+      typeof s === "object" ? s._id : s
+    );
+  }
+  if (data?.subCategories?.length) {
+    return data.subCategories.map((s) => (typeof s === "object" ? s._id : s));
+  }
+  return [];
+};
+
 const CommonFormModal = ({
   title,
   categories,
@@ -47,6 +63,9 @@ const CommonFormModal = ({
   const [categoryIds, setCategoryIds] = useState(() =>
     getInitialCategoryIds(data)
   );
+  const [subCategoryIds, setSubCategoryIds] = useState(() =>
+    getInitialSubCategoryIds(data)
+  );
   const [formData, setFormData] = useState({
     title: data?.title || "",
     description: data?.description || "",
@@ -58,20 +77,65 @@ const CommonFormModal = ({
     thumbnailFile: null, // Store actual file for API upload
     contentName: data?.contentName || "",
     categoryIds: getInitialCategoryIds(data),
+    subCategoryIds: getInitialSubCategoryIds(data),
   });
 
   const [tagInput, setTagInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const categoryTriggerRef = useRef(null);
+  const subCategoryTriggerRef = useRef(null);
   const [categoryMenuWidth, setCategoryMenuWidth] = useState(undefined);
+  const [subCategoryMenuWidth, setSubCategoryMenuWidth] = useState(undefined);
+
+  const selectedLibraryCategory = useMemo(
+    () =>
+      categories?.find(
+        (cat) => categoryIds.includes(cat._id) && isLibraryCategory(cat)
+      ) || null,
+    [categories, categoryIds]
+  );
+  const isLibrarySelected = Boolean(selectedLibraryCategory);
+
+  const {
+    data: subcategoryResponse,
+    isFetching: isFetchingSubcategories,
+  } = useGetSubcategoriesByCategoryQuery(selectedLibraryCategory?._id, {
+    skip: !selectedLibraryCategory?._id,
+  });
+  const availableSubcategories = subcategoryResponse?.data || [];
 
   useEffect(() => {
     setFormData((prev) => ({ ...prev, categoryIds }));
   }, [categoryIds]);
 
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, subCategoryIds }));
+  }, [subCategoryIds]);
+
+  useEffect(() => {
+    if (!isLibrarySelected && subCategoryIds.length > 0) {
+      setSubCategoryIds([]);
+    }
+  }, [isLibrarySelected, subCategoryIds.length]);
+
+  useEffect(() => {
+    if (!availableSubcategories.length) return;
+    const validIds = new Set(availableSubcategories.map((s) => s._id));
+    setSubCategoryIds((prev) => {
+      const filtered = prev.filter((id) => validIds.has(id));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [availableSubcategories]);
+
   const handleCategoryToggle = (catId, checked) => {
     setCategoryIds((prev) =>
       checked ? [...prev, catId] : prev.filter((id) => id !== catId)
+    );
+  };
+
+  const handleSubCategoryToggle = (subId, checked) => {
+    setSubCategoryIds((prev) =>
+      checked ? [...prev, subId] : prev.filter((id) => id !== subId)
     );
   };
 
@@ -142,6 +206,25 @@ const CommonFormModal = ({
       .slice(0, 2)
       .map((c) => c.name)
       .join(", ")} +${selectedCategories.length - 2}`;
+  })();
+
+  const selectedSubcategories = availableSubcategories.filter((sub) =>
+    subCategoryIds.includes(sub._id)
+  );
+
+  const subCategoryDisplayLabel = (() => {
+    if (isFetchingSubcategories && !availableSubcategories.length) {
+      return "Loading subcategories…";
+    }
+    if (selectedSubcategories.length === 0) return "Select subcategories";
+    if (selectedSubcategories.length === 1) return selectedSubcategories[0].name;
+    if (selectedSubcategories.length === 2) {
+      return selectedSubcategories.map((s) => s.name).join(", ");
+    }
+    return `${selectedSubcategories
+      .slice(0, 2)
+      .map((s) => s.name)
+      .join(", ")} +${selectedSubcategories.length - 2}`;
   })();
 
   return (
@@ -238,42 +321,127 @@ const CommonFormModal = ({
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div>
-              <Label>Tags</Label>
-              <div className="flex gap-2 mb-3">
-                <Input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) =>
-                    e.key === "Enter" && (e.preventDefault(), handleAddTag())
-                  }
-                  placeholder="Type a tag and press Enter"
-                />
-                <Button onClick={handleAddTag} type="button" className="h-12">
-                  Add
-                </Button>
-              </div>
-              {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
+            {isLibrarySelected ? (
+              <div ref={subCategoryTriggerRef} className="relative w-full">
+                <Label>Subcategories</Label>
+                <DropdownMenu
+                  modal={false}
+                  onOpenChange={(open) => {
+                    if (open && subCategoryTriggerRef.current) {
+                      setSubCategoryMenuWidth(
+                        subCategoryTriggerRef.current.offsetWidth
+                      );
+                    }
+                  }}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        "mt-1 flex h-12 w-full items-center justify-between gap-2 rounded-md border border-white/40 bg-transparent px-3 text-sm shadow-sm outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
+                        subCategoryIds.length === 0
+                          ? "text-accent/50"
+                          : "text-accent"
+                      )}
                     >
-                      <Tag className="h-3 w-3" />
-                      {tag}
-                      <button
-                        onClick={() => handleRemoveTag(tag)}
-                        className="hover:text-blue-900"
+                      <span className="truncate text-left">
+                        {subCategoryDisplayLabel}
+                      </span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    sideOffset={4}
+                    style={{ width: subCategoryMenuWidth }}
+                    className={cn(
+                      "z-[200] max-h-52 overflow-y-auto",
+                      "border-white/20 bg-[#1a1a2e] p-1 text-accent shadow-xl"
+                    )}
+                  >
+                    {availableSubcategories.length ? (
+                      availableSubcategories.map((sub) => (
+                        <DropdownMenuCheckboxItem
+                          key={sub._id}
+                          checked={subCategoryIds.includes(sub._id)}
+                          onCheckedChange={(checked) =>
+                            handleSubCategoryToggle(sub._id, checked === true)
+                          }
+                          onSelect={(e) => e.preventDefault()}
+                          className="cursor-pointer text-accent focus:bg-white/10 focus:text-accent"
+                        >
+                          {sub.name}
+                        </DropdownMenuCheckboxItem>
+                      ))
+                    ) : (
+                      <p className="px-2 py-2 text-sm text-accent/60">
+                        {isFetchingSubcategories
+                          ? "Loading…"
+                          : "No subcategories available"}
+                      </p>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {selectedSubcategories.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedSubcategories.map((sub) => (
+                      <span
+                        key={sub._id}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
+                        {sub.name}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSubCategoryToggle(sub._id, false)
+                          }
+                          className="hover:text-blue-900"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <Label>Tags</Label>
+                <div className="flex gap-2 mb-3">
+                  <Input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyPress={(e) =>
+                      e.key === "Enter" && (e.preventDefault(), handleAddTag())
+                    }
+                    placeholder="Type a tag and press Enter"
+                  />
+                  <Button onClick={handleAddTag} type="button" className="h-12">
+                    Add
+                  </Button>
                 </div>
-              )}
-            </div>
+                {formData.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
+                      >
+                        <Tag className="h-3 w-3" />
+                        {tag}
+                        <button
+                          onClick={() => handleRemoveTag(tag)}
+                          className="hover:text-blue-900"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
