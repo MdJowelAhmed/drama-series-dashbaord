@@ -80,24 +80,9 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
       icon: Video,
     },
     {
-      name: "Report Analytics",
-      path: "/reports",
-      icon: ReceiptPoundSterling,
-    },
-    {
       name: "Category Management",
       path: "/categories",
       icon: ReceiptPoundSterling,
-    },
-    {
-      name: "Subscription Package",
-      path: "/subscriptions",
-      icon: CreditCard,
-    },
-    {
-      name: "FAQ Management",
-      path: "/faq",
-      icon: HelpCircle,
     },
     {
       name: "Remainder Management",
@@ -109,6 +94,24 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
       path: "/login-image",
       icon: Image,
     },
+    {
+      name: "Report Analytics",
+      path: "/reports",
+      icon: ReceiptPoundSterling,
+    },
+  
+    {
+      name: "Subscription Package",
+      path: "/subscriptions",
+      icon: CreditCard,
+    },
+    {
+      name: "FAQ Management",
+      path: "/faq",
+      icon: HelpCircle,
+    },
+ 
+  
     {
       name: "User Management",
       path: "/users",
