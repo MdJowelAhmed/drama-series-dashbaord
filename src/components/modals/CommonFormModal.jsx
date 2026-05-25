@@ -80,7 +80,6 @@ const CommonFormModal = ({
     subCategoryIds: getInitialSubCategoryIds(data),
   });
 
-  const [tagInput, setTagInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const categoryTriggerRef = useRef(null);
   const subCategoryTriggerRef = useRef(null);
@@ -169,23 +168,6 @@ const CommonFormModal = ({
       }));
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()],
-      }));
-      setTagInput("");
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
-    }));
   };
 
   const handleSave = () => {
@@ -294,8 +276,10 @@ const CommonFormModal = ({
                   align="start"
                   sideOffset={4}
                   style={{ width: categoryMenuWidth }}
+                  onWheel={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
                   className={cn(
-                    "z-[200] max-h-52 overflow-y-auto",
+                    "z-[200] max-h-60 overflow-y-auto overscroll-contain",
                     "border-white/20 bg-[#1a1a2e] p-1 text-accent shadow-xl"
                   )}
                 >
@@ -321,127 +305,105 @@ const CommonFormModal = ({
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            {isLibrarySelected ? (
-              <div ref={subCategoryTriggerRef} className="relative w-full">
-                <Label>Subcategories</Label>
-                <DropdownMenu
-                  modal={false}
-                  onOpenChange={(open) => {
-                    if (open && subCategoryTriggerRef.current) {
-                      setSubCategoryMenuWidth(
-                        subCategoryTriggerRef.current.offsetWidth
-                      );
+            <div ref={subCategoryTriggerRef} className="relative w-full">
+              <Label
+                className={cn(!isLibrarySelected && "text-accent/50")}
+              >
+                Tags
+              </Label>
+              <DropdownMenu
+                modal={false}
+                onOpenChange={(open) => {
+                  if (open && subCategoryTriggerRef.current) {
+                    setSubCategoryMenuWidth(
+                      subCategoryTriggerRef.current.offsetWidth
+                    );
+                  }
+                }}
+              >
+                <DropdownMenuTrigger asChild disabled={!isLibrarySelected}>
+                  <button
+                    type="button"
+                    disabled={!isLibrarySelected}
+                    title={
+                      !isLibrarySelected
+                        ? "Select the 'Library' category to enable tags"
+                        : undefined
                     }
-                  }}
-                >
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(
-                        "mt-1 flex h-12 w-full items-center justify-between gap-2 rounded-md border border-white/40 bg-transparent px-3 text-sm shadow-sm outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
-                        subCategoryIds.length === 0
+                    className={cn(
+                      "mt-1 flex h-12 w-full items-center justify-between gap-2 rounded-md border border-white/40 bg-transparent px-3 text-sm shadow-sm outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
+                      !isLibrarySelected
+                        ? "cursor-not-allowed opacity-50 text-accent/50"
+                        : subCategoryIds.length === 0
                           ? "text-accent/50"
                           : "text-accent"
-                      )}
-                    >
-                      <span className="truncate text-left">
-                        {subCategoryDisplayLabel}
-                      </span>
-                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    sideOffset={4}
-                    style={{ width: subCategoryMenuWidth }}
-                    className={cn(
-                      "z-[200] max-h-52 overflow-y-auto",
-                      "border-white/20 bg-[#1a1a2e] p-1 text-accent shadow-xl"
                     )}
                   >
-                    {availableSubcategories.length ? (
-                      availableSubcategories.map((sub) => (
-                        <DropdownMenuCheckboxItem
-                          key={sub._id}
-                          checked={subCategoryIds.includes(sub._id)}
-                          onCheckedChange={(checked) =>
-                            handleSubCategoryToggle(sub._id, checked === true)
-                          }
-                          onSelect={(e) => e.preventDefault()}
-                          className="cursor-pointer text-accent focus:bg-white/10 focus:text-accent"
-                        >
-                          {sub.name}
-                        </DropdownMenuCheckboxItem>
-                      ))
-                    ) : (
-                      <p className="px-2 py-2 text-sm text-accent/60">
-                        {isFetchingSubcategories
-                          ? "Loading…"
-                          : "No subcategories available"}
-                      </p>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                {selectedSubcategories.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {selectedSubcategories.map((sub) => (
-                      <span
+                    <span className="truncate text-left">
+                      {!isLibrarySelected
+                        ? "Select 'Library' category first"
+                        : subCategoryDisplayLabel}
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  sideOffset={4}
+                  style={{ width: subCategoryMenuWidth }}
+                  onWheel={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                  className={cn(
+                    "z-[200] max-h-60 overflow-y-auto overscroll-contain",
+                    "border-white/20 bg-[#1a1a2e] p-1 text-accent shadow-xl"
+                  )}
+                >
+                  {availableSubcategories.length ? (
+                    availableSubcategories.map((sub) => (
+                      <DropdownMenuCheckboxItem
                         key={sub._id}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
+                        checked={subCategoryIds.includes(sub._id)}
+                        onCheckedChange={(checked) =>
+                          handleSubCategoryToggle(sub._id, checked === true)
+                        }
+                        onSelect={(e) => e.preventDefault()}
+                        className="cursor-pointer text-accent focus:bg-white/10 focus:text-accent"
                       >
                         {sub.name}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSubCategoryToggle(sub._id, false)
-                          }
-                          className="hover:text-blue-900"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div>
-                <Label>Tags</Label>
-                <div className="flex gap-2 mb-3">
-                  <Input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyPress={(e) =>
-                      e.key === "Enter" && (e.preventDefault(), handleAddTag())
-                    }
-                    placeholder="Type a tag and press Enter"
-                  />
-                  <Button onClick={handleAddTag} type="button" className="h-12">
-                    Add
-                  </Button>
-                </div>
-                {formData.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {formData.tags.map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
+                      </DropdownMenuCheckboxItem>
+                    ))
+                  ) : (
+                    <p className="px-2 py-2 text-sm text-accent/60">
+                      {isFetchingSubcategories
+                        ? "Loading…"
+                        : "No subcategories available"}
+                    </p>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {isLibrarySelected && selectedSubcategories.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {selectedSubcategories.map((sub) => (
+                    <span
+                      key={sub._id}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
+                    >
+                      <Tag className="h-3 w-3" />
+                      {sub.name}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleSubCategoryToggle(sub._id, false)
+                        }
+                        className="hover:text-blue-900"
                       >
-                        <Tag className="h-3 w-3" />
-                        {tag}
-                        <button
-                          onClick={() => handleRemoveTag(tag)}
-                          className="hover:text-blue-900"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
