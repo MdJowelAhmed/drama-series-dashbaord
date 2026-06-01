@@ -20,7 +20,7 @@ import {
 } from "@/redux/feature/RemainderApi";
 import { toast } from "sonner";
 import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
-import { getImageUrl } from "@/components/share/imageUrl";
+import AppImage from "@/components/share/AppImage";
 import ReminderFormModal from "./components/ReminderFormModal";
 import ReminderDetailsModal from "./components/ReminderDetailsModal";
 import { formatDateTime } from "./utils";
@@ -257,9 +257,10 @@ const RemainderManage = () => {
                           <td className="px-6 py-4">
                             <div className="h-16 w-32 rounded-lg overflow-hidden bg-slate-100">
                               {reminder.thumbnail ? (
-                                <img
-                                  src={getImageUrl(reminder.thumbnail)}
+                                <AppImage
+                                  src={reminder.thumbnail}
                                   alt={reminder.name}
+                                  width={200}
                                   className="h-full w-full object-cover"
                                 />
                               ) : (

@@ -14,6 +14,7 @@ import {
   useDeleteDramaMutation,
 } from "@/redux/feature/dramaManagement/dramaManagementApi";
 import { getImageUrl } from "@/components/share/imageUrl";
+import AppImage from "@/components/share/AppImage";
 import CommonFormModal from "@/components/modals/CommonFormModal";
 import { useGetAllCategoryQuery } from "@/redux/feature/categoryApi";
 import ReusablePagination from "@/components/share/ReusablePagination";
@@ -225,13 +226,11 @@ const AllDramas = () => {
               >
                 <div className="relative h-72 overflow-hidden bg-slate-200">
                   {drama.thumbnail ? (
-                    <img
-                      src={getImageUrl(drama.thumbnail)}
+                    <AppImage
+                      src={drama.thumbnail}
                       alt={drama.title}
+                      width={400}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-400">

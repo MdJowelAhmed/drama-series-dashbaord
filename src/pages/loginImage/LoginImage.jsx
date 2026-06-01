@@ -55,6 +55,8 @@ const LoginImage = () => {
               key={imgPath || index}
               src={buildImageUrl(imgPath)}
               alt={`Login visual ${index + 1}`}
+              loading="lazy"
+              decoding="async"
               className="w-full h-80 rounded-lg object-cover"
             />
           ))}

@@ -486,6 +486,8 @@ const CommonFormModal = ({
                   <img
                     src={formData.thumbnail}
                     alt="Preview"
+                    loading="lazy"
+                    decoding="async"
                     className="mx-auto h-40 w-full object-cover rounded-lg"
                   />
                   <Button

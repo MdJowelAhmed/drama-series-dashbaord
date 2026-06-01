@@ -112,6 +112,8 @@ const ProfilePage = () => {
                     <img
                       src={getImageUrl(imagePreview)}
                       alt="Profile"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                     />
                   ) : (

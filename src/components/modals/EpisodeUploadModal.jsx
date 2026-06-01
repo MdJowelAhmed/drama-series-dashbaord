@@ -775,6 +775,8 @@ const EpisodeUploadModal = ({
                       <img
                         src={thumbnailPreview}
                         alt="Thumbnail preview"
+                        loading="lazy"
+                        decoding="async"
                         className="h-32 mx-auto rounded-lg object-cover shadow-lg border border-white/10 hover:opacity-80 transition-opacity"
                       />
                       <p className="text-xs text-white/50 mt-2">Click to change</p>

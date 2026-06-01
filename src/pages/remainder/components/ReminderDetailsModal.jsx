@@ -1,5 +1,5 @@
 import { Calendar, Clock } from "lucide-react";
-import { getImageUrl } from "@/components/share/imageUrl";
+import AppImage from "@/components/share/AppImage";
 import { formatDateTime } from "../utils";
 import {
   Dialog,
@@ -25,9 +25,10 @@ const ReminderDetailsModal = ({ reminder, onClose }) => {
           {/* Thumbnail */}
           {reminder.thumbnail && (
             <div className="h-80 w-full overflow-hidden bg-gray-100 rounded-lg">
-              <img
-                src={getImageUrl(reminder.thumbnail)}
+              <AppImage
+                src={reminder.thumbnail}
                 alt={reminder.name}
+                width={600}
                 className="w-full h-full object-cover"
               />
             </div>

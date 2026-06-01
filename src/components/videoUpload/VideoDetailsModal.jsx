@@ -94,10 +94,12 @@ const VideoDetailsModal = ({ video, onClose }) => {
               </div>
             ) : (
               <>
-                <img 
-                  src={thumbnailUrl} 
-                  alt={video.title} 
-                  className="w-full h-72 object-cover" 
+                <img
+                  src={thumbnailUrl}
+                  alt={video.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-72 object-cover"
                 />
                 {/* Play button overlay */}
                 <div 

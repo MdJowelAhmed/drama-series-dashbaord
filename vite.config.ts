@@ -12,9 +12,25 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
-    server: {
-    host: "72.62.164.122",
-    // host: "10.10.7.30",
+  build: {
+    // Split heavy/third-party code into separate cacheable chunks so the
+    // initial JS payload stays small and vendor code is cached across deploys.
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'redux-vendor': ['@reduxjs/toolkit', 'react-redux'],
+          'chart-vendor': ['recharts'],
+          'editor-vendor': ['react-quill'],
+          'export-vendor': ['jspdf', 'xlsx'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
+  server: {
+    // host: "72.62.164.122",
+    host: "10.10.7.30",
     // port: 3000,
   },
 });

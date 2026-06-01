@@ -370,8 +370,8 @@ export default function CategoryManager() {
     <div className="min-h-screen p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Category Manager</h1>
-          <p>Manage your product categories</p>
+          <h1 className="text-4xl font-bold mb-2">Category Management</h1>
+          <p>Manage all your categories in here</p>
         </div>
         <Button onClick={openCreateModal} className="gap-2 py-6 rounded-sm">
           <Plus className="w-4 h-4" />

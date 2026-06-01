@@ -12,11 +12,10 @@ export const api = createApi({
     baseUrl: `${import.meta.env.VITE_API_BASE_URL}/api/v1`,
     prepareHeaders: (headers, { endpoint }) => {
       if (endpoint !== "resetPassword") {
-        const token =
-          localStorage.getItem("token") 
-          headers.set("token", `${token}`);
-    
+        const token = localStorage.getItem("token");
+
         if (token) {
+          headers.set("token", token);
           headers.set("authorization", `Bearer ${token}`);
         }
       }

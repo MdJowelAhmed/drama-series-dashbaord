@@ -100,10 +100,12 @@ const TrailerManagement = () => {
             {trailers?.map((trailer) => (
               <div key={trailer._id || trailer.id} className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col rounded-2xl border border-white/20">
                 <div className="relative h-60 overflow-hidden">
-                  <img 
-                    src={getVideoAndThumbnail(trailer.thumbnail_url || trailer.thumbnailUrl) || "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400"} 
-                    alt={trailer.title} 
-                    className="w-full h-full object-cover" 
+                  <img
+                    src={getVideoAndThumbnail(trailer.thumbnail_url || trailer.thumbnailUrl) || "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?auto=compress&cs=tinysrgb&w=400"}
+                    alt={trailer.title}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                     {/* <Play className="h-12 w-12 text-white" /> */}

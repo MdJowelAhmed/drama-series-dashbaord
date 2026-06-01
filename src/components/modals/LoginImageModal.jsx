@@ -169,6 +169,8 @@ const LoginImageModal = ({ open, onClose, onSuccess, existingImages = [] }) => {
                   <img
                     src={buildImageUrl(imgPath)}
                     alt={`Existing ${idx + 1}`}
+                    loading="lazy"
+                    decoding="async"
                     className="h-32 w-full rounded-lg object-cover"
                   />
                   <button
@@ -186,6 +188,8 @@ const LoginImageModal = ({ open, onClose, onSuccess, existingImages = [] }) => {
                   <img
                     src={src}
                     alt={`New ${idx + 1}`}
+                    loading="lazy"
+                    decoding="async"
                     className="h-32 w-full rounded-lg object-cover"
                   />
                   <button

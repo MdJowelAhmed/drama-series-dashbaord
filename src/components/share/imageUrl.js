@@ -10,30 +10,52 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // const CDN_BASE_URL = "http://10.10.7.48:5003";
 const CDN_BASE_URL = import.meta.env.VITE_CDN_BASE_URL;
 /**
+ * Append Bunny CDN image optimizer params (width/height/quality) to a URL.
+ * Harmless on non-CDN hosts (params are simply ignored by the server).
+ *
+ * @param {string} url
+ * @param {{ width?: number, height?: number, quality?: number }} [options]
+ * @returns {string}
+ */
+const withResizeParams = (url, options = {}) => {
+  const { width, height, quality } = options;
+  if (!url || (!width && !height && !quality)) return url;
+
+  const params = [];
+  if (width) params.push(`width=${width}`);
+  if (height) params.push(`height=${height}`);
+  if (quality) params.push(`quality=${quality}`);
+
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}${params.join("&")}`;
+};
+
+/**
  * Get proper image URL from path
  * Handles both full URLs and relative paths
- * 
+ *
  * @param {string} path - Image path or URL
+ * @param {{ width?: number, height?: number, quality?: number }} [options] - Optional CDN resize params
  * @returns {string} - Complete image URL
  */
-export const getImageUrl = (path) => {
+export const getImageUrl = (path, options = {}) => {
   if (!path || typeof path !== "string") {
     return "";
   }
 
   // Already a full URL
   if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
+    return withResizeParams(path, options);
   }
 
   // CDN URL without protocol (e.g., "yoga-app.b-cdn.net/thumbnails/xxx.jpg")
   if (path.includes("b-cdn.net") || path.includes("bunnycdn")) {
-    return `https://${path}`;
+    return withResizeParams(`https://${path}`, options);
   }
 
   // Relative path - prepend API base URL
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${API_BASE_URL}${cleanPath}`;
+  return withResizeParams(`${API_BASE_URL}${cleanPath}`, options);
 };
 
 /**

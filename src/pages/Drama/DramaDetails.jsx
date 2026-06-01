@@ -147,6 +147,8 @@ const SeasonCard = ({
                     <img
                       src={getVideoAndThumbnail(video.thumbnailUrl || video.thumbnail_url)}
                       alt={video.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.src =
@@ -469,8 +471,10 @@ const DramaDetails = () => {
           <div className="flex flex-col lg:flex-row gap-8 p-8">
             <div className="relative group">
               <img
-                src={getImageUrl(drama.thumbnail)}
+                src={getImageUrl(drama.thumbnail, { width: 640 })}
                 alt={drama.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full lg:w-80 h-[300px] object-cover rounded-2xl shadow-2xl group-hover:scale-105 transition-transform duration-300"
                 onError={(e) => {
                   e.target.src =

@@ -3,6 +3,7 @@ import { Search, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import DeleteConfirmationModal from '@/components/share/DeleteConfirmationModal';
+import AppImage from '@/components/share/AppImage';
 import { useDeleteUserMutation, useGetAllUserQuery, useToggleUserStatusMutation } from '@/redux/feature/usersApi';
 // import { 
 //   useGetAllUserQuery, 
@@ -30,10 +31,10 @@ const UserManagement = () => {
     }
   ]
   
-  if (searchQuery) {
-    queryParams.append({
+  if (searchQuery.trim()) {
+    queryParams.push({
       name: 'searchTerm',
-      value: searchQuery
+      value: searchQuery.trim()
     });
   }
 
@@ -139,7 +140,7 @@ const UserManagement = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             {user.image ? (
-                              <img src={user.image} alt={user.name} className="h-8 w-8 rounded-full" />
+                              <AppImage src={user.image} alt={user.name} width={64} className="h-8 w-8 rounded-full object-cover" />
                             ) : (
                               <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                                 <span className="text-blue-600 font-medium text-sm">
@@ -262,7 +263,7 @@ const UserManagement = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 mb-4">
                     {selectedUser.image ? (
-                      <img src={selectedUser.image} alt={selectedUser.name} className="h-16 w-16 rounded-full" />
+                      <AppImage src={selectedUser.image} alt={selectedUser.name} width={128} className="h-16 w-16 rounded-full object-cover" />
                     ) : (
                       <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
                         <span className="text-blue-600 font-bold text-2xl">

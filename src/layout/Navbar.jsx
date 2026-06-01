@@ -1,7 +1,7 @@
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProfileQuery } from "@/redux/feature/authApi";
-import { getImageUrl } from "@/components/share/imageUrl";
+import AppImage from "@/components/share/AppImage";
 
 const Navbar = ({ onMenuClick }) => {
   const { data } = useProfileQuery();
@@ -28,9 +28,11 @@ const Navbar = ({ onMenuClick }) => {
 
       {/* Profile Image */}
       <div className="flex items-center gap-2 sm:gap-4">
-        <img
-          src={getImageUrl(data?.data?.image)}
+        <AppImage
+          src={data?.data?.image}
           alt="profile"
+          width={128}
+          fallbackSrc="/assets/profile.jpg"
           className="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover cursor-pointer sm:mr-10"
         />
       </div>

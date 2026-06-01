@@ -48,6 +48,8 @@ const VideoDetailsModal = ({ video, onClose }) => {
                 <img
                   src={thumbnailSrc}
                   alt={`${video.title} thumbnail`}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.style.display = "none";

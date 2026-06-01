@@ -5,15 +5,18 @@ import { Provider } from 'react-redux';
 import { Toaster } from 'sonner';
 import App from './App';
 import { store } from './redux/store';
+import ErrorBoundary from './components/share/ErrorBoundary';
 import './index.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Provider store={store}>
-      <BrowserRouter>
-        <App />
-        <Toaster position="top-right" richColors />
-      </BrowserRouter>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <BrowserRouter>
+          <App />
+          <Toaster position="top-right" richColors />
+        </BrowserRouter>
+      </Provider>
+    </ErrorBoundary>
   </StrictMode>
 );

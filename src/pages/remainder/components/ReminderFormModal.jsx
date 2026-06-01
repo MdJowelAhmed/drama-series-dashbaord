@@ -208,6 +208,8 @@ const ReminderFormModal = ({
                   <img
                     src={formData.thumbnailPreview}
                     alt="Thumbnail preview"
+                    loading="lazy"
+                    decoding="async"
                     className="mx-auto h-40 w-full object-cover rounded-lg"
                   />
                   <Button
