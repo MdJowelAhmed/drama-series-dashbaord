@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useGetLoginPageQuery } from "../../redux/feature/loginPage";
 import { Button } from "@/components/ui/button";
 import LoginImageModal from "@/components/modals/LoginImageModal";
+import AppImage from "@/components/share/AppImage";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -51,14 +52,17 @@ const LoginImage = () => {
       {images.length ? (
         <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-3">
           {images.map((imgPath, index) => (
-            <img
+            <div
               key={imgPath || index}
-              src={buildImageUrl(imgPath)}
-              alt={`Login visual ${index + 1}`}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-80 rounded-lg object-cover"
-            />
+              className="w-full h-80 rounded-lg overflow-hidden bg-slate-700/20"
+            >
+              <AppImage
+                src={buildImageUrl(imgPath)}
+                resolve={false}
+                alt={`Login visual ${index + 1}`}
+                className="w-full h-full rounded-lg object-cover"
+              />
+            </div>
           ))}
         </div>
       ) : (

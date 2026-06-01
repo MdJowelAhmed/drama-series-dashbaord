@@ -665,7 +665,7 @@ const DramaManagementDashboard = () => {
             xAxisHeight={72}
           />
 
-          <Card className="mb-6 backdrop-blur-md p-6 rounded-lg">
+          {/* <Card className="mb-6 backdrop-blur-md p-6 rounded-lg">
             <h4 className="text-lg text-white font-semibold mb-3">
               Production statistics (year scope)
             </h4>
@@ -699,7 +699,7 @@ const DramaManagementDashboard = () => {
                 />
               </div>
             )}
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Upload, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLoginPageMutation } from "@/redux/feature/loginPage";
+import { compressImage } from "@/utils/compressImage";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -41,14 +42,19 @@ const LoginImageModal = ({ open, onClose, onSuccess, existingImages = [] }) => {
     });
   };
 
-  const handleFilesSelected = (fileList) => {
+  const handleFilesSelected = async (fileList) => {
     const selectedFiles = Array.from(fileList || []);
     if (!selectedFiles.length) return;
 
-    setFiles((prev) => [...prev, ...selectedFiles]);
+    // Compress/resize before storing so we upload small files, not multi-MB originals.
+    const processed = await Promise.all(
+      selectedFiles.map((file) => compressImage(file))
+    );
+
+    setFiles((prev) => [...prev, ...processed]);
     setPreviewUrls((prev) => [
       ...prev,
-      ...selectedFiles.map((file) => URL.createObjectURL(file)),
+      ...processed.map((file) => URL.createObjectURL(file)),
     ]);
   };
 
@@ -85,7 +91,9 @@ const LoginImageModal = ({ open, onClose, onSuccess, existingImages = [] }) => {
         if (!res.ok) continue;
         const blob = await res.blob();
         const fileName = path.split("/").pop() || `existing-${Date.now()}.jpg`;
-        const file = new File([blob], fileName, { type: blob.type || "image/jpeg" });
+        const rawFile = new File([blob], fileName, { type: blob.type || "image/jpeg" });
+        // Shrink any previously-stored large originals on re-save too.
+        const file = await compressImage(rawFile);
         formData.append("images", file);
       } catch (err) {
         console.warn("Could not fetch existing image:", path, err);
