@@ -12,6 +12,7 @@ import {
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import { useReportAnalyticsQuery } from "@/redux/base-url/dashboardApi";
+import RevenueAnalyticsChart from "./components/RevenueAnalyticsChart";
 
 const MONTH_NAMES_FULL = [
   "January",
@@ -62,7 +63,7 @@ function formatMonthViewDayLabel(period) {
 const WEEK_VIEW_QUERY_ARGS = [{ name: "view", value: "week" }];
 const DAY_VIEW_QUERY_ARGS = [{ name: "view", value: "day" }];
 
-const EXPORT_FILE_BASE = "C-S-drama production-report";
+const EXPORT_FILE_BASE = "C&S-drama Exhibition-report";
 
 const Custom3DBarWithWatermark = ({
   x = 0,
@@ -532,6 +533,8 @@ const DramaManagementDashboard = () => {
         <h1 className="text-4xl font-bold text-white mb-8">
           Series Production Management
         </h1>
+
+        <RevenueAnalyticsChart />
 
         <div className="rounded-lg mb-6">
           <div className="flex gap-4 mb-4 flex-wrap items-center justify-end">

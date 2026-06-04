@@ -13,6 +13,8 @@ import { useDeleteUserMutation, useGetAllUserQuery, useToggleUserStatusMutation 
 
 const UserManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [isSubscribeFilter, setIsSubscribeFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -29,12 +31,26 @@ const UserManagement = () => {
       name: 'limit',
       value: perPage
     }
-  ]
-  
+  ];
+
   if (searchQuery.trim()) {
     queryParams.push({
       name: 'searchTerm',
       value: searchQuery.trim()
+    });
+  }
+
+  if (statusFilter) {
+    queryParams.push({
+      name: 'status',
+      value: statusFilter
+    });
+  }
+
+  if (isSubscribeFilter) {
+    queryParams.push({
+      name: 'isSubscribe',
+      value: isSubscribeFilter
     });
   }
 
@@ -62,13 +78,13 @@ const UserManagement = () => {
     }
   };
 
-  // Debounce search
+  // Reset page when search or filters change
   useEffect(() => {
     const timer = setTimeout(() => {
-      setCurrentPage(1); // Reset to first page on search
-    }, 500);
+      setCurrentPage(1);
+    }, searchQuery ? 500 : 0);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, statusFilter, isSubscribeFilter]);
 
   const users = usersData?.data || [];
   const meta = usersData?.meta || { page: 1, limit: 10, total: 0, totalPage: 1 };
@@ -91,8 +107,8 @@ const UserManagement = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
@@ -101,6 +117,38 @@ const UserManagement = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="user-status-filter" className="text-sm text-accent whitespace-nowrap">
+              Status
+            </label>
+            <select
+              id="user-status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="min-w-[130px] px-3 py-2 border border-slate-300 rounded-lg  text-accent focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="user-subscribe-filter" className="text-sm text-accent whitespace-nowrap">
+              Subscribed
+            </label>
+            <select
+              id="user-subscribe-filter"
+              value={isSubscribeFilter}
+              onChange={(e) => setIsSubscribeFilter(e.target.value)}
+              className="min-w-[130px] px-3 py-2 border border-slate-300 rounded-lg text-accent focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All</option>
+              <option value="true">Paid Users</option>
+              <option value="false">Free Users</option>
+            </select>
           </div>
         </div>
 

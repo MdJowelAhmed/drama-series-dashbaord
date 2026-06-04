@@ -135,6 +135,10 @@ const TrailerManagement = () => {
                     <Clock className="h-3 w-3" />
                     {formatDuration(trailer.duration)}
                     </span>
+                    <span className="flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      {trailer.views } views
+                    </span>
                     <span>{trailer.created_at || trailer.createdAt ? new Date(trailer.created_at || trailer.createdAt).toLocaleDateString() : ''}</span>
                   </div>
                 </div>

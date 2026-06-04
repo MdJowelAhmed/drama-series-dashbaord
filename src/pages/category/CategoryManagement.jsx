@@ -112,8 +112,8 @@ function LibrarySubcategorySection({ category }) {
         <p className="text-xs font-medium text-muted-foreground">
           {isFetching
             ? 'Loading…'
-            : `${subcategories.length} subcategor${
-                subcategories.length === 1 ? 'y' : 'ies'
+            : `${subcategories.length} Tag${
+                subcategories.length === 1 ? 's' : 's'
               }`}
         </p>
         <Button
@@ -142,7 +142,7 @@ function LibrarySubcategorySection({ category }) {
                 closeAdd();
               }
             }}
-            placeholder="Subcategory name"
+            placeholder="tags name"
             disabled={isCreating}
             className="h-9 text-sm"
           />
@@ -177,7 +177,7 @@ function LibrarySubcategorySection({ category }) {
           className="gap-1.5 w-full"
         >
           <Plus className="w-4 h-4" />
-          Add Subcategory
+          Add Tags
         </Button>
       )}
 

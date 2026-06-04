@@ -39,6 +39,22 @@ const dashboardApi = api.injectEndpoints({
         },
             providesTags: ["Dashboard"],
         }),
+        revenueAnalytics: builder.query({
+            query: (args) => {
+                const params = new URLSearchParams();
+                if (args) {
+                    args.forEach((arg) => {
+                        params.append(arg.name, arg.value);
+                    });
+                }
+                return {
+                    url: "/dashboard/revenue",
+                    method: "GET",
+                    params,
+                };
+            },
+            providesTags: ["Dashboard"],
+        }),
     }),
 })
 
@@ -47,4 +63,5 @@ export const {
     useTopWatchDataQuery,
     useDashboardStatsQuery,
     useReportAnalyticsQuery,
+    useRevenueAnalyticsQuery,
 } = dashboardApi;

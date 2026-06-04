@@ -35,22 +35,31 @@ const AppImage = ({
   const hideBroken = errored && !fallbackSrc;
 
   return (
-    <img
-      src={errored && fallbackSrc ? fallbackSrc : finalSrc}
-      alt={alt}
-      loading={eager ? "eager" : "lazy"}
-      decoding="async"
-      onLoad={() => setLoaded(true)}
-      onError={() => setErrored(true)}
-      className={cn(
-        "transition-opacity duration-300",
-        showSkeleton && "animate-pulse bg-slate-700/20 opacity-0",
-        (loaded || (errored && fallbackSrc)) && "opacity-100",
-        hideBroken && "opacity-0",
-        className
+    <span className="relative block">
+      {showSkeleton && (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-0 rounded-[inherit] bg-slate-700/20 animate-pulse"
+          )}
+        />
       )}
-      {...rest}
-    />
+      <img
+        src={errored && fallbackSrc ? fallbackSrc : finalSrc}
+        alt={alt}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => setErrored(true)}
+        className={cn(
+          "relative transition-opacity duration-300",
+          showSkeleton ? "opacity-0" : "opacity-100",
+          hideBroken && "opacity-0",
+          className
+        )}
+        {...rest}
+      />
+    </span>
   );
 };
 
