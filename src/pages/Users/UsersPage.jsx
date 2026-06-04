@@ -49,7 +49,7 @@ const UserManagement = () => {
 
   if (isSubscribeFilter) {
     queryParams.push({
-      name: 'isSubscribe',
+      name: 'isSubscribed',
       value: isSubscribeFilter
     });
   }
