@@ -11,12 +11,16 @@ import {
   Calendar,
   Eye,
   Loader2,
+  FileDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
 import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
+import { baseUrl } from "@/redux/base-url/baseUrlApi";
 
 // API Hooks
 import { useGetDramaByIdQuery } from "@/redux/feature/dramaManagement/dramaManagementApi";
@@ -40,6 +44,176 @@ import EpisodeUploadModal from "@/components/modals/EpisodeUploadModal";
 import VideoDetailsModal from "@/components/modals/VideoDetailsModal";
 import { getImageUrl, getVideoAndThumbnail } from "@/components/share/imageUrl";
 import ReusablePagination from "@/components/share/ReusablePagination";
+
+const formatExportDate = (dateString) => {
+  if (!dateString) return "";
+  return new Date(dateString).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const authHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}`, token } : {};
+};
+
+const fetchJson = async (url) => {
+  const response = await fetch(url, { headers: authHeaders() });
+  if (!response.ok) throw new Error("Failed to fetch export data");
+  return response.json();
+};
+
+const mapSeriesExportRow = (drama) => ({
+  "Series ID": drama._id || drama.id || "",
+  Title: drama.title || "",
+  Description: drama.description || "",
+  Status: drama.status || "",
+  Genre: drama.genre || "",
+  "Content Name": drama.contentName || "",
+  "Total Views": drama.totalViews ?? 0,
+  Tags: Array.isArray(drama.tags) ? drama.tags.join(", ") : "",
+  "Accent Color": drama.accentColor || "",
+  "Created Date": formatExportDate(drama.createdAt),
+  "Updated Date": formatExportDate(drama.updatedAt),
+});
+
+const mapSeasonExportRow = (season, seriesTitle) => ({
+  "Series Title": seriesTitle || "",
+  "Season ID": season._id || season.id || "",
+  "Season Number": season.seasonNumber ?? "",
+  Title: season.title || "",
+  Description: season.description || "",
+  "Created Date": formatExportDate(season.createdAt),
+  "Updated Date": formatExportDate(season.updatedAt),
+});
+
+const mapEpisodeExportRow = (episode, season, seriesTitle, formatDuration) => ({
+  "Series Title": seriesTitle || "",
+  "Season Number": season.seasonNumber ?? "",
+  "Season Title": season.title || "",
+  "Episode ID": episode._id || episode.id || "",
+  "Episode Number": episode.episodeNumber ?? "",
+  Title: episode.title || "",
+  Description: episode.description || "",
+  Duration: formatDuration(episode.duration),
+  Views: episode.views ?? 0,
+  Status: episode.status || "",
+  "Video URL": episode.videoUrl || episode.video_url || "",
+  "Thumbnail URL": episode.thumbnailUrl || episode.thumbnail_url || "",
+  "Created Date": formatExportDate(episode.createdAt),
+  "Updated Date": formatExportDate(episode.updatedAt),
+});
+
+const buildExportFileSlug = (title) =>
+  (title || "series")
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-")
+    .slice(0, 60);
+
+const fetchSeriesExportData = async (movieId, drama, formatDuration) => {
+  const seasonsResult = await fetchJson(
+    `${baseUrl}/season-management/get-seasons?movieId=${movieId}&page=1&limit=9999`
+  );
+  const allSeasons = Array.isArray(seasonsResult?.data) ? seasonsResult.data : [];
+
+  const episodeRows = [];
+  for (const season of allSeasons) {
+    const seasonId = season._id || season.id;
+    if (!seasonId) continue;
+
+    const videosResult = await fetchJson(
+      `${baseUrl}/video-management/get-all-videos/${seasonId}?page=1&limit=9999`
+    );
+    const episodes = Array.isArray(videosResult?.data) ? videosResult.data : [];
+
+    episodes.forEach((episode) => {
+      episodeRows.push(
+        mapEpisodeExportRow(episode, season, drama.title, formatDuration)
+      );
+    });
+  }
+
+  return { allSeasons, episodeRows };
+};
+
+const writePdfSection = (doc, title, lines, startY) => {
+  let y = startY;
+  doc.setFontSize(12);
+  doc.text(title, 14, y);
+  y += 7;
+  doc.setFontSize(8);
+
+  lines.forEach((line) => {
+    const wrapped = doc.splitTextToSize(line, 180);
+    doc.text(wrapped, 14, y);
+    y += 4 * wrapped.length + 1;
+    if (y > 280) {
+      doc.addPage();
+      y = 16;
+    }
+  });
+
+  return y + 4;
+};
+
+const downloadSeriesExcel = ({ drama, allSeasons, episodeRows, fileSlug, dateSlug }) => {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.json_to_sheet([mapSeriesExportRow(drama)]),
+    "Series"
+  );
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.json_to_sheet(
+      allSeasons.map((season) => mapSeasonExportRow(season, drama.title))
+    ),
+    "Seasons"
+  );
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(episodeRows), "Episodes");
+  XLSX.writeFile(wb, `series-export-${fileSlug}-${dateSlug}.xlsx`);
+};
+
+const downloadSeriesPdf = ({ drama, allSeasons, episodeRows, fileSlug, dateSlug }) => {
+  const doc = new jsPDF();
+  let y = 16;
+
+  doc.setFontSize(16);
+  const titleLines = doc.splitTextToSize(`Series Export: ${drama.title || "Untitled"}`, 180);
+  doc.text(titleLines, 14, y);
+  y += 8 * titleLines.length + 4;
+
+  doc.setFontSize(9);
+  doc.text(`Exported: ${formatExportDate(new Date().toISOString())}`, 14, y);
+  y += 8;
+
+  const seriesLines = Object.entries(mapSeriesExportRow(drama)).map(
+    ([key, value]) => `${key}: ${value ?? ""}`
+  );
+  y = writePdfSection(doc, "Series Details", seriesLines, y);
+
+  const seasonLines = allSeasons.length
+    ? allSeasons.map((season) => {
+        const row = mapSeasonExportRow(season, drama.title);
+        return `Season ${row["Season Number"]} | ${row.Title} | Created: ${row["Created Date"]} | ${row.Description || "No description"}`;
+      })
+    : ["No seasons found"];
+  y = writePdfSection(doc, "Seasons", seasonLines, y);
+
+  const episodeLines = episodeRows.length
+    ? episodeRows.map(
+        (row) =>
+          `S${row["Season Number"]} EP${row["Episode Number"]} | ${row.Title} | Duration: ${row.Duration} | Views: ${row.Views} | Created: ${row["Created Date"]}`
+      )
+    : ["No episodes found"];
+  writePdfSection(doc, "Episodes", episodeLines, y);
+
+  doc.save(`series-export-${fileSlug}-${dateSlug}.pdf`);
+};
 
 // SeasonCard Component - Fetches and displays videos for a season
 const SeasonCard = ({
@@ -252,6 +426,7 @@ const DramaDetails = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [refetchVideosCallback, setRefetchVideosCallback] = useState(null);
   const [seasonPage, setSeasonPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
   const seasonsPerPage = 5;
 
   // API Queries
@@ -306,6 +481,38 @@ const DramaDetails = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleExportSeriesDetails = async (format) => {
+    if (!drama || !movieId) return;
+
+    try {
+      setIsExporting(true);
+
+      const { allSeasons, episodeRows } = await fetchSeriesExportData(
+        movieId,
+        drama,
+        formatDuration
+      );
+
+      const fileSlug = buildExportFileSlug(drama.title);
+      const dateSlug = new Date().toISOString().slice(0, 10);
+      const exportPayload = { drama, allSeasons, episodeRows, fileSlug, dateSlug };
+
+      if (format === "pdf") {
+        downloadSeriesPdf(exportPayload);
+      } else {
+        downloadSeriesExcel(exportPayload);
+      }
+
+      toast.success(
+        `Exported ${format.toUpperCase()} with ${allSeasons.length} season(s) and ${episodeRows.length} episode(s)`
+      );
+    } catch (error) {
+      toast.error(error?.message || "Failed to export series details");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Season handlers
@@ -484,7 +691,8 @@ const DramaDetails = () => {
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className="flex-1 space-y-6">
-              <div>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3 mb-3 flex-wrap">
                   <h1 className="text-4xl font-bold text-accent">{drama.title}</h1>
                   <span
@@ -502,6 +710,33 @@ const DramaDetails = () => {
                 <p className="text-white/70 text-lg leading-relaxed">
                   {drama.description || "No description available"}
                 </p>
+                </div>
+                <div className="flex flex-wrap gap-2 shrink-0">
+                  <Button
+                    onClick={() => handleExportSeriesDetails("excel")}
+                    disabled={isExporting}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {isExporting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileDown className="h-4 w-4" />
+                    )}
+                    Excel
+                  </Button>
+                  <Button
+                    onClick={() => handleExportSeriesDetails("pdf")}
+                    disabled={isExporting}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {isExporting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileDown className="h-4 w-4" />
+                    )}
+                    PDF
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
