@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { FileDown } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -7,7 +8,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 import { useRevenueAnalyticsQuery } from "@/redux/base-url/dashboardApi";
+
+const EXPORT_FILE_BASE = "C&S-drama-revenue-report";
 
 const MONTH_NAMES_FULL = [
   "January",
@@ -72,6 +77,66 @@ const formatMonthDayLabel = (period) => {
 
 const selectFilterClass =
   "px-4 py-2 border border-gray-300 rounded-md bg-gray-500 text-white min-w-[7rem]";
+
+const exportBtnClass =
+  "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md text-white transition-colors";
+
+function sanitizeFileStem(stem) {
+  const s = String(stem)
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-");
+  return s.slice(0, 120) || "export";
+}
+
+function buildRevenueExportRows(rows) {
+  return (rows || []).map((r) => ({
+    period: r.period,
+    revenue: r.revenue ?? 0,
+  }));
+}
+
+function downloadRevenuePdf({ chartTitle, subtitle, metaLines, rows, fileStem }) {
+  const doc = new jsPDF();
+  let y = 16;
+  doc.setFontSize(14);
+  const titleLines = doc.splitTextToSize(chartTitle, 180);
+  doc.text(titleLines, 14, y);
+  y += 6 * titleLines.length + 4;
+  doc.setFontSize(10);
+  if (subtitle) {
+    const subLines = doc.splitTextToSize(subtitle, 180);
+    doc.text(subLines, 14, y);
+    y += 6 * subLines.length + 2;
+  }
+  (metaLines || []).forEach((line) => {
+    doc.text(line, 14, y);
+    y += 5;
+  });
+  y += 4;
+  doc.setFontSize(8);
+  (rows || []).forEach((row) => {
+    const line = `${row.period} | revenue: $${row.revenue ?? 0}`;
+    const wrapped = doc.splitTextToSize(line, 180);
+    doc.text(wrapped, 14, y);
+    y += 4 * wrapped.length + 1;
+    if (y > 280) {
+      doc.addPage();
+      y = 16;
+    }
+  });
+  doc.save(`${EXPORT_FILE_BASE}-${sanitizeFileStem(fileStem)}.pdf`);
+}
+
+function downloadRevenueExcel({ rows, sheetName, fileStem }) {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(buildRevenueExportRows(rows));
+  XLSX.utils.book_append_sheet(
+    wb,
+    ws,
+    sheetName.replace(/[:\\/?*[\]]/g, "").slice(0, 31)
+  );
+  XLSX.writeFile(wb, `${EXPORT_FILE_BASE}-${sanitizeFileStem(fileStem)}.xlsx`);
+}
 
 /** YYYY-MM-DD + N calendar days → YYYY-MM-DD */
 const addDaysToDate = (dateStr, days) => {
@@ -183,16 +248,78 @@ const RevenueAnalyticsChart = () => {
     }
   };
 
+  const subtitle = formatFilterSubtitle(filter);
+
+  const exportMetaLines = useMemo(() => {
+    const lines = [`View: ${view}`];
+    if (view === "year") lines.push(`Year: ${year}`);
+    if (view === "month") lines.push(`Month: ${MONTH_NAMES_FULL[monthIndex]}`);
+    if (view === "week") {
+      lines.push(`Start: ${weekStartDate}`);
+      lines.push(`End: ${weekEndDate}`);
+    }
+    if (view === "day") {
+      lines.push(`Year: ${year}`);
+      lines.push(`Month: ${MONTH_NAMES_FULL[monthIndex]}`);
+      lines.push(`Day: ${day}`);
+    }
+    return lines;
+  }, [view, year, monthIndex, day, weekStartDate, weekEndDate]);
+
+  const fileStem = useMemo(() => {
+    if (view === "year") return `revenue-year-${year}`;
+    if (view === "month") return `revenue-month-${MONTH_NAMES_FULL[monthIndex]}`;
+    if (view === "week") return `revenue-week-${weekStartDate}-to-${weekEndDate}`;
+    return `revenue-day-${year}-${MONTH_NAMES_FULL[monthIndex]}-${day}`;
+  }, [view, year, monthIndex, day, weekStartDate, weekEndDate]);
+
+  const excelSheetName = useMemo(() => {
+    const names = { year: "Year", month: "Month", week: "Week", day: "Day" };
+    return names[view] || "Revenue";
+  }, [view]);
+
   return (
     <div className="bg-secondary rounded-lg mb-6 p-6">
+      <div className="flex flex-wrap justify-end gap-2 mb-3">
+        <button
+          type="button"
+          disabled={!breakdown.length || isLoading}
+          onClick={() =>
+            downloadRevenuePdf({
+              chartTitle: "Revenue Analytics",
+              subtitle,
+              metaLines: exportMetaLines,
+              rows: breakdown,
+              fileStem,
+            })
+          }
+          className={`${exportBtnClass} bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          <FileDown className="w-3.5 h-3.5 shrink-0" />
+          PDF
+        </button>
+        <button
+          type="button"
+          disabled={!breakdown.length || isLoading}
+          onClick={() =>
+            downloadRevenueExcel({
+              rows: breakdown,
+              sheetName: excelSheetName,
+              fileStem,
+            })
+          }
+          className={`${exportBtnClass} bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          <FileDown className="w-3.5 h-3.5 shrink-0" />
+          Excel
+        </button>
+      </div>
       <div className="mb-4">
         <div className="flex flex-row justify-between items-start gap-4 flex-wrap">
           <div className="min-w-0 flex-1">
             <h4 className="text-lg font-semibold text-accent">Revenue Analytics</h4>
-            {filter ? (
-              <p className="text-sm text-white/60 mt-1">
-                {formatFilterSubtitle(filter)}
-              </p>
+            {subtitle ? (
+              <p className="text-sm text-white/60 mt-1">{subtitle}</p>
             ) : null}
           </div>
 

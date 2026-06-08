@@ -555,7 +555,7 @@ const DramaManagementDashboard = () => {
           </div>
 
           <ProductionBreakdownChart
-            title="Production breakdown — Year view"
+            title="Exhibition breakdown — Year view"
             subtitle={formatFilterSubtitle(yearReport?.data?.filter)}
             fileStem={`year-${yearViewYear}`}
             excelSheetName="Year"
@@ -588,7 +588,7 @@ const DramaManagementDashboard = () => {
           />
 
           <ProductionBreakdownChart
-            title="Production breakdown — Month view"
+            title="Exhibition breakdown — Month view"
             subtitle={formatFilterSubtitle(monthReport?.data?.filter)}
             fileStem={`month-${monthViewYear}-${monthViewMonthName}`}
             excelSheetName="Month"
@@ -639,7 +639,7 @@ const DramaManagementDashboard = () => {
           />
 
           <ProductionBreakdownChart
-            title="Production breakdown — Week view"
+            title="Exhibition breakdown — Week view"
             subtitle={formatFilterSubtitle(weekReport?.data?.filter)}
             fileStem="week"
             excelSheetName="Week"
@@ -653,7 +653,7 @@ const DramaManagementDashboard = () => {
           />
 
           <ProductionBreakdownChart
-            title="Production breakdown — Day view"
+            title="Exhibition breakdown — Day view"
             subtitle={formatFilterSubtitle(dayReport?.data?.filter)}
             fileStem="day"
             excelSheetName="Day"

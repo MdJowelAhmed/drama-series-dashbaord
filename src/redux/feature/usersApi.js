@@ -14,17 +14,21 @@ const usersApi = api.injectEndpoints({
       invalidatesTags: ["Admin"],
     }),
     getAllUser: builder.query({
-      query: (args) => {
+      query: (filters = {}) => {
         const params = new URLSearchParams();
-          if (args) {
-          args.forEach((arg) => {
-            params.append(arg.name, arg.value);
-          });
+
+        if (filters.page != null) params.append("page", String(filters.page));
+        if (filters.limit != null) params.append("limit", String(filters.limit));
+        if (filters.searchTerm) params.append("searchTerm", filters.searchTerm);
+        if (filters.status) params.append("status", filters.status);
+        if (filters.isSubscribed != null && filters.isSubscribed !== "") {
+          params.append("isSubscribed", String(filters.isSubscribed));
         }
+
         return {
           url: "/user-management",
           method: "GET",
-           params,
+          params,
         };
       },
       providesTags: ["Admin"],

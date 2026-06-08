@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Edit2, Play, Film } from 'lucide-react';
+import { Plus, Trash2, Edit2, Play, Film, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import ReusableVideoUploadModal from '@/components/videoUpload/ReusableVideoUploadModal';
@@ -19,6 +19,37 @@ import {
   useDeleteAdMutation,
   useGetAllAdQuery,
 } from '@/redux/feature/adApi';
+
+const AD_FORM_FIELDS = [
+  {
+    name: 'title',
+    label: 'Title',
+    type: 'text',
+    placeholder: 'Enter ad title',
+    required: true,
+    metadata: true,
+    gridCols: 2,
+  },
+  {
+    name: 'description',
+    label: 'Description',
+    type: 'textarea',
+    placeholder: 'Enter ad description',
+    required: false,
+    metadata: true,
+    gridCols: 2,
+    rows: 3,
+  },
+  {
+    name: 'link',
+    label: 'Link',
+    type: 'url',
+    placeholder: 'https://example.com',
+    required: false,
+    metadata: true,
+    gridCols: 2,
+  },
+];
 
 const VideoPlayerModal = ({ ad, onClose }) => {
   const videoUrl = ad?.videoUrl || ad?.video_url;
@@ -156,6 +187,10 @@ const AdManagement = () => {
                 const videoUrl = ad?.videoUrl || ad?.video_url;
                 const downloadUrls = ad?.downloadUrls || ad?.download_urls || {};
                 const videoSource = downloadUrls?.hd || downloadUrls?.sd || downloadUrls?.mobile || downloadUrls?.original || videoUrl;
+                const meta = ad?.metadata || {};
+                const adTitle = meta.title || ad.title || 'Untitled Ad';
+                const adDescription = meta.description || '';
+                const adLink = meta.link || '';
 
                 return (
                   <div key={ad._id || ad.id} className="overflow-hidden hover:shadow-lg bg-secondary transition-shadow flex flex-col rounded-2xl border border-white/20">
@@ -210,7 +245,26 @@ const AdManagement = () => {
                       )}
                     </div>
 
-                    <div className="flex justify-between gap-2 p-4">
+                    <div className="p-4 space-y-2 flex-1">
+                      <h3 className="font-semibold text-accent truncate">{adTitle}</h3>
+                      {adDescription ? (
+                        <p className="text-sm text-white/60 line-clamp-2">{adDescription}</p>
+                      ) : null}
+                      {adLink ? (
+                        <a
+                          href={adLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 truncate max-w-full"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{adLink}</span>
+                        </a>
+                      ) : null}
+                    </div>
+
+                    <div className="flex justify-between gap-2 p-4 pt-0">
                       <Button
                         size="sm"
                         className="py-5"
@@ -256,7 +310,7 @@ const AdManagement = () => {
           onSave={handleSaveAd}
           editingData={editingAd}
           title="Upload Ad"
-          fields={[]}
+          fields={AD_FORM_FIELDS}
           generateUploadUrl={generateUploadUrl}
           createMutation={createAd}
           updateMutation={updateAd}

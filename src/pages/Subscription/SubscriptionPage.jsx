@@ -30,6 +30,7 @@ import {
 
 // Duration options that match the API's expected enum values
 const DURATION_OPTIONS = [
+  { value: "1 week", label: "1 Week" },
   { value: "1 month", label: "1 Month" },
   { value: "3 months", label: "3 Months" },
   { value: "6 months", label: "6 Months" },
@@ -40,6 +41,7 @@ const DURATION_OPTIONS = [
 const PAYMENT_TYPE_OPTIONS = [
   { value: "Yearly", label: "Yearly" },
   { value: "Monthly", label: "Monthly" },
+  { value: "Weekly", label: "Weekly" },
 ];
 
 // Membership types that can see discounts

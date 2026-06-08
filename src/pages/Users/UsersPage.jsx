@@ -1,60 +1,106 @@
-import { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Search, Eye, Trash2, ChevronLeft, ChevronRight, FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
 import DeleteConfirmationModal from '@/components/share/DeleteConfirmationModal';
 import AppImage from '@/components/share/AppImage';
+import { baseUrl } from '@/redux/base-url/baseUrlApi';
 import { useDeleteUserMutation, useGetAllUserQuery, useToggleUserStatusMutation } from '@/redux/feature/usersApi';
-// import { 
-//   useGetAllUserQuery, 
-//   useDeleteUserMutation, 
-//   useToggleUserStatusMutation 
-// } from '../redux/feature/usersApi';
+
+const USER_CATEGORY_OPTIONS = [
+  { value: '', label: 'All Users' },
+  { value: 'active', label: 'Active Users' },
+  { value: 'inactive', label: 'Inactive Users' },
+  { value: 'paid', label: 'Paid Users' },
+  { value: 'free', label: 'Free Users' },
+];
+
+const buildUserQueryFilters = ({ page, limit, searchQuery, category }) => {
+  const filters = { page, limit };
+
+  if (searchQuery?.trim()) {
+    filters.searchTerm = searchQuery.trim();
+  }
+
+  if (category === "active") {
+    filters.status = "active";
+  } else if (category === "inactive") {
+    filters.status = "inactive";
+  } else if (category === "paid") {
+    filters.isSubscribed = "true";
+  } else if (category === "free") {
+    filters.isSubscribed = "false";
+  }
+
+  return filters;
+};
+
+const filtersToSearchString = (filters) => {
+  const searchParams = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value != null && value !== "") {
+      searchParams.append(key, String(value));
+    }
+  });
+  return searchParams.toString().replace(/\+/g, "%20");
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+const mapUserToExportRow = (user) => ({
+  'User ID': user._id || user.id || '',
+  Name: user.name || '',
+  Email: user.email || '',
+  Phone: user.phone || '',
+  Role: user.role || '',
+  Verified: user.verified ? 'Yes' : 'No',
+  Status: user.status || '',
+  Subscription:
+    user.isSubscribed === true || user.isSubscribe === true ? 'Paid' : 'Free',
+  Online: user.onlineStatus?.isOnline ? 'Online' : 'Offline',
+  'Last Seen': user.onlineStatus?.lastSeen
+    ? formatDate(user.onlineStatus.lastSeen)
+    : '',
+  'Stripe Customer ID': user.stripeCustomerId || '',
+  'Joined Date': user.createdAt ? formatDate(user.createdAt) : '',
+  'Page Access': Array.isArray(user.pageAccess)
+    ? user.pageAccess
+        .map((page) => (typeof page === 'string' ? page : page?.name))
+        .filter(Boolean)
+        .join(', ')
+    : '',
+});
 
 const UserManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [isSubscribeFilter, setIsSubscribeFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [perPage, setPerPage] = useState(10);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // Build query params
-  const queryParams = [
-    {
-      name: 'page',
-      value: currentPage
-    },
-    {
-      name: 'limit',
-      value: perPage
-    }
-  ];
+  const queryFilters = useMemo(
+    () =>
+      buildUserQueryFilters({
+        page: currentPage,
+        limit: perPage,
+        searchQuery,
+        category: categoryFilter,
+      }),
+    [currentPage, perPage, searchQuery, categoryFilter]
+  );
 
-  if (searchQuery.trim()) {
-    queryParams.push({
-      name: 'searchTerm',
-      value: searchQuery.trim()
-    });
-  }
-
-  if (statusFilter) {
-    queryParams.push({
-      name: 'status',
-      value: statusFilter
-    });
-  }
-
-  if (isSubscribeFilter) {
-    queryParams.push({
-      name: 'isSubscribed',
-      value: isSubscribeFilter
-    });
-  }
-
-  const { data: usersData, isLoading, error } = useGetAllUserQuery(queryParams);
+  const { data: usersData, isLoading, error } = useGetAllUserQuery(queryFilters);
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const [toggleUserStatus] = useToggleUserStatusMutation();
 
@@ -84,27 +130,88 @@ const UserManagement = () => {
       setCurrentPage(1);
     }, searchQuery ? 500 : 0);
     return () => clearTimeout(timer);
-  }, [searchQuery, statusFilter, isSubscribeFilter]);
+  }, [searchQuery, categoryFilter]);
 
   const users = usersData?.data || [];
   const meta = usersData?.meta || { page: 1, limit: 10, total: 0, totalPage: 1 };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
+  const activeCategoryLabel =
+    USER_CATEGORY_OPTIONS.find((opt) => opt.value === categoryFilter)?.label ||
+    'All Users';
+
+  const fetchAllFilteredUsers = useCallback(async () => {
+    const exportFilters = buildUserQueryFilters({
+      page: 1,
+      limit: Math.max(meta.total, 1),
+      searchQuery,
+      category: categoryFilter,
     });
+
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      `${baseUrl}/user-management?${filtersToSearchString(exportFilters)}`,
+      {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}`, token } : {}),
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch users for export');
+    }
+
+    const result = await response.json();
+    return Array.isArray(result?.data) ? result.data : [];
+  }, [meta.total, searchQuery, categoryFilter]);
+
+  const handleExportUsers = async () => {
+    try {
+      setIsExporting(true);
+      const allUsers = await fetchAllFilteredUsers();
+
+      if (!allUsers.length) {
+        toast.error('No users found to export for the selected filter');
+        return;
+      }
+
+      const rows = allUsers.map(mapUserToExportRow);
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, 'Users');
+
+      const filterSlug = categoryFilter || 'all';
+      const dateSlug = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `users-export-${filterSlug}-${dateSlug}.xlsx`);
+
+      toast.success(`Exported ${allUsers.length} user(s) (${activeCategoryLabel})`);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to export users');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
     <div className="min-h-screen">
       <div className="mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-accent">User Management</h1>
             <p className="text-accent mt-1">Manage all registered users</p>
           </div>
+          <Button
+            onClick={handleExportUsers}
+            disabled={isExporting || isLoading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white"
+          >
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileDown className="h-4 w-4" />
+            )}
+            {isExporting ? 'Exporting...' : 'Export Users'}
+          </Button>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
@@ -120,34 +227,20 @@ const UserManagement = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="user-status-filter" className="text-sm text-accent whitespace-nowrap">
-              Status
+            <label htmlFor="user-category-filter" className="text-sm text-accent whitespace-nowrap">
+              Filter
             </label>
             <select
-              id="user-status-filter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="min-w-[130px] px-3 py-2 border border-slate-300 rounded-lg  text-accent focus:outline-none focus:ring-2 focus:ring-blue-500"
+              id="user-category-filter"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="min-w-[160px] px-3 py-2 border border-slate-300 rounded-lg text-accent focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label htmlFor="user-subscribe-filter" className="text-sm text-accent whitespace-nowrap">
-              Subscribed
-            </label>
-            <select
-              id="user-subscribe-filter"
-              value={isSubscribeFilter}
-              onChange={(e) => setIsSubscribeFilter(e.target.value)}
-              className="min-w-[130px] px-3 py-2 border border-slate-300 rounded-lg text-accent focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All</option>
-              <option value="true">Paid Users</option>
-              <option value="false">Free Users</option>
+              {USER_CATEGORY_OPTIONS.map((option) => (
+                <option key={option.value || 'all'} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -344,6 +437,15 @@ const UserManagement = () => {
                       </span>
                     </div>
                     
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Subscription</p>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {selectedUser.isSubscribed === true || selectedUser.isSubscribe === true
+                          ? 'Paid'
+                          : 'Free'}
+                      </span>
+                    </div>
+
                     <div>
                       <p className="text-sm font-medium text-slate-600 mb-1">Account Status</p>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${

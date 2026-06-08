@@ -74,7 +74,14 @@ const ReusableVideoUploadModal = ({
       if (editingData) {
         const initialData = {};
         fields.forEach((field) => {
-          initialData[field.name] = editingData[field.name] || "";
+          if (field.metadata) {
+            initialData[field.name] =
+              editingData.metadata?.[field.name] ??
+              editingData[field.name] ??
+              "";
+          } else {
+            initialData[field.name] = editingData[field.name] || "";
+          }
         });
         setFormData(initialData);
 
@@ -525,8 +532,19 @@ const ReusableVideoUploadModal = ({
       }
 
       // Step 5: Save data as JSON (not FormData)
+      const metadataFieldNames = fields.filter((f) => f.metadata).map((f) => f.name);
+      const metadata = metadataFieldNames.reduce((acc, name) => {
+        acc[name] = formData[name]?.toString().trim() ?? "";
+        return acc;
+      }, {});
+
+      const topLevelFormData = Object.fromEntries(
+        Object.entries(formData).filter(([key]) => !metadataFieldNames.includes(key))
+      );
+
       const submitData = {
-        ...formData,
+        ...topLevelFormData,
+        ...(metadataFieldNames.length ? { metadata } : {}),
         duration: duration || formData.duration || 0,
         videoUrl: videoUrl || "",
         videoId: videoId,
