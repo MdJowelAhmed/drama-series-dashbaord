@@ -63,7 +63,7 @@ function formatMonthViewDayLabel(period) {
 const WEEK_VIEW_QUERY_ARGS = [{ name: "view", value: "week" }];
 const DAY_VIEW_QUERY_ARGS = [{ name: "view", value: "day" }];
 
-const EXPORT_FILE_BASE = "C&S-drama Exhibition-report";
+const EXPORT_FILE_BASE = "C&C Creepy Shorts Exhibition-report";
 
 const Custom3DBarWithWatermark = ({
   x = 0,

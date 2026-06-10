@@ -297,7 +297,7 @@ const AllDramas = () => {
                     onClick={() => handleViewDetails(drama)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    View
+                    Details
                   </Button>
                   <div className="flex gap-2">
                     <Button
@@ -311,7 +311,7 @@ const AllDramas = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="py-5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="py-5 text-white hover:text-red-700 hover:bg-red-50"
                       onClick={() => {
                         setSelectedDrama(drama);
                         setDeleteDialogOpen(true);

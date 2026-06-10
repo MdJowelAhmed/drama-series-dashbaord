@@ -12,7 +12,7 @@ import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import { useRevenueAnalyticsQuery } from "@/redux/base-url/dashboardApi";
 
-const EXPORT_FILE_BASE = "C&S-drama-revenue-report";
+const EXPORT_FILE_BASE = "C&C Creepy Short Exhibition-revenue-report";
 
 const MONTH_NAMES_FULL = [
   "January",

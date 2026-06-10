@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
 
 // Map sidebar paths to pageAccess values
 const PAGE_ACCESS_MAP = {
@@ -34,6 +35,7 @@ const PAGE_ACCESS_MAP = {
 const Sidebar = ({ onNavigate, showCloseButton = false }) => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -255,7 +257,8 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
             <p className="text-xs text-slate-400">admin@cine.com</p> */}
 
             <button
-              onClick={handleLogout}
+              type="button"
+              onClick={() => setLogoutConfirmOpen(true)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition text-white"
             >
               <LogOut className="h-5 w-5" />
@@ -264,6 +267,16 @@ const Sidebar = ({ onNavigate, showCloseButton = false }) => {
           </div>
         </div>
       </div>
+
+      <DeleteConfirmationModal
+        open={logoutConfirmOpen}
+        onOpenChange={setLogoutConfirmOpen}
+        onConfirm={handleLogout}
+        title="Confirm Logout"
+        description="Are you sure you want to logout from your account?"
+        confirmButtonText="Logout"
+        cancelButtonText="Cancel"
+      />
     </div>
   );
 };

@@ -150,7 +150,7 @@ const TrailerManagement = () => {
                     onClick={() => handleViewDetails(trailer)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    View
+                    Details
                   </Button>
                   <div className="flex gap-5">
                     <Button

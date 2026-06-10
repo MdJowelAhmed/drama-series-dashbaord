@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Eye, Trash2, ChevronLeft, ChevronRight, FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 import { Button } from '@/components/ui/button';
 import DeleteConfirmationModal from '@/components/share/DeleteConfirmationModal';
 import AppImage from '@/components/share/AppImage';
@@ -79,6 +80,47 @@ const mapUserToExportRow = (user) => ({
     : '',
 });
 
+const downloadUsersExcel = ({ users, filterSlug, dateSlug }) => {
+  const rows = users.map(mapUserToExportRow);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Users');
+  XLSX.writeFile(wb, `users-export-${filterSlug}-${dateSlug}.xlsx`);
+};
+
+const downloadUsersPdf = ({ users, filterSlug, dateSlug, activeCategoryLabel }) => {
+  const doc = new jsPDF();
+  let y = 16;
+
+  doc.setFontSize(16);
+  doc.text('Users Export', 14, y);
+  y += 10;
+
+  doc.setFontSize(10);
+  doc.text(`Filter: ${activeCategoryLabel}`, 14, y);
+  y += 6;
+  doc.text(`Exported: ${dateSlug}`, 14, y);
+  y += 6;
+  doc.text(`Total users: ${users.length}`, 14, y);
+  y += 10;
+
+  doc.setFontSize(8);
+  users.forEach((user, index) => {
+    const row = mapUserToExportRow(user);
+    const line = `${index + 1}. ${row.Name} | ${row.Email} | ${row.Role} | ${row.Status} | ${row.Subscription} | Verified: ${row.Verified} | Joined: ${row['Joined Date']}`;
+    const wrapped = doc.splitTextToSize(line, 180);
+    doc.text(wrapped, 14, y);
+    y += 4 * wrapped.length + 2;
+
+    if (y > 280) {
+      doc.addPage();
+      y = 16;
+    }
+  });
+
+  doc.save(`users-export-${filterSlug}-${dateSlug}.pdf`);
+};
+
 const UserManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -87,7 +129,7 @@ const UserManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [perPage, setPerPage] = useState(10);
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportingFormat, setExportingFormat] = useState(null);
 
   const queryFilters = useMemo(
     () =>
@@ -165,9 +207,9 @@ const UserManagement = () => {
     return Array.isArray(result?.data) ? result.data : [];
   }, [meta.total, searchQuery, categoryFilter]);
 
-  const handleExportUsers = async () => {
+  const handleExportUsers = async (format) => {
     try {
-      setIsExporting(true);
+      setExportingFormat(format);
       const allUsers = await fetchAllFilteredUsers();
 
       if (!allUsers.length) {
@@ -175,20 +217,23 @@ const UserManagement = () => {
         return;
       }
 
-      const rows = allUsers.map(mapUserToExportRow);
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(rows);
-      XLSX.utils.book_append_sheet(wb, ws, 'Users');
-
       const filterSlug = categoryFilter || 'all';
       const dateSlug = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(wb, `users-export-${filterSlug}-${dateSlug}.xlsx`);
+      const exportPayload = { users: allUsers, filterSlug, dateSlug, activeCategoryLabel };
 
-      toast.success(`Exported ${allUsers.length} user(s) (${activeCategoryLabel})`);
+      if (format === 'pdf') {
+        downloadUsersPdf(exportPayload);
+      } else {
+        downloadUsersExcel(exportPayload);
+      }
+
+      toast.success(
+        `Exported ${allUsers.length} user(s) (${activeCategoryLabel}) as ${format.toUpperCase()}`
+      );
     } catch (err) {
       toast.error(err?.message || 'Failed to export users');
     } finally {
-      setIsExporting(false);
+      setExportingFormat(null);
     }
   };
 
@@ -200,18 +245,32 @@ const UserManagement = () => {
             <h1 className="text-3xl font-bold text-accent">User Management</h1>
             <p className="text-accent mt-1">Manage all registered users</p>
           </div>
-          <Button
-            onClick={handleExportUsers}
-            disabled={isExporting || isLoading}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white"
-          >
-            {isExporting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FileDown className="h-4 w-4" />
-            )}
-            {isExporting ? 'Exporting...' : 'Export Users'}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => handleExportUsers('excel')}
+              disabled={exportingFormat !== null || isLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white"
+            >
+              {exportingFormat === 'excel' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4" />
+              )}
+              Excel
+            </Button>
+            <Button
+              onClick={() => handleExportUsers('pdf')}
+              disabled={exportingFormat !== null || isLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
+            >
+              {exportingFormat === 'pdf' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4" />
+              )}
+              PDF
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">

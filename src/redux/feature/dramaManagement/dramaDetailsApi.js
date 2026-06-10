@@ -73,7 +73,7 @@ const dramaDetailsApi = api.injectEndpoints({
     // Delete a season
     deleteDramaSeason: builder.mutation({
       query: (id) => ({
-        url: `/season-management/${id}`,
+        url: `/season-management/delete-season/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Drama", "Season"],

@@ -366,7 +366,7 @@ const SeasonCard = ({
                       onClick={() => onViewDetails(video)}
                     >
                       <Eye className="h-4 w-4 mr-1" />
-                      View
+                      Details
                     </Button>
                     <div className="flex gap-2">
                       <Button
@@ -382,7 +382,7 @@ const SeasonCard = ({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="py-5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="py-5 text-white hover:text-red-700 hover:bg-red-50"
                         onClick={() => onDeleteVideo(video, refetchVideos)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -426,7 +426,7 @@ const DramaDetails = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [refetchVideosCallback, setRefetchVideosCallback] = useState(null);
   const [seasonPage, setSeasonPage] = useState(1);
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportingFormat, setExportingFormat] = useState(null);
   const seasonsPerPage = 5;
 
   // API Queries
@@ -487,7 +487,7 @@ const DramaDetails = () => {
     if (!drama || !movieId) return;
 
     try {
-      setIsExporting(true);
+      setExportingFormat(format);
 
       const { allSeasons, episodeRows } = await fetchSeriesExportData(
         movieId,
@@ -511,7 +511,7 @@ const DramaDetails = () => {
     } catch (error) {
       toast.error(error?.message || "Failed to export series details");
     } finally {
-      setIsExporting(false);
+      setExportingFormat(null);
     }
   };
 
@@ -714,10 +714,10 @@ const DramaDetails = () => {
                 <div className="flex flex-wrap gap-2 shrink-0">
                   <Button
                     onClick={() => handleExportSeriesDetails("excel")}
-                    disabled={isExporting}
+                    disabled={exportingFormat !== null}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white"
                   >
-                    {isExporting ? (
+                    {exportingFormat === "excel" ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <FileDown className="h-4 w-4" />
@@ -726,10 +726,10 @@ const DramaDetails = () => {
                   </Button>
                   <Button
                     onClick={() => handleExportSeriesDetails("pdf")}
-                    disabled={isExporting}
+                    disabled={exportingFormat !== null}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
                   >
-                    {isExporting ? (
+                    {exportingFormat === "pdf" ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <FileDown className="h-4 w-4" />

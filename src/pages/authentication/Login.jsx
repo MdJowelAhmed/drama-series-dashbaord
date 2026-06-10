@@ -68,6 +68,11 @@ const LoginPage = () => {
     }
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onFinish();
+  };
+
   const onFinish = async () => {
     try {
       setLoading(true);
@@ -136,7 +141,7 @@ const handleForgotPassword = () => {
             </div>
 
             {/* Form */}
-            <div className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-200 mb-2">
@@ -187,6 +192,7 @@ const handleForgotPassword = () => {
               {/* Forgot Password Link */}
               <div className="flex justify-end">
                 <button
+                  type="button"
                   onClick={handleForgotPassword}
                   className="text-sm text-blue-400 hover:text-blue-300 transition"
                 >
@@ -196,7 +202,7 @@ const handleForgotPassword = () => {
 
               {/* Login Button */}
               <Button
-                onClick={onFinish}
+                type="submit"
                 disabled={isLoading || loading}
                 className="w-full   text-white font-semibold py-6 rounded-lg flex items-center justify-center gap-2 transition"
               >
@@ -209,7 +215,7 @@ const handleForgotPassword = () => {
                   </>
                 )}
               </Button>
-            </div>
+            </form>
 
             
           </div>
