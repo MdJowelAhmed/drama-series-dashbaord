@@ -56,6 +56,18 @@ const formatDate = (dateString) => {
   });
 };
 
+const formatWatchTime = (user) => {
+  const details = user?.watchTimeDetails;
+  if (details?.formatted) return details.formatted;
+
+  const totalSeconds =
+    details?.totalSeconds ?? user?.totalWatchTime ?? 0;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${hours}h ${minutes}m ${seconds}s`;
+};
+
 const mapUserToExportRow = (user) => ({
   'User ID': user._id || user.id || '',
   Name: user.name || '',
@@ -456,9 +468,9 @@ const UserManagement = () => {
 
         {detailsDialogOpen && selectedUser && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className=" bg-[#FFFFFF3B] border border-white/10 backdrop-blur-lg rounded-xl shadow-xl max-w-xl w-full">
               <div className="p-6">
-                <h2 className="text-xl font-bold text-slate-900 mb-6">User Details</h2>
+                <h2 className="text-xl font-bold text-white mb-6">User Details</h2>
                 
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 mb-4">
@@ -472,21 +484,21 @@ const UserManagement = () => {
                       </div>
                     )}
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-900">{selectedUser.name}</h3>
-                      <p className="text-sm text-slate-500">{selectedUser.email}</p>
+                      <h3 className="text-lg font-semibold text-white">{selectedUser.name}</h3>
+                      <p className="text-sm text-white/50">{selectedUser.email}</p>
                     </div>
                   </div>
 
                   <div className="border-t pt-4 space-y-3">
                     <div>
-                      <p className="text-sm font-medium text-slate-600 mb-1">Role</p>
+                      <p className="text-sm font-medium text-white mb-1">Role</p>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                         {selectedUser.role}
                       </span>
                     </div>
                     
                     <div>
-                      <p className="text-sm font-medium text-slate-600 mb-1">Verification Status</p>
+                      <p className="text-sm font-medium text-white mb-1">Verification Status</p>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         selectedUser.verified 
                           ? 'bg-green-100 text-green-800' 
@@ -497,7 +509,7 @@ const UserManagement = () => {
                     </div>
                     
                     <div>
-                      <p className="text-sm font-medium text-slate-600 mb-1">Subscription</p>
+                      <p className="text-sm font-medium text-white mb-1">Subscription</p>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {selectedUser.isSubscribed === true || selectedUser.isSubscribe === true
                           ? 'Paid'
@@ -506,7 +518,7 @@ const UserManagement = () => {
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium text-slate-600 mb-1">Account Status</p>
+                      <p className="text-sm font-medium text-white mb-1">Account Status</p>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
                         selectedUser.status === 'active' 
                           ? 'bg-green-100 text-green-800' 
@@ -517,40 +529,47 @@ const UserManagement = () => {
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium text-slate-600 mb-1">Online Status</p>
+                      <p className="text-sm font-medium text-white mb-1">Online Status</p>
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${
                           selectedUser.onlineStatus?.isOnline ? 'bg-green-500' : 'bg-slate-300'
                         }`} />
-                        <span className="text-sm text-slate-900">
+                        <span className="text-sm text-white">
                           {selectedUser.onlineStatus?.isOnline ? 'Online' : 'Offline'}
                         </span>
                       </div>
                       {selectedUser.onlineStatus?.lastSeen && !selectedUser.onlineStatus?.isOnline && (
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-white/50 mt-1">
                           Last seen: {formatDate(selectedUser.onlineStatus.lastSeen)}
                         </p>
                       )}
                     </div>
 
+                    <div>
+                      <p className="text-sm font-medium text-white mb-1">Total Watch Time</p>
+                      <p className="text-base font-medium text-white">
+                        {formatWatchTime(selectedUser)}
+                      </p>
+                    </div>
+
                     {selectedUser.stripeCustomerId && (
                       <div>
-                        <p className="text-sm font-medium text-slate-600 mb-1">Stripe Customer ID</p>
-                        <p className="text-sm text-slate-900">{selectedUser.stripeCustomerId}</p>
+                        <p className="text-sm font-medium text-white mb-1">Stripe Customer ID</p>
+                        <p className="text-sm text-white">{selectedUser.stripeCustomerId}</p>
                       </div>
                     )}
                     
                     <div>
-                      <p className="text-sm font-medium text-slate-600 mb-1">Joined</p>
-                      <p className="text-base text-slate-900">{formatDate(selectedUser.createdAt)}</p>
+                      <p className="text-sm font-medium text-white mb-1">Joined</p>
+                      <p className="text-base text-white">{formatDate(selectedUser.createdAt)}</p>
                     </div>
 
                     {selectedUser.pageAccess && selectedUser.pageAccess.length > 0 && (
                       <div>
-                        <p className="text-sm font-medium text-slate-600 mb-1">Page Access</p>
+                        <p className="text-sm font-medium text-white mb-1">Page Access</p>
                         <div className="flex flex-wrap gap-1">
                           {selectedUser.pageAccess.map((page, index) => (
-                            <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
+                            <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-slate-100 text-white">
                               {page}
                             </span>
                           ))}
