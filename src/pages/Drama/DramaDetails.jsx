@@ -162,18 +162,61 @@ const writePdfSection = (doc, title, lines, startY) => {
 
 const downloadSeriesExcel = ({ drama, allSeasons, episodeRows, fileSlug, dateSlug }) => {
   const wb = XLSX.utils.book_new();
+
+  const seriesRow = mapSeriesExportRow(drama);
+  const seasonRows = allSeasons.map((season) =>
+    mapSeasonExportRow(season, drama.title)
+  );
+  const mainSheetRows = [
+    ["Series Export"],
+    ["Exported", formatExportDate(new Date().toISOString())],
+    [],
+    ["Series Details"],
+    ...Object.entries(seriesRow).map(([key, value]) => [key, value ?? ""]),
+    [],
+    ["Seasons"],
+    ["Season Number", "Title", "Description", "Created Date", "Updated Date"],
+    ...(seasonRows.length
+      ? seasonRows.map((row) => [
+          row["Season Number"],
+          row.Title,
+          row.Description,
+          row["Created Date"],
+          row["Updated Date"],
+        ])
+      : [["No seasons found"]]),
+    [],
+    ["Episodes"],
+    [
+      "Season Number",
+      "Episode Number",
+      "Title",
+      "Duration",
+      "Views",
+      "Status",
+      "Created Date",
+    ],
+    ...(episodeRows.length
+      ? episodeRows.map((row) => [
+          row["Season Number"],
+          row["Episode Number"],
+          row.Title,
+          row.Duration,
+          row.Views,
+          row.Status,
+          row["Created Date"],
+        ])
+      : [["No episodes found"]]),
+  ];
+
   XLSX.utils.book_append_sheet(
     wb,
-    XLSX.utils.json_to_sheet([mapSeriesExportRow(drama)]),
-    "Series"
+    XLSX.utils.aoa_to_sheet(mainSheetRows),
+    "Series Export"
   );
-  XLSX.utils.book_append_sheet(
-    wb,
-    XLSX.utils.json_to_sheet(
-      allSeasons.map((season) => mapSeasonExportRow(season, drama.title))
-    ),
-    "Seasons"
-  );
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([seriesRow]), "Series");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(seasonRows), "Seasons");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(episodeRows), "Episodes");
   XLSX.writeFile(wb, `series-export-${fileSlug}-${dateSlug}.xlsx`);
 };
