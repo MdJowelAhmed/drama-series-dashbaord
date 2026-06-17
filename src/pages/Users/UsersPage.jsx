@@ -68,31 +68,55 @@ const formatWatchTime = (user) => {
   return `${hours}h ${minutes}m ${seconds}s`;
 };
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const getSubscriptionPackageName = (user) => {
+  const sub = user?.activeSubscription;
+  if (sub?.packageName) return sub.packageName;
+  if (sub?.subscriptionId) return sub.subscriptionId;
+  return '';
+};
+
+const getSubscriptionPrice = (user) => {
+  const price = user?.activeSubscription?.price;
+  return price != null && price !== '' ? price : '';
+};
+
+const getSubscriptionEndDate = (user) => {
+  const end = user?.activeSubscription?.currentPeriodEnd;
+  return end ? formatDateTime(end) : '';
+};
+
 const mapUserToExportRow = (user) => ({
-  'User ID': user._id || user.id || '',
   Name: user.name || '',
   Email: user.email || '',
   Age: user.age ?? '',
   Gender: user.gender || '',
-  Phone: user.phone || '',
+  'Watch Time': formatWatchTime(user),
   Role: user.role || '',
   Verified: user.verified ? 'Yes' : 'No',
   Status: user.status || '',
-  Subscription:
-    user.isSubscribed === true || user.isSubscribe === true ? 'Paid' : 'Free',
+  'Subscription Package': getSubscriptionPackageName(user),
+  'Subscription Price': getSubscriptionPrice(user),
+  'Subscription End Date': getSubscriptionEndDate(user),
   Online: user.onlineStatus?.isOnline ? 'Online' : 'Offline',
   'Last Seen': user.onlineStatus?.lastSeen
     ? formatDate(user.onlineStatus.lastSeen)
     : '',
-  'Stripe Customer ID': user.stripeCustomerId || '',
   'Joined Date': user.createdAt ? formatDate(user.createdAt) : '',
-  'Page Access': Array.isArray(user.pageAccess)
-    ? user.pageAccess
-        .map((page) => (typeof page === 'string' ? page : page?.name))
-        .filter(Boolean)
-        .join(', ')
-    : '',
 });
+
+const formatUserExportPdfLine = (row, index) =>
+  `${index + 1}. ${row.Name} | ${row.Email} | Age: ${row.Age || 'N/A'} | Gender: ${row.Gender || 'N/A'} | Watch Time: ${row['Watch Time']} | Role: ${row.Role} | Status: ${row.Status} | Verified: ${row.Verified} | Package: ${row['Subscription Package'] || 'N/A'} | Price: ${row['Subscription Price'] !== '' ? row['Subscription Price'] : 'N/A'} | End Date: ${row['Subscription End Date'] || 'N/A'} | Online: ${row.Online} | Last Seen: ${row['Last Seen'] || 'N/A'} | Joined: ${row['Joined Date']}`;
 
 const downloadUsersExcel = ({ users, filterSlug, dateSlug }) => {
   const rows = users.map(mapUserToExportRow);
@@ -121,7 +145,7 @@ const downloadUsersPdf = ({ users, filterSlug, dateSlug, activeCategoryLabel }) 
   doc.setFontSize(8);
   users.forEach((user, index) => {
     const row = mapUserToExportRow(user);
-    const line = `${index + 1}. ${row.Name} | ${row.Email} | Age: ${row.Age || 'N/A'} | Gender: ${row.Gender || 'N/A'} | ${row.Role} | ${row.Status} | ${row.Subscription} | Verified: ${row.Verified} | Joined: ${row['Joined Date']}`;
+    const line = formatUserExportPdfLine(row, index);
     const wrapped = doc.splitTextToSize(line, 180);
     doc.text(wrapped, 14, y);
     y += 4 * wrapped.length + 2;
@@ -337,6 +361,7 @@ const UserManagement = () => {
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Email</th>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Age</th>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Gender</th>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Subscription Package</th>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Role</th>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Verified</th>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Status</th>
@@ -347,7 +372,7 @@ const UserManagement = () => {
                   <tbody className="divide-y divide-slate-200">
                     {users.length === 0 ? (
                       <tr>
-                        <td colSpan="9" className="text-center py-12 text-slate-600">
+                        <td colSpan="10" className="text-center py-12 text-slate-600">
                           No users found
                         </td>
                       </tr>
@@ -370,6 +395,9 @@ const UserManagement = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-accent">{user.email}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-accent">{user.age ?? 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-accent capitalize">{user.gender || 'N/A'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-accent max-w-[180px] truncate" title={getSubscriptionPackageName(user) || undefined}>
+                          {getSubscriptionPackageName(user) || '—'}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                             {user.role}
@@ -496,25 +524,25 @@ const UserManagement = () => {
                   </div>
 
                   <div className="border-t pt-4 space-y-3">
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">Role</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Role : </p>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                         {selectedUser.role}
                       </span>
                     </div>
 
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">Age</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Age : </p>
                       <p className="text-base text-white">{selectedUser.age ?? 'N/A'}</p>
                     </div>
 
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">Gender</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Gender : </p>
                       <p className="text-base text-white capitalize">{selectedUser.gender || 'N/A'}</p>
                     </div>
                     
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">Verification Status</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Verification Status : </p>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         selectedUser.verified 
                           ? 'bg-green-100 text-green-800' 
@@ -524,8 +552,8 @@ const UserManagement = () => {
                       </span>
                     </div>
                     
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">Subscription</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Subscription : </p>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {selectedUser.isSubscribed === true || selectedUser.isSubscribe === true
                           ? 'Paid'
@@ -533,8 +561,33 @@ const UserManagement = () => {
                       </span>
                     </div>
 
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">Account Status</p>
+                    {selectedUser.activeSubscription && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-white mb-1">Subscription Package : </p>
+                          <p className="text-base text-white">
+                            {getSubscriptionPackageName(selectedUser) || 'N/A'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-white mb-1">Subscription Price : </p>
+                          <p className="text-base text-white">
+                            {getSubscriptionPrice(selectedUser) !== ''
+                              ? `$${getSubscriptionPrice(selectedUser)}`
+                              : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-white mb-1">Subscription End Date : </p>
+                          <p className="text-base text-white">
+                            {getSubscriptionEndDate(selectedUser) || 'N/A'}
+                          </p>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Account Status : </p>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
                         selectedUser.status === 'active' 
                           ? 'bg-green-100 text-green-800' 
@@ -544,8 +597,8 @@ const UserManagement = () => {
                       </span>
                     </div>
 
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">Online Status</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Online Status : </p>
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${
                           selectedUser.onlineStatus?.isOnline ? 'bg-green-500' : 'bg-slate-300'
@@ -554,44 +607,28 @@ const UserManagement = () => {
                           {selectedUser.onlineStatus?.isOnline ? 'Online' : 'Offline'}
                         </span>
                       </div>
-                      {selectedUser.onlineStatus?.lastSeen && !selectedUser.onlineStatus?.isOnline && (
-                        <p className="text-xs text-white/50 mt-1">
-                          Last seen: {formatDate(selectedUser.onlineStatus.lastSeen)}
+                   
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Last seen : </p>
+                    {selectedUser.onlineStatus?.lastSeen && !selectedUser.onlineStatus?.isOnline && (
+                        <p className="text-xs text-white mt-1">
+                         {formatDate(selectedUser.onlineStatus.lastSeen)}
                         </p>
                       )}
                     </div>
 
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">Total Watch Time</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Total Watch Time : </p>
                       <p className="text-base font-medium text-white">
                         {formatWatchTime(selectedUser)}
                       </p>
                     </div>
 
-                    {selectedUser.stripeCustomerId && (
-                      <div>
-                        <p className="text-sm font-medium text-white mb-1">Stripe Customer ID</p>
-                        <p className="text-sm text-white">{selectedUser.stripeCustomerId}</p>
-                      </div>
-                    )}
-                    
-                    <div>
-                      <p className="text-sm font-medium text-white mb-1">Joined</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white mb-1">Joined : </p>
                       <p className="text-base text-white">{formatDate(selectedUser.createdAt)}</p>
                     </div>
-
-                    {selectedUser.pageAccess && selectedUser.pageAccess.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-white mb-1">Page Access</p>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedUser.pageAccess.map((page, index) => (
-                            <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-slate-100 text-white">
-                              {page}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
