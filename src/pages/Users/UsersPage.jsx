@@ -72,6 +72,8 @@ const mapUserToExportRow = (user) => ({
   'User ID': user._id || user.id || '',
   Name: user.name || '',
   Email: user.email || '',
+  Age: user.age ?? '',
+  Gender: user.gender || '',
   Phone: user.phone || '',
   Role: user.role || '',
   Verified: user.verified ? 'Yes' : 'No',
@@ -119,7 +121,7 @@ const downloadUsersPdf = ({ users, filterSlug, dateSlug, activeCategoryLabel }) 
   doc.setFontSize(8);
   users.forEach((user, index) => {
     const row = mapUserToExportRow(user);
-    const line = `${index + 1}. ${row.Name} | ${row.Email} | ${row.Role} | ${row.Status} | ${row.Subscription} | Verified: ${row.Verified} | Joined: ${row['Joined Date']}`;
+    const line = `${index + 1}. ${row.Name} | ${row.Email} | Age: ${row.Age || 'N/A'} | Gender: ${row.Gender || 'N/A'} | ${row.Role} | ${row.Status} | ${row.Subscription} | Verified: ${row.Verified} | Joined: ${row['Joined Date']}`;
     const wrapped = doc.splitTextToSize(line, 180);
     doc.text(wrapped, 14, y);
     y += 4 * wrapped.length + 2;
@@ -333,6 +335,8 @@ const UserManagement = () => {
                     <tr>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Name</th>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Email</th>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Age</th>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Gender</th>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Role</th>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Verified</th>
                       <th className="text-left px-6 py-3 text-xs font-medium text-accent-foreground uppercase tracking-wider">Status</th>
@@ -343,7 +347,7 @@ const UserManagement = () => {
                   <tbody className="divide-y divide-slate-200">
                     {users.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="text-center py-12 text-slate-600">
+                        <td colSpan="9" className="text-center py-12 text-slate-600">
                           No users found
                         </td>
                       </tr>
@@ -364,6 +368,8 @@ const UserManagement = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-accent">{user.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-accent">{user.age ?? 'N/A'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-accent capitalize">{user.gender || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                             {user.role}
@@ -495,6 +501,16 @@ const UserManagement = () => {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                         {selectedUser.role}
                       </span>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-white mb-1">Age</p>
+                      <p className="text-base text-white">{selectedUser.age ?? 'N/A'}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-white mb-1">Gender</p>
+                      <p className="text-base text-white capitalize">{selectedUser.gender || 'N/A'}</p>
                     </div>
                     
                     <div>
