@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pencil, Plus } from "lucide-react";
+import { FaApple, FaGooglePlay } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import {
   useGetAllPackageQuery,
@@ -332,6 +333,10 @@ export default function SubscriptionPackagesManagement() {
               const discountedPrice = hasDiscount
                 ? originalPrice * (1 - pkg.discount / 100)
                 : pkg.price;
+              const isGooglePackage =
+                Boolean(pkg.googleProductId) || pkg.isGoogle === true;
+              const isApplePackage =
+                Boolean(pkg.appleProductId) || pkg.provider === "apple";
 
               return (
                 <div
@@ -346,8 +351,22 @@ export default function SubscriptionPackagesManagement() {
                     </div>
                   )}
 
-                  <div className="flex justify-end">
-                    <button
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <div>
+                      {(isGooglePackage || isApplePackage) && (
+                        <div
+                          className={`inline-flex items-center justify-center h-8 w-8 rounded-full ${isGooglePackage
+                              ? " text-white"
+                              : " text-white"
+                            }`}
+                          title={isGooglePackage ? "Google Play Product" : "Apple Product"}
+                        >
+                          {isGooglePackage ? <FaGooglePlay size={20} /> : <FaApple size={20} />}
+                        </div>
+                      )}
+                    </div>
+                  <div >
+                  <button
                       className="p-1 mr-2 hover:bg-gray-100 rounded"
                       onClick={() => openPackageModal(pkg)}
                     >
@@ -374,6 +393,7 @@ export default function SubscriptionPackagesManagement() {
                       </svg>
                     </button>
                   </div>
+                  </div>
 
                   <div className="mb-3 text-sm text-center">{pkg.name}</div>
 
@@ -396,10 +416,13 @@ export default function SubscriptionPackagesManagement() {
                   </div>
 
                   <div className="mb-2 text-xs text-center">
-                    {DURATION_OPTIONS.find(
-                      (opt) => opt.value === pkg.duration?.toLowerCase()
-                    )?.label || pkg.duration}{" "}
-                    - {pkg.paymentType}
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-white bg-red-500 font-semibold ">
+                      {DURATION_OPTIONS.find(
+                        (opt) => opt.value === pkg.duration?.toLowerCase()
+                      )?.label || pkg.duration}
+                    </span>
+                    <span className="mx-2 text-accent/70">-</span>
+                    <span>{pkg.paymentType}</span>
                   </div>
 
                   <p className="mb-8 text-xs text-center">{pkg.description}</p>
@@ -496,7 +519,7 @@ export default function SubscriptionPackagesManagement() {
                     onValueChange={(value) =>
                       setCurrentPackage((prev) => ({ ...prev, paymentType: value }))
                     }
-                   
+
                   >
                     <SelectTrigger className="py-[22px] border border-white/50 ">
                       <SelectValue placeholder="Select payment type" />
