@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Plus, Trash2, Edit2, Play, Clock, Eye, Film, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, Play, Clock, Eye, Film, X, FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 import { Button } from '@/components/ui/button';
 import TrailerUploadModal from '@/components/modals/TrailerUploadModal';
 import VideoDetailsModal from '@/components/videoUpload/VideoDetailsModal';
@@ -12,6 +14,71 @@ import {
 } from '@/redux/feature/trailerApi';
 import { getVideoAndThumbnail } from '@/components/share/imageUrl';
 
+const formatExportDate = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const mapTrailerExportRow = (trailer) => ({
+  'Trailer ID': trailer._id || trailer.id || '',
+  Title: trailer.title || '',
+  Description: trailer.description || trailer.content || '',
+  Type: trailer.type || '',
+  Duration: trailer.duration || '',
+  Views: trailer.views ?? 0,
+  Status: trailer.status || '',
+  'Content Name': trailer.contentName || '',
+  'Thumbnail URL': trailer.thumbnail_url || trailer.thumbnailUrl || '',
+  'Video URL': trailer.videoUrl || trailer.video_url || '',
+  'Created Date': formatExportDate(trailer.created_at || trailer.createdAt),
+  'Updated Date': formatExportDate(trailer.updated_at || trailer.updatedAt),
+});
+
+const buildExportFileSlug = () =>
+  `trailers-${new Date().toISOString().slice(0, 10)}`;
+
+const downloadTrailerExcel = (trailers) => {
+  const rows = trailers.map(mapTrailerExportRow);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Trailers');
+  XLSX.writeFile(wb, `${buildExportFileSlug()}.xlsx`);
+};
+
+const downloadTrailerPdf = (trailers) => {
+  const doc = new jsPDF();
+  let y = 16;
+
+  doc.setFontSize(15);
+  doc.text('Trailer Export', 14, y);
+  y += 10;
+  doc.setFontSize(10);
+  doc.text(`Exported: ${formatExportDate(new Date().toISOString())}`, 14, y);
+  y += 6;
+  doc.text(`Total trailers: ${trailers.length}`, 14, y);
+  y += 10;
+
+  doc.setFontSize(8);
+  trailers.forEach((trailer, index) => {
+    const row = mapTrailerExportRow(trailer);
+    const line = `${index + 1}. ${row.Title} | ${row.Type || 'N/A'} | Duration: ${row.Duration || 'N/A'} | Views: ${row.Views} | Status: ${row.Status || 'N/A'} | Created: ${row['Created Date']}`;
+    const wrapped = doc.splitTextToSize(line, 180);
+    doc.text(wrapped, 14, y);
+    y += 4 * wrapped.length + 2;
+    if (y > 280) {
+      doc.addPage();
+      y = 16;
+    }
+  });
+
+  doc.save(`${buildExportFileSlug()}.pdf`);
+};
+
 const TrailerManagement = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -19,6 +86,7 @@ const TrailerManagement = () => {
   const [editingTrailer, setEditingTrailer] = useState(null);
   const [selectedTrailer, setSelectedTrailer] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [exportingFormat, setExportingFormat] = useState(null);
 
   // RTK Query hooks
   const { data: trailersData, isLoading: isLoadingTrailers, refetch } = useGetAllTrailerQuery();
@@ -26,7 +94,6 @@ const TrailerManagement = () => {
   const [deleteTrailer, { isLoading: isDeleting }] = useDeleteTrailerMutation();
 
   const trailers = trailersData?.data?.result || [];
-  console.log(trailers);
 
   const handleUploadTrailer = () => {
     setEditingTrailer(null);
@@ -68,21 +135,69 @@ const TrailerManagement = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const handleExportTrailers = (format) => {
+    try {
+      setExportingFormat(format);
+      if (!trailers.length) {
+        toast.error('No trailers found to export');
+        return;
+      }
+
+      if (format === 'pdf') {
+        downloadTrailerPdf(trailers);
+      } else {
+        downloadTrailerExcel(trailers);
+      }
+
+      toast.success(`Exported ${trailers.length} trailer(s) as ${format.toUpperCase()}`);
+    } catch (error) {
+      toast.error(error?.message || 'Failed to export trailers');
+    } finally {
+      setExportingFormat(null);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <div className="mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-4xl font-bold text-accent mb-2">Trailer Management</h1>
             <p className="text-white/70">Manage all your drama trailers in one place</p>
           </div>
-          <Button
-            onClick={handleUploadTrailer}
-            className="flex items-center gap-2 px-6 py-6 rounded-sm transition-all font-semibold"
-          >
-            <Plus className="h-5 w-5" />
-            Upload Trailer
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => handleExportTrailers('pdf')}
+              disabled={isLoadingTrailers || exportingFormat !== null}
+              className="flex items-center gap-2 px-4 py-6 rounded-sm bg-red-600 hover:bg-red-700 text-white transition-all font-semibold"
+            >
+              {exportingFormat === 'pdf' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4" />
+              )}
+              PDF
+            </Button>
+            <Button
+              onClick={() => handleExportTrailers('excel')}
+              disabled={isLoadingTrailers || exportingFormat !== null}
+              className="flex items-center gap-2 px-4 py-6 rounded-sm bg-green-600 hover:bg-green-700 text-white transition-all font-semibold"
+            >
+              {exportingFormat === 'excel' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4" />
+              )}
+              Excel
+            </Button>
+            <Button
+              onClick={handleUploadTrailer}
+              className="flex items-center gap-2 px-6 py-6 rounded-sm transition-all font-semibold"
+            >
+              <Plus className="h-5 w-5" />
+              Upload Trailer
+            </Button>
+          </div>
         </div>
 
         {isLoadingTrailers ? (
