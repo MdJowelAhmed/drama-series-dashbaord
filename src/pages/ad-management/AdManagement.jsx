@@ -68,18 +68,10 @@ const formatExportDate = (dateString) => {
 const mapAdExportRow = (ad) => {
   const meta = ad?.metadata || {};
   return {
-    'Ad ID': ad._id || ad.id || '',
     Title: meta.title || ad.title || ad.name || 'Untitled Ad',
     Description: meta.description || ad.description || '',
     Link: meta.link || '',
-    'Video ID': ad.videoId || '',
-    'Library ID': ad.libraryId || '',
     Views: ad.views ?? 0,
-    'Video URL': ad.videoUrl || ad.video_url || '',
-    'Download URL': ad.downloadUrls || ad.download_urls || '',
-    'Uploaded By': ad.uploadedBy || '',
-    'Created Date': formatExportDate(ad.createdAt || ad.created_at),
-    'Updated Date': formatExportDate(ad.updatedAt || ad.updated_at),
   };
 };
 
@@ -225,7 +217,7 @@ const AdManagement = () => {
     doc.setFontSize(8);
     allAds.forEach((ad, index) => {
       const row = mapAdExportRow(ad);
-      const line = `${index + 1}. ${row.Title} | Views: ${row.Views} | Video ID: ${row['Video ID']} | Created: ${row['Created Date']}`;
+    const line = `${index + 1}. ${row.Title} | Description: ${row.Description || 'N/A'} | Link: ${row.Link || 'N/A'} | Views: ${row.Views}`;
       const wrapped = doc.splitTextToSize(line, 180);
       doc.text(wrapped, 14, y);
       y += 4 * wrapped.length + 1;

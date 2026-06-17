@@ -28,14 +28,10 @@ const formatExportDate = (dateString) => {
 const mapTrailerExportRow = (trailer) => ({
   'Trailer ID': trailer._id || trailer.id || '',
   Title: trailer.title || '',
-  Description: trailer.description || trailer.content || '',
   Type: trailer.type || '',
   Duration: trailer.duration || '',
   Views: trailer.views ?? 0,
   Status: trailer.status || '',
-  'Content Name': trailer.contentName || '',
-  'Thumbnail URL': trailer.thumbnail_url || trailer.thumbnailUrl || '',
-  'Video URL': trailer.videoUrl || trailer.video_url || '',
   'Created Date': formatExportDate(trailer.created_at || trailer.createdAt),
   'Updated Date': formatExportDate(trailer.updated_at || trailer.updatedAt),
 });
@@ -66,7 +62,7 @@ const downloadTrailerPdf = (trailers) => {
   doc.setFontSize(8);
   trailers.forEach((trailer, index) => {
     const row = mapTrailerExportRow(trailer);
-    const line = `${index + 1}. ${row.Title} | ${row.Type || 'N/A'} | Duration: ${row.Duration || 'N/A'} | Views: ${row.Views} | Status: ${row.Status || 'N/A'} | Created: ${row['Created Date']}`;
+    const line = `${index + 1}. ID: ${row['Trailer ID']} | ${row.Title} | Type: ${row.Type || 'N/A'} | Duration: ${row.Duration || 'N/A'} | Views: ${row.Views} | Status: ${row.Status || 'N/A'} | Created: ${row['Created Date']} | Updated: ${row['Updated Date']}`;
     const wrapped = doc.splitTextToSize(line, 180);
     doc.text(wrapped, 14, y);
     y += 4 * wrapped.length + 2;
