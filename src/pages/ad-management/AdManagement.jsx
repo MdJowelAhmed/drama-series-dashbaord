@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Plus, Trash2, Edit2, Play, Film, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Edit2, Play, Film, ExternalLink, Eye, FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 import { Button } from '@/components/ui/button';
 import ReusableVideoUploadModal from '@/components/videoUpload/ReusableVideoUploadModal';
 import DeleteConfirmationModal from '@/components/share/DeleteConfirmationModal';
 import ReusablePagination from '@/components/share/ReusablePagination';
+import { baseUrl } from '@/redux/base-url/baseUrlApi';
 import {
   Dialog,
   DialogContent,
@@ -50,6 +53,35 @@ const AD_FORM_FIELDS = [
     gridCols: 2,
   },
 ];
+
+const formatExportDate = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const mapAdExportRow = (ad) => {
+  const meta = ad?.metadata || {};
+  return {
+    'Ad ID': ad._id || ad.id || '',
+    Title: meta.title || ad.title || ad.name || 'Untitled Ad',
+    Description: meta.description || ad.description || '',
+    Link: meta.link || '',
+    'Video ID': ad.videoId || '',
+    'Library ID': ad.libraryId || '',
+    Views: ad.views ?? 0,
+    'Video URL': ad.videoUrl || ad.video_url || '',
+    'Download URL': ad.downloadUrls || ad.download_urls || '',
+    'Uploaded By': ad.uploadedBy || '',
+    'Created Date': formatExportDate(ad.createdAt || ad.created_at),
+    'Updated Date': formatExportDate(ad.updatedAt || ad.updated_at),
+  };
+};
 
 const VideoPlayerModal = ({ ad, onClose }) => {
   const videoUrl = ad?.videoUrl || ad?.video_url;
@@ -102,6 +134,7 @@ const AdManagement = () => {
   const [selectedAd, setSelectedAd] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [page, setPage] = useState(1);
+  const [exportingFormat, setExportingFormat] = useState(null);
   const limit = 10;
 
   // RTK Query hooks
@@ -153,21 +186,122 @@ const AdManagement = () => {
     setVideoPlayerOpen(true);
   };
 
+  const fetchAllAdsForExport = async () => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${baseUrl}/ad-management?page=1&limit=9999`, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}`, token } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch ads for export');
+    }
+
+    const result = await response.json();
+    return Array.isArray(result?.data) ? result.data : [];
+  };
+
+  const downloadAdsExcel = (allAds) => {
+    const rows = allAds.map(mapAdExportRow);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Ads');
+    const fileDate = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `ads-export-${fileDate}.xlsx`);
+  };
+
+  const downloadAdsPdf = (allAds) => {
+    const doc = new jsPDF();
+    let y = 16;
+    doc.setFontSize(14);
+    doc.text('Ads Export', 14, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.text(`Exported: ${formatExportDate(new Date().toISOString())}`, 14, y);
+    y += 6;
+    doc.text(`Total ads: ${allAds.length}`, 14, y);
+    y += 8;
+
+    doc.setFontSize(8);
+    allAds.forEach((ad, index) => {
+      const row = mapAdExportRow(ad);
+      const line = `${index + 1}. ${row.Title} | Views: ${row.Views} | Video ID: ${row['Video ID']} | Created: ${row['Created Date']}`;
+      const wrapped = doc.splitTextToSize(line, 180);
+      doc.text(wrapped, 14, y);
+      y += 4 * wrapped.length + 1;
+      if (y > 280) {
+        doc.addPage();
+        y = 16;
+      }
+    });
+
+    const fileDate = new Date().toISOString().slice(0, 10);
+    doc.save(`ads-export-${fileDate}.pdf`);
+  };
+
+  const handleExportAds = async (format) => {
+    try {
+      setExportingFormat(format);
+      const allAds = await fetchAllAdsForExport();
+      if (!allAds.length) {
+        toast.error('No ads found to export');
+        return;
+      }
+
+      if (format === 'pdf') {
+        downloadAdsPdf(allAds);
+      } else {
+        downloadAdsExcel(allAds);
+      }
+      toast.success(`Exported ${allAds.length} ad(s) as ${format.toUpperCase()}`);
+    } catch (error) {
+      toast.error(error?.message || 'Failed to export ads');
+    } finally {
+      setExportingFormat(null);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <div className="mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div>
             <h1 className="text-4xl font-bold text-accent mb-2">Ad Management</h1>
             <p className="text-white/70">Manage all your advertisements in one place</p>
           </div>
-          <Button
-            onClick={handleUploadAd}
-            className="flex items-center gap-2 px-6 py-6 rounded-sm transition-all font-semibold"
-          >
-            <Plus className="h-5 w-5" />
-            Upload Ad
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => handleExportAds('pdf')}
+              disabled={isLoadingAds || exportingFormat !== null}
+              className="flex items-center gap-2 px-4 py-6 rounded-sm bg-red-600 hover:bg-red-700 text-white transition-all font-semibold"
+            >
+              {exportingFormat === 'pdf' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4" />
+              )}
+              PDF
+            </Button>
+            <Button
+              onClick={() => handleExportAds('excel')}
+              disabled={isLoadingAds || exportingFormat !== null}
+              className="flex items-center gap-2 px-4 py-6 rounded-sm bg-green-600 hover:bg-green-700 text-white transition-all font-semibold"
+            >
+              {exportingFormat === 'excel' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4" />
+              )}
+              Excel
+            </Button>
+            <Button
+              onClick={handleUploadAd}
+              className="flex items-center gap-2 px-6 py-6 rounded-sm transition-all font-semibold"
+            >
+              <Plus className="h-5 w-5" />
+              Upload Ad
+            </Button>
+          </div>
         </div>
 
         {isLoadingAds ? (
@@ -262,6 +396,10 @@ const AdManagement = () => {
                           <span className="truncate">{adLink}</span>
                         </a>
                       ) : null}
+                      <div className="flex items-center gap-1 text-sm text-accent/80">
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>{ad.views ?? 0} views</span>
+                      </div>
                     </div>
 
                     <div className="flex justify-between gap-2 p-4 pt-0">
