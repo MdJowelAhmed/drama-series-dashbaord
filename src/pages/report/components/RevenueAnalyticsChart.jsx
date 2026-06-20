@@ -3,6 +3,7 @@ import { FileDown } from "lucide-react";
 import {
   Bar,
   BarChart,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -92,6 +93,9 @@ function buildRevenueExportRows(rows) {
   return (rows || []).map((r) => ({
     period: r.period,
     revenue: r.revenue ?? 0,
+    weekly: r.weekly ?? 0,
+    monthly: r.monthly ?? 0,
+    yearly: r.yearly ?? 0,
   }));
 }
 
@@ -115,7 +119,7 @@ function downloadRevenuePdf({ chartTitle, subtitle, metaLines, rows, fileStem })
   y += 4;
   doc.setFontSize(8);
   (rows || []).forEach((row) => {
-    const line = `${row.period} | revenue: $${row.revenue ?? 0}`;
+    const line = `${row.period} | revenue: $${row.revenue ?? 0} | weekly: $${row.weekly ?? 0} | monthly: $${row.monthly ?? 0} | yearly: $${row.yearly ?? 0}`;
     const wrapped = doc.splitTextToSize(line, 180);
     doc.text(wrapped, 14, y);
     y += 4 * wrapped.length + 1;
@@ -442,7 +446,7 @@ const RevenueAnalyticsChart = () => {
           <div className="text-white/70">No revenue data</div>
         </div>
       ) : (
-        <div className="h-72">
+        <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
@@ -478,14 +482,36 @@ const RevenueAnalyticsChart = () => {
                     ? payload[0].payload?.period ?? _label
                     : _label
                 }
-                formatter={(value) => [`$${value}`, "Revenue"]}
+                formatter={(value, name) => [`$${value}`, name]}
               />
+              <Legend wrapperStyle={{ color: "#fff", paddingTop: 12 }} />
               <Bar
                 dataKey="revenue"
                 fill="#a855f7"
                 name="Revenue"
                 radius={[4, 4, 0, 0]}
-                maxBarSize={view === "month" ? 12 : 48}
+                maxBarSize={view === "month" ? 10 : 28}
+              />
+              <Bar
+                dataKey="weekly"
+                fill="#3b82f6"
+                name="Weekly"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={view === "month" ? 10 : 28}
+              />
+              <Bar
+                dataKey="monthly"
+                fill="#10b981"
+                name="Monthly"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={view === "month" ? 10 : 28}
+              />
+              <Bar
+                dataKey="yearly"
+                fill="#f59e0b"
+                name="Yearly"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={view === "month" ? 10 : 28}
               />
             </BarChart>
           </ResponsiveContainer>

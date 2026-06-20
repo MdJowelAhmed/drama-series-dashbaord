@@ -81,7 +81,7 @@ const formatDateTime = (dateString) => {
 
 const getSubscriptionPackageName = (user) => {
   const sub = user?.activeSubscription;
-  if (sub?.packageName) return sub.packageName;
+  if (sub?.name) return sub.name;
   if (sub?.subscriptionId) return sub.subscriptionId;
   return '';
 };
@@ -597,7 +597,7 @@ const UserManagement = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    {/* <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-white mb-1">Online Status : </p>
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${
@@ -608,7 +608,7 @@ const UserManagement = () => {
                         </span>
                       </div>
                    
-                    </div>
+                    </div> */}
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-white mb-1">Last seen : </p>
                     {selectedUser.onlineStatus?.lastSeen && !selectedUser.onlineStatus?.isOnline && (
