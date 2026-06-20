@@ -34,14 +34,22 @@ import {
 } from "@/redux/feature/controllerApi";
 import { useGetAllBackUpAdminQuery } from "@/redux/feature/controllerApi";
 
+// Matches Sidebar nav items (excluding Settings and Controller Management)
 const AVAILABLE_PAGES = [
-  { value: "dashboard", label: "Dashboard Overview" },
-  { value: "user", label: "Users Management" },
+  { value: "dashboard", label: "Overview" },
+  { value: "series", label: "Series Management" },
+  { value: "trailer", label: "Trailer Management" },
+  { value: "ad", label: "Ad Management" },
   { value: "category", label: "Category Management" },
-  { value: "movie", label: "Movies Management" },
-  { value: "trailer", label: "Trailers Management" },
-  { value: "report", label: "Reports Analysis" },
+  { value: "remainder", label: "Remainder Management" },
+  { value: "login-image", label: "Login Image" },
+  { value: "report", label: "Report Analytics" },
+  { value: "subscription", label: "Subscription Package" },
+  { value: "faq", label: "FAQ Management" },
+  { value: "user", label: "User Management" },
 ];
+
+const normalizePageAccessName = (name) => (name === "movie" ? "series" : name);
 
 export default function ControllerManagement() {
   const { data: adminData, isLoading } = useGetAllBackUpAdminQuery();
@@ -82,7 +90,7 @@ export default function ControllerManagement() {
     setShowPassword(false);
     const pageAccessArray = controller.pageAccess
       .filter((page) => page.access)
-      .map((page) => page.name);
+      .map((page) => normalizePageAccessName(page.name));
 
     setFormData({
       name: controller.name,
@@ -256,8 +264,9 @@ console.log("payload", payload);
                               variant="secondary"
                               className="bg-blue-100 text-blue-800 text-xs"
                             >
-                              {AVAILABLE_PAGES.find((p) => p.value === page.name)
-                                ?.label || page.name}
+                              {AVAILABLE_PAGES.find(
+                                (p) => p.value === normalizePageAccessName(page.name)
+                              )?.label || page.name}
                             </Badge>
                           ))}
                       </div>

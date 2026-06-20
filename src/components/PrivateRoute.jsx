@@ -5,13 +5,16 @@ import { useMemo } from 'react';
 // Map paths to pageAccess values
 const PAGE_ACCESS_MAP = {
   "/": "dashboard",
-  "/movies": "movie",
+  "/series": "series",
+  "/movies": "series",
   "/trailers": "trailer",
   "/ad-management": "ad",
   "/reports": "report",
   "/categories": "category",
   "/subscriptions": "subscription",
   "/remainder": "remainder",
+  "/login-image": "login-image",
+  "/faq": "faq",
   "/users": "user",
   "/controllers": "controller",
 };

@@ -28,6 +28,8 @@ const PAGE_ACCESS_MAP = {
   "/categories": "category",
   "/subscriptions": "subscription",
   "/remainder": "remainder",
+  "/login-image": "login-image",
+  "/faq": "faq",
   "/users": "user",
   "/controllers": "controller", // Only SUPER_ADMIN should see this
 };

@@ -29,8 +29,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
   },
   server: {
-    host: "72.62.164.122",
-    // host: "10.10.26.183",
+    // host: "72.62.164.122",
+    host: "10.10.26.183",
     // port: 3000,
   },
 });
