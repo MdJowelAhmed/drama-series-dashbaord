@@ -12,6 +12,10 @@ import {
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import { useReportAnalyticsQuery } from "@/redux/base-url/dashboardApi";
+import {
+  Custom3DBarWithWatermark,
+  useSeriesMaxValues,
+} from "@/components/charts/Custom3DBarWithWatermark";
 import RevenueAnalyticsChart from "./components/RevenueAnalyticsChart";
 
 const MONTH_NAMES_FULL = [
@@ -65,69 +69,6 @@ const DAY_VIEW_QUERY_ARGS = [{ name: "view", value: "day" }];
 
 const EXPORT_FILE_BASE = "C&C Creepy Shorts Exhibition-report";
 
-const Custom3DBarWithWatermark = ({
-  x = 0,
-  y = 0,
-  width = 0,
-  height = 0,
-  fill = "#000",
-  dataKey,
-  payload,
-  maxValues,
-}) => {
-  const depth = 10;
-  const maxValue = maxValues?.[dataKey] || 1;
-  const currentValue = payload[dataKey] || 0;
-  const scale = maxValue > 0 && currentValue > 0 ? maxValue / currentValue : 1;
-  const watermarkHeight = height * scale;
-  const watermarkY = y - (watermarkHeight - height);
-
-  return (
-    <g>
-      <g opacity={0.1}>
-        <rect
-          x={x}
-          y={watermarkY}
-          width={width}
-          height={watermarkHeight}
-          fill={fill}
-        />
-        <polygon
-          points={`${x},${watermarkY} ${x + depth},${watermarkY - depth} ${x + width + depth
-            },${watermarkY - depth} ${x + width},${watermarkY}`}
-          fill={fill}
-        />
-        <polygon
-          points={`${x + width},${watermarkY} ${x + width + depth},${watermarkY - depth
-            } ${x + width + depth},${watermarkY + watermarkHeight} ${x + width},${watermarkY + watermarkHeight
-            }`}
-          fill={fill}
-        />
-      </g>
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        fill={fill}
-        opacity={0.4}
-      />
-      <polygon
-        points={`${x},${y} ${x + depth},${y - depth} ${x + width + depth},${y - depth
-          } ${x + width},${y}`}
-        fill={fill}
-        opacity={0.6}
-      />
-      <polygon
-        points={`${x + width},${y} ${x + width + depth},${y - depth} ${x + width + depth
-          },${y + height} ${x + width},${y + height}`}
-        fill={fill}
-        opacity={0.7}
-      />
-    </g>
-  );
-};
-
 const Card = ({ children, className }) => (
   <div className={className}>{children}</div>
 );
@@ -144,17 +85,12 @@ const MetricsCards = ({ value, label, icons, growth }) => (
 );
 
 function useBreakdownMaxValues(breakdown) {
-  return useMemo(() => {
-    if (!breakdown?.length) {
-      return { movies: 1, trailers: 1, views: 1, revenue: 1 };
-    }
-    return {
-      movies: Math.max(...breakdown.map((d) => d.movies ?? 0), 1),
-      trailers: Math.max(...breakdown.map((d) => d.trailers ?? 0), 1),
-      views: Math.max(...breakdown.map((d) => d.views ?? 0), 1),
-      revenue: Math.max(...breakdown.map((d) => d.revenue ?? 0), 1),
-    };
-  }, [breakdown]);
+  return useSeriesMaxValues(breakdown, [
+    "movies",
+    "trailers",
+    "views",
+    "revenue",
+  ]);
 }
 
 function buildBreakdownTableRows(rows) {

@@ -256,7 +256,7 @@ const OverviewPage = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         {userGrowthLoading ? (
           <div className="bg-secondary rounded-lg p-6 flex items-center justify-center h-[400px]">
             <p className="text-accent">Loading user growth data...</p>

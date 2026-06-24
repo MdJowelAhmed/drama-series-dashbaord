@@ -12,8 +12,19 @@ import {
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import { useRevenueAnalyticsQuery } from "@/redux/base-url/dashboardApi";
+import {
+  Custom3DBarWithWatermark,
+  useSeriesMaxValues,
+} from "@/components/charts/Custom3DBarWithWatermark";
 
 const EXPORT_FILE_BASE = "C&C Creepy Short Exhibition-revenue-report";
+
+const REVENUE_SERIES = [
+  { dataKey: "revenue", fill: "#a855f7", name: "Revenue" },
+  { dataKey: "weekly", fill: "#3b82f6", name: "Weekly" },
+  { dataKey: "monthly", fill: "#10b981", name: "Monthly" },
+  { dataKey: "yearly", fill: "#CA8A04", name: "Yearly" },
+];
 
 const MONTH_NAMES_FULL = [
   "January",
@@ -31,6 +42,25 @@ const MONTH_NAMES_FULL = [
 ];
 
 const MONTH_VALUES = MONTH_NAMES_FULL.map((m) => m.toLowerCase());
+
+const normalizeRevenueRow = (row) => ({
+  ...row,
+  revenue: Number(row.revenue ?? 0),
+  weekly: Number(row.weekly ?? 0),
+  monthly: Number(row.monthly ?? 0),
+  yearly: Number(row.yearly ?? 0),
+});
+
+const getEmptyYearBreakdown = () =>
+  MONTH_NAMES_FULL.map((period) => ({
+    period,
+    revenue: 0,
+    weekly: 0,
+    monthly: 0,
+    yearly: 0,
+  }));
+
+const getYAxisMax = (dataMax) => Math.max(dataMax, 1);
 
 const getYearOptions = () => {
   const currentYear = new Date().getFullYear();
@@ -77,7 +107,7 @@ const formatMonthDayLabel = (period) => {
 };
 
 const selectFilterClass =
-  "px-4 py-2 border border-gray-300 rounded-md bg-gray-500 text-white min-w-[7rem]";
+  "px-6 py-2 border border-gray-300 rounded-md bg-gray-500 text-white min-w-[7rem]";
 
 const exportBtnClass =
   "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md text-white transition-colors";
@@ -224,12 +254,27 @@ const RevenueAnalyticsChart = () => {
   const filter = data?.data?.filter;
 
   const chartData = useMemo(() => {
-    if (view !== "month") return breakdown;
-    return breakdown.map((row) => ({
+    const source =
+      breakdown.length > 0
+        ? breakdown
+        : view === "year"
+          ? getEmptyYearBreakdown()
+          : [];
+
+    const normalized = source.map(normalizeRevenueRow);
+
+    if (view !== "month") return normalized;
+
+    return normalized.map((row) => ({
       ...row,
       periodAxis: formatMonthDayLabel(row.period),
     }));
   }, [breakdown, view]);
+
+  const maxValues = useSeriesMaxValues(
+    chartData,
+    REVENUE_SERIES.map((s) => s.dataKey)
+  );
 
   const xAxisDataKey = view === "month" ? "periodAxis" : "period";
   const xAxisAngle = view === "day" ? -35 : 0;
@@ -287,13 +332,13 @@ const RevenueAnalyticsChart = () => {
       <div className="flex flex-wrap justify-end gap-2 mb-3">
         <button
           type="button"
-          disabled={!breakdown.length || isLoading}
+          disabled={!chartData.length || isLoading}
           onClick={() =>
             downloadRevenuePdf({
               chartTitle: "Revenue Analytics",
               subtitle,
               metaLines: exportMetaLines,
-              rows: breakdown,
+              rows: chartData,
               fileStem,
             })
           }
@@ -304,10 +349,10 @@ const RevenueAnalyticsChart = () => {
         </button>
         <button
           type="button"
-          disabled={!breakdown.length || isLoading}
+          disabled={!chartData.length || isLoading}
           onClick={() =>
             downloadRevenueExcel({
-              rows: breakdown,
+              rows: chartData,
               sheetName: excelSheetName,
               fileStem,
             })
@@ -441,12 +486,12 @@ const RevenueAnalyticsChart = () => {
         <div className="h-72 flex items-center justify-center">
           <div className="text-red-400">Error loading revenue data</div>
         </div>
-      ) : !breakdown.length ? (
+      ) : !chartData.length ? (
         <div className="h-72 flex items-center justify-center">
           <div className="text-white/70">No revenue data</div>
         </div>
       ) : (
-        <div className="h-80">
+        <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
@@ -463,6 +508,8 @@ const RevenueAnalyticsChart = () => {
                 interval={view === "month" ? "preserveStartEnd" : 0}
               />
               <YAxis
+                domain={[0, getYAxisMax]}
+                allowDecimals={false}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#fff", fontSize: 11 }}
@@ -484,35 +531,22 @@ const RevenueAnalyticsChart = () => {
                 }
                 formatter={(value, name) => [`$${value}`, name]}
               />
-              <Legend wrapperStyle={{ color: "#fff", paddingTop: 12 }} />
-              <Bar
-                dataKey="revenue"
-                fill="#a855f7"
-                name="Revenue"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={view === "month" ? 10 : 28}
-              />
-              <Bar
-                dataKey="weekly"
-                fill="#3b82f6"
-                name="Weekly"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={view === "month" ? 10 : 28}
-              />
-              <Bar
-                dataKey="monthly"
-                fill="#10b981"
-                name="Monthly"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={view === "month" ? 10 : 28}
-              />
-              <Bar
-                dataKey="yearly"
-                fill="#f59e0b"
-                name="Yearly"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={view === "month" ? 10 : 28}
-              />
+              <Legend />
+              {REVENUE_SERIES.map(({ dataKey, fill, name }) => (
+                <Bar
+                  key={dataKey}
+                  dataKey={dataKey}
+                  fill={fill}
+                  name={name}
+                  shape={(props) => (
+                    <Custom3DBarWithWatermark
+                      {...props}
+                      dataKey={dataKey}
+                      maxValues={maxValues}
+                    />
+                  )}
+                />
+              ))}
             </BarChart>
           </ResponsiveContainer>
         </div>

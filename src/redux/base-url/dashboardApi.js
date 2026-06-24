@@ -13,6 +13,7 @@ const dashboardApi = api.injectEndpoints({
             query: () => ({
                 url: "/dashboard/top-watched",
                 method: "GET",
+                params: { limit: 20 },
             }),
             providesTags: ["Dashboard"],
         }),
