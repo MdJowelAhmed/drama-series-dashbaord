@@ -15,6 +15,17 @@ import {
 
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
 
+const sanitizeImageFileName = (fileName) => fileName.replace(/\s+/g, "");
+
+const withSanitizedImageFileName = (file) => {
+  const sanitizedName = sanitizeImageFileName(file.name);
+  if (sanitizedName === file.name) return file;
+  return new File([file], sanitizedName, {
+    type: file.type,
+    lastModified: file.lastModified,
+  });
+};
+
 const EpisodeUploadModal = ({
   open,
   onClose,
@@ -152,9 +163,10 @@ const EpisodeUploadModal = ({
         toast.error("Image must be smaller than 5MB");
         return;
       }
-      setThumbnailFile(file);
-      
-      const previewUrl = URL.createObjectURL(file);
+      const sanitizedThumbnail = withSanitizedImageFileName(file);
+      setThumbnailFile(sanitizedThumbnail);
+
+      const previewUrl = URL.createObjectURL(sanitizedThumbnail);
       setThumbnailPreview(previewUrl);
       
       toast.success("Thumbnail selected successfully");
@@ -446,7 +458,11 @@ const EpisodeUploadModal = ({
         setUploadProgress(92);
         try {
           const thumbnailFormData = new FormData();
-          thumbnailFormData.append("thumbnail", thumbnailFile);
+          thumbnailFormData.append(
+            "thumbnail",
+            thumbnailFile,
+            thumbnailFile.name
+          );
           
           const token = localStorage.getItem("token");
           const thumbnailResponse = await fetch(
@@ -746,7 +762,7 @@ const EpisodeUploadModal = ({
             {/* Thumbnail Upload */}
             <div className={isEditMode ? "md:col-span-2" : ""}>
               <Label className="block text-sm font-semibold text-white/80 mb-2">
-                Thumbnail Image {!isEditMode && <span className="text-red-400">*</span>}
+                Thumbnail Image {!isEditMode && <span className="text-red-400">*</span>} <span className="text-xs text-white/50">(Better performance for upload webp image)</span>
               </Label>
               <input
                 type="file"
@@ -791,7 +807,7 @@ const EpisodeUploadModal = ({
                         </p>
                       </>
                     )}
-                    <div className="flex gap-2 justify-center">
+                    {/* <div className="flex gap-2 justify-center">
                       <label
                         htmlFor="episode-thumbnail-upload"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-300 rounded-lg cursor-pointer hover:bg-blue-500/30 font-medium transition-all border border-blue-500/30 text-sm"
@@ -811,7 +827,7 @@ const EpisodeUploadModal = ({
                           Remove
                         </Button>
                       )}
-                    </div>
+                    </div> */}
                   </div>
                 ) : (
                   <>

@@ -841,27 +841,7 @@ const TrailerUploadModal = ({
                         </p>
                       </>
                     )}
-                    <div className="flex gap-2 justify-center">
-                      <label
-                        htmlFor="trailer-thumbnail-upload"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-300 rounded-lg cursor-pointer hover:bg-blue-500/30 font-medium transition-all border border-blue-500/30 text-sm"
-                      >
-                        <Upload className="h-4 w-4" />
-                        Change
-                      </label>
-                      {thumbnailFile && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeFile("thumbnail")}
-                          disabled={uploadingVideo}
-                          className="text-red-400 hover:text-red-300 border-red-400/50"
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </div>
+                 
                   </div>
                 ) : (
                   <>
@@ -869,9 +849,10 @@ const TrailerUploadModal = ({
                     <p className="text-sm text-white/70 mb-2 font-medium">
                       Drag and drop thumbnail
                     </p>
-                    <p className="text-xs text-white/40 mb-4">
+                    <p className="text-xs text-white/40 mb-2">
                       JPG, PNG, WEBP (Max 5MB)
                     </p>
+                    <p className="text-xs text-white/70 mb-2">(Better performance for upload webp image)</p>
                     <label
                       htmlFor="trailer-thumbnail-upload"
                       className="inline-block px-6 py-2.5 bg-white/10 text-white rounded-lg cursor-pointer hover:bg-white/20 font-medium transition-all border border-white/20"
