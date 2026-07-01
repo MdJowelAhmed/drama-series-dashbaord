@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLoginPageMutation } from "@/redux/feature/loginPage";
 import { compressImage } from "@/utils/compressImage";
+import { toast } from "sonner";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 const buildImageUrl = (path) => {
   if (!path) return "";
@@ -46,9 +48,19 @@ const LoginImageModal = ({ open, onClose, onSuccess, existingImages = [] }) => {
     const selectedFiles = Array.from(fileList || []);
     if (!selectedFiles.length) return;
 
+    const validFiles = selectedFiles.filter((file) => {
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast.error(`${file.name} must be smaller than 5MB`);
+        return false;
+      }
+      return true;
+    });
+
+    if (!validFiles.length) return;
+
     // Compress/resize before storing so we upload small files, not multi-MB originals.
     const processed = await Promise.all(
-      selectedFiles.map((file) => compressImage(file))
+      validFiles.map((file) => compressImage(file))
     );
 
     setFiles((prev) => [...prev, ...processed]);
@@ -139,6 +151,7 @@ const LoginImageModal = ({ open, onClose, onSuccess, existingImages = [] }) => {
           <DialogTitle className="text-xl font-semibold text-accent">
             Update Login Images
           </DialogTitle>
+          <span className="text-xs text-white/70">(Better performance for upload webp image)</span>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -156,7 +169,7 @@ const LoginImageModal = ({ open, onClose, onSuccess, existingImages = [] }) => {
                 Click to upload or drag and drop
               </p>
               <p className="text-xs text-gray-400">
-                You can select multiple images. They will all be shown on the login page.
+                You can select multiple images. Max 5MB per image.
               </p>
             </div>
             <input

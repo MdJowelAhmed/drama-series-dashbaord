@@ -468,43 +468,30 @@ const CommonFormModal = ({
           </div>
 
           <div>
-            <Label>Thumbnail</Label>
+            <div className="flex items-center gap-2">
+              <Label className="">Thumbnail</Label>
+              <span className="text-xs text-white/70">(Better performance for upload webp image)</span>
+            </div>
             <div
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
               onClick={() => document.getElementById("file-upload").click()}
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
-                dragActive
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer mt-2 ${dragActive
                   ? "border-blue-500 bg-blue-50"
                   : "border-slate-300 hover:border-blue-500"
-              }`}
+                }`}
             >
               {formData.thumbnail ? (
                 <div className="space-y-3">
                   <img
                     src={formData.thumbnail}
-                    alt="Preview"
+                    alt="Thumbnail preview"
                     loading="lazy"
                     decoding="async"
                     className="mx-auto h-40 w-full object-cover rounded-lg"
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFormData((prev) => ({
-                        ...prev,
-                        thumbnail: null,
-                        thumbnailFile: null,
-                      }));
-                    }}
-                  >
-                    Remove Image
-                  </Button>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -518,7 +505,7 @@ const CommonFormModal = ({
                     or drag and drop
                   </div>
                   <p className="text-xs text-accent">
-                    PNG, JPG, GIF up to 10MB
+                    PNG, JPG, GIF up to 5MB
                   </p>
                 </div>
               )}
