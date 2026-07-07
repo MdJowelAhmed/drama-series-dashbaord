@@ -14,6 +14,7 @@ import {
   downloadReportPdf,
   PRODUCTION_BREAKDOWN_COLUMNS,
   sanitizeFileStem,
+  sortRowsByPeriod,
 } from "./utils/reportPdfExport";
 import { useReportAnalyticsQuery } from "@/redux/base-url/dashboardApi";
 import {
@@ -139,7 +140,7 @@ function buildStatisticsTableRows(stats) {
 
 function downloadProductionViewExcel({ rows, statistics, sheetName, fileStem }) {
   const wb = XLSX.utils.book_new();
-  const wsMain = XLSX.utils.json_to_sheet(buildBreakdownTableRows(rows));
+  const wsMain = XLSX.utils.json_to_sheet(buildBreakdownTableRows(sortRowsByPeriod(rows)));
   XLSX.utils.book_append_sheet(wb, wsMain, sheetName.replace(/[:\\/?*[\]]/g, "").slice(0, 31));
   const statRows = buildStatisticsTableRows(statistics);
   if (statRows?.length) {

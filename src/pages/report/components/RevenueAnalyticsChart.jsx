@@ -14,6 +14,7 @@ import {
   downloadReportPdf,
   REVENUE_BREAKDOWN_COLUMNS,
   sanitizeFileStem,
+  sortRowsByPeriod,
 } from "../utils/reportPdfExport";
 import { useRevenueAnalyticsQuery } from "@/redux/base-url/dashboardApi";
 import {
@@ -128,7 +129,7 @@ function buildRevenueExportRows(rows) {
 
 function downloadRevenueExcel({ rows, sheetName, fileStem }) {
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(buildRevenueExportRows(rows));
+  const ws = XLSX.utils.json_to_sheet(buildRevenueExportRows(sortRowsByPeriod(rows)));
   XLSX.utils.book_append_sheet(
     wb,
     ws,
