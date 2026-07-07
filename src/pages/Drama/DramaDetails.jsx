@@ -18,9 +18,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
 import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
 import { baseUrl } from "@/redux/base-url/baseUrlApi";
+import { downloadReportPdfSections } from "../report/utils/reportPdfExport";
 
 // API Hooks
 import { useGetDramaByIdQuery } from "@/redux/feature/dramaManagement/dramaManagementApi";
@@ -140,26 +140,6 @@ const fetchSeriesExportData = async (movieId, drama, formatDuration) => {
   return { allSeasons, episodeRows };
 };
 
-const writePdfSection = (doc, title, lines, startY) => {
-  let y = startY;
-  doc.setFontSize(12);
-  doc.text(title, 14, y);
-  y += 7;
-  doc.setFontSize(8);
-
-  lines.forEach((line) => {
-    const wrapped = doc.splitTextToSize(line, 180);
-    doc.text(wrapped, 14, y);
-    y += 4 * wrapped.length + 1;
-    if (y > 280) {
-      doc.addPage();
-      y = 16;
-    }
-  });
-
-  return y + 4;
-};
-
 const downloadSeriesExcel = ({ drama, allSeasons, episodeRows, fileSlug, dateSlug }) => {
   const wb = XLSX.utils.book_new();
 
@@ -222,40 +202,83 @@ const downloadSeriesExcel = ({ drama, allSeasons, episodeRows, fileSlug, dateSlu
 };
 
 const downloadSeriesPdf = ({ drama, allSeasons, episodeRows, fileSlug, dateSlug }) => {
-  const doc = new jsPDF();
-  let y = 16;
+  const seriesRow = mapSeriesExportRow(drama);
+  const seasonRows = allSeasons.map((season) => mapSeasonExportRow(season, drama.title));
+  const toDateOnly = (value) => String(value ?? "").split(",")[0].trim();
 
-  doc.setFontSize(16);
-  const titleLines = doc.splitTextToSize(`Series Export: ${drama.title || "Untitled"}`, 180);
-  doc.text(titleLines, 14, y);
-  y += 8 * titleLines.length + 4;
+  const seriesColumns = [
+    { header: "Field", key: "field", width: 70, align: "left" },
+    { header: "Value", key: "value", width: 110, align: "left" },
+  ];
+  const seriesTableRows = Object.entries(seriesRow).map(([field, value]) => {
+    const isDateField = field === "Created Date" || field === "Updated Date";
+    return {
+      field,
+      value: isDateField ? toDateOnly(value) : value ?? "",
+    };
+  });
 
-  doc.setFontSize(9);
-  doc.text(`Exported: ${formatExportDate(new Date().toISOString())}`, 14, y);
-  y += 8;
+  const seasonColumns = [
+    { header: "Season #", key: "Season Number", width: 22, align: "right" },
+    { header: "Title", key: "Title", width: 42, align: "left" },
+    { header: "Description", key: "Description", width: 58, align: "left" },
+    { header: "Created", key: "Created Date", width: 28, align: "left" },
+    { header: "Updated", key: "Updated Date", width: 30, align: "left" },
+  ];
 
-  const seriesLines = Object.entries(mapSeriesExportRow(drama)).map(
-    ([key, value]) => `${key}: ${value ?? ""}`
+  const episodeColumns = [
+    { header: "S#", key: "Season Number", width: 12, align: "right" },
+    { header: "EP#", key: "Episode Number", width: 14, align: "right" },
+    { header: "Title", key: "Title", width: 48, align: "left" },
+    { header: "Duration", key: "Duration", width: 20, align: "left" },
+    {
+      header: "Views",
+      key: "Views",
+      width: 18,
+      align: "right",
+      format: (v) => Number(v ?? 0).toLocaleString("en-US"),
+    },
+    { header: "Status", key: "Status", width: 22, align: "left" },
+    { header: "Created", key: "Created Date", width: 28, align: "left" },
+    { header: "Updated", key: "Updated Date", width: 28, align: "left" },
+  ];
+
+  const normalizedSeasonRows = seasonRows.map((row) => ({
+    ...row,
+    "Created Date": toDateOnly(row["Created Date"]),
+    "Updated Date": toDateOnly(row["Updated Date"]),
+  }));
+  const normalizedEpisodeRows = episodeRows.map((row) => ({
+    ...row,
+    "Created Date": toDateOnly(row["Created Date"]),
+    "Updated Date": toDateOnly(row["Updated Date"]),
+  }));
+
+  const sortedSeasons = [...normalizedSeasonRows].sort(
+    (a, b) => Number(a["Season Number"] ?? 0) - Number(b["Season Number"] ?? 0)
   );
-  y = writePdfSection(doc, "Series Details", seriesLines, y);
+  const sortedEpisodes = [...normalizedEpisodeRows].sort((a, b) => {
+    const seasonDiff = Number(a["Season Number"] ?? 0) - Number(b["Season Number"] ?? 0);
+    if (seasonDiff !== 0) return seasonDiff;
+    return Number(a["Episode Number"] ?? 0) - Number(b["Episode Number"] ?? 0);
+  });
 
-  const seasonLines = allSeasons.length
-    ? allSeasons.map((season) => {
-        const row = mapSeasonExportRow(season, drama.title);
-        return `Season ${row["Season Number"]} | ${row.Title} | Created: ${row["Created Date"]} | ${row.Description || "No description"}`;
-      })
-    : ["No seasons found"];
-  y = writePdfSection(doc, "Seasons", seasonLines, y);
-
-  const episodeLines = episodeRows.length
-    ? episodeRows.map(
-        (row) =>
-          `S${row["Season Number"]} EP${row["Episode Number"]} | ${row.Title} | Duration: ${row.Duration} | Views: ${row.Views} | Created: ${row["Created Date"]}`
-      )
-    : ["No episodes found"];
-  writePdfSection(doc, "Episodes", episodeLines, y);
-
-  doc.save(`series-export-${fileSlug}-${dateSlug}.pdf`);
+  downloadReportPdfSections({
+    fileBase: "series-export",
+    chartTitle: `Series Export: ${drama.title || "Untitled"}`,
+    subtitle: `Exported: ${formatExportDate(new Date().toISOString())}`,
+    metaLines: [
+      `Date key: ${dateSlug}`,
+      `Total seasons: ${sortedSeasons.length}`,
+      `Total episodes: ${sortedEpisodes.length}`,
+    ],
+    sections: [
+      { title: "Series Details", columns: seriesColumns, rows: seriesTableRows },
+      { title: "Seasons", columns: seasonColumns, rows: sortedSeasons },
+      { title: "Episodes", columns: episodeColumns, rows: sortedEpisodes },
+    ],
+    fileStem: `${fileSlug}-${dateSlug}`,
+  });
 };
 
 // SeasonCard Component - Fetches and displays videos for a season
