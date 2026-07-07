@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Plus, Trash2, Edit2, Play, Film, ExternalLink, Eye, FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
 import { Button } from '@/components/ui/button';
 import ReusableVideoUploadModal from '@/components/videoUpload/ReusableVideoUploadModal';
 import DeleteConfirmationModal from '@/components/share/DeleteConfirmationModal';
 import ReusablePagination from '@/components/share/ReusablePagination';
 import { baseUrl } from '@/redux/base-url/baseUrlApi';
+import { downloadReportPdfSections } from '../report/utils/reportPdfExport';
 import {
   Dialog,
   DialogContent,
@@ -203,32 +203,37 @@ const AdManagement = () => {
   };
 
   const downloadAdsPdf = (allAds) => {
-    const doc = new jsPDF();
-    let y = 16;
-    doc.setFontSize(14);
-    doc.text('Ads Export', 14, y);
-    y += 10;
-    doc.setFontSize(10);
-    doc.text(`Exported: ${formatExportDate(new Date().toISOString())}`, 14, y);
-    y += 6;
-    doc.text(`Total ads: ${allAds.length}`, 14, y);
-    y += 8;
-
-    doc.setFontSize(8);
-    allAds.forEach((ad, index) => {
-      const row = mapAdExportRow(ad);
-    const line = `${index + 1}. ${row.Title} | Description: ${row.Description || 'N/A'} | Link: ${row.Link || 'N/A'} | Views: ${row.Views}`;
-      const wrapped = doc.splitTextToSize(line, 180);
-      doc.text(wrapped, 14, y);
-      y += 4 * wrapped.length + 1;
-      if (y > 280) {
-        doc.addPage();
-        y = 16;
-      }
-    });
-
+    const rows = allAds.map(mapAdExportRow);
     const fileDate = new Date().toISOString().slice(0, 10);
-    doc.save(`ads-export-${fileDate}.pdf`);
+    downloadReportPdfSections({
+      fileBase: 'ads-export',
+      chartTitle: 'Ads Export',
+      subtitle: `Exported: ${formatExportDate(new Date().toISOString())}`,
+      metaLines: [`Total ads: ${allAds.length}`],
+      sections: [
+        {
+          title: 'Ad Details',
+          columns: [
+            { header: 'Title', key: 'Title', width: 45, align: 'left' },
+            { header: 'Description', key: 'Description', width: 80, align: 'left' },
+            { header: 'Link', key: 'Link', width: 35, align: 'left' },
+            {
+              header: 'Views',
+              key: 'Views',
+              width: 20,
+              align: 'right',
+              format: (v) => Number(v ?? 0).toLocaleString('en-US'),
+            },
+          ],
+          rows: rows.map((row) => ({
+            ...row,
+            Description: row.Description || 'N/A',
+            Link: row.Link || 'N/A',
+          })),
+        },
+      ],
+      fileStem: fileDate,
+    });
   };
 
   const handleExportAds = async (format) => {

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Plus, Trash2, Edit2, Play, Clock, Eye, Film, X, FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
 import { Button } from '@/components/ui/button';
 import TrailerUploadModal from '@/components/modals/TrailerUploadModal';
 import VideoDetailsModal from '@/components/videoUpload/VideoDetailsModal';
@@ -13,6 +12,7 @@ import {
   useGetAllTrailerQuery,
 } from '@/redux/feature/trailerApi';
 import { getVideoAndThumbnail } from '@/components/share/imageUrl';
+import { downloadReportPdfSections } from '../report/utils/reportPdfExport';
 
 const formatExportDate = (dateString) => {
   if (!dateString) return '';
@@ -25,6 +25,15 @@ const formatExportDate = (dateString) => {
   });
 };
 
+const formatExportDateOnly = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
 const mapTrailerExportRow = (trailer) => ({
   'Trailer ID': trailer._id || trailer.id || '',
   Title: trailer.title || '',
@@ -32,9 +41,15 @@ const mapTrailerExportRow = (trailer) => ({
   Duration: trailer.duration || '',
   Views: trailer.views ?? 0,
   Status: trailer.status || '',
-  'Created Date': formatExportDate(trailer.created_at || trailer.createdAt),
   'Updated Date': formatExportDate(trailer.updated_at || trailer.updatedAt),
 });
+
+const getShortTrailerId = (idValue) => {
+  const id = String(idValue || '').trim();
+  if (!id) return '';
+  if (id.length <= 8) return id;
+  return `...${id.slice(-8)}`;
+};
 
 const buildExportFileSlug = () =>
   `trailers-${new Date().toISOString().slice(0, 10)}`;
@@ -47,32 +62,43 @@ const downloadTrailerExcel = (trailers) => {
 };
 
 const downloadTrailerPdf = (trailers) => {
-  const doc = new jsPDF();
-  let y = 16;
-
-  doc.setFontSize(15);
-  doc.text('Trailer Export', 14, y);
-  y += 10;
-  doc.setFontSize(10);
-  doc.text(`Exported: ${formatExportDate(new Date().toISOString())}`, 14, y);
-  y += 6;
-  doc.text(`Total trailers: ${trailers.length}`, 14, y);
-  y += 10;
-
-  doc.setFontSize(8);
-  trailers.forEach((trailer, index) => {
+  const rows = trailers.map((trailer) => {
     const row = mapTrailerExportRow(trailer);
-    const line = `${index + 1}. ID: ${row['Trailer ID']} | ${row.Title} | Type: ${row.Type || 'N/A'} | Duration: ${row.Duration || 'N/A'} | Views: ${row.Views} | Status: ${row.Status || 'N/A'} | Created: ${row['Created Date']} | Updated: ${row['Updated Date']}`;
-    const wrapped = doc.splitTextToSize(line, 180);
-    doc.text(wrapped, 14, y);
-    y += 4 * wrapped.length + 2;
-    if (y > 280) {
-      doc.addPage();
-      y = 16;
-    }
+    return {
+      ...row,
+      'Trailer ID': getShortTrailerId(row['Trailer ID']),
+      'Updated Date': formatExportDateOnly(trailer.updated_at || trailer.updatedAt),
+    };
   });
 
-  doc.save(`${buildExportFileSlug()}.pdf`);
+  downloadReportPdfSections({
+    fileBase: 'trailers',
+    chartTitle: 'Trailer Export',
+    subtitle: `Exported: ${formatExportDate(new Date().toISOString())}`,
+    metaLines: [`Total trailers: ${trailers.length}`],
+    sections: [
+      {
+        title: 'Trailer Details',
+        columns: [
+          { header: 'Trailer ID', key: 'Trailer ID', width: 26, align: 'left' },
+          { header: 'Title', key: 'Title', width: 50, align: 'left' },
+          { header: 'Type', key: 'Type', width: 20, align: 'left' },
+          { header: 'Duration', key: 'Duration', width: 22, align: 'left' },
+          {
+            header: 'Views',
+            key: 'Views',
+            width: 16,
+            align: 'right',
+            format: (v) => Number(v ?? 0).toLocaleString('en-US'),
+          },
+          { header: 'Status', key: 'Status', width: 20, align: 'left' },
+          { header: 'Updated', key: 'Updated Date', width: 30, align: 'left' },
+        ],
+        rows,
+      },
+    ],
+    fileStem: new Date().toISOString().slice(0, 10),
+  });
 };
 
 const TrailerManagement = () => {
