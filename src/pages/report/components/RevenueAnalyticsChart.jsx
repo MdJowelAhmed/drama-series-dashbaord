@@ -9,8 +9,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
+import {
+  downloadReportPdf,
+  REVENUE_BREAKDOWN_COLUMNS,
+  sanitizeFileStem,
+} from "../utils/reportPdfExport";
 import { useRevenueAnalyticsQuery } from "@/redux/base-url/dashboardApi";
 import {
   Custom3DBarWithWatermark,
@@ -112,13 +116,6 @@ const selectFilterClass =
 const exportBtnClass =
   "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md text-white transition-colors";
 
-function sanitizeFileStem(stem) {
-  const s = String(stem)
-    .replace(/[\\/:*?"<>|]+/g, "-")
-    .replace(/\s+/g, "-");
-  return s.slice(0, 120) || "export";
-}
-
 function buildRevenueExportRows(rows) {
   return (rows || []).map((r) => ({
     period: r.period,
@@ -127,38 +124,6 @@ function buildRevenueExportRows(rows) {
     monthly: r.monthly ?? 0,
     yearly: r.yearly ?? 0,
   }));
-}
-
-function downloadRevenuePdf({ chartTitle, subtitle, metaLines, rows, fileStem }) {
-  const doc = new jsPDF();
-  let y = 16;
-  doc.setFontSize(14);
-  const titleLines = doc.splitTextToSize(chartTitle, 180);
-  doc.text(titleLines, 14, y);
-  y += 6 * titleLines.length + 4;
-  doc.setFontSize(10);
-  if (subtitle) {
-    const subLines = doc.splitTextToSize(subtitle, 180);
-    doc.text(subLines, 14, y);
-    y += 6 * subLines.length + 2;
-  }
-  (metaLines || []).forEach((line) => {
-    doc.text(line, 14, y);
-    y += 5;
-  });
-  y += 4;
-  doc.setFontSize(8);
-  (rows || []).forEach((row) => {
-    const line = `${row.period} | revenue: $${row.revenue ?? 0} | weekly: $${row.weekly ?? 0} | monthly: $${row.monthly ?? 0} | yearly: $${row.yearly ?? 0}`;
-    const wrapped = doc.splitTextToSize(line, 180);
-    doc.text(wrapped, 14, y);
-    y += 4 * wrapped.length + 1;
-    if (y > 280) {
-      doc.addPage();
-      y = 16;
-    }
-  });
-  doc.save(`${EXPORT_FILE_BASE}-${sanitizeFileStem(fileStem)}.pdf`);
 }
 
 function downloadRevenueExcel({ rows, sheetName, fileStem }) {
@@ -334,10 +299,12 @@ const RevenueAnalyticsChart = () => {
           type="button"
           disabled={!chartData.length || isLoading}
           onClick={() =>
-            downloadRevenuePdf({
+            downloadReportPdf({
+              fileBase: EXPORT_FILE_BASE,
               chartTitle: "Revenue Analytics",
               subtitle,
               metaLines: exportMetaLines,
+              columns: REVENUE_BREAKDOWN_COLUMNS,
               rows: chartData,
               fileStem,
             })

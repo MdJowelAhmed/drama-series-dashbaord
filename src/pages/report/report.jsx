@@ -9,8 +9,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
+import {
+  downloadReportPdf,
+  PRODUCTION_BREAKDOWN_COLUMNS,
+  sanitizeFileStem,
+} from "./utils/reportPdfExport";
 import { useReportAnalyticsQuery } from "@/redux/base-url/dashboardApi";
 import {
   Custom3DBarWithWatermark,
@@ -43,7 +47,7 @@ const getYearOptions = () => {
 };
 
 const yearOptions = getYearOptions();
-const categoryOptions = ["All", "movies", "trailers", "views", "revenue"];
+const categoryOptions = ["All", "series", "trailers", "views", "revenue"];
 
 const buildYearViewQueryArgs = (year) => [
   { name: "view", value: "year" },
@@ -86,7 +90,7 @@ const MetricsCards = ({ value, label, icons, growth }) => (
 
 function useBreakdownMaxValues(breakdown) {
   return useSeriesMaxValues(breakdown, [
-    "movies",
+    "series",
     "trailers",
     "views",
     "revenue",
@@ -98,7 +102,7 @@ function buildBreakdownTableRows(rows) {
     period: r.period,
     revenue: r.revenue ?? 0,
     views: r.views ?? 0,
-    movies: r.movies ?? 0,
+    series: r.series ?? 0,
     trailers: r.trailers ?? 0,
   }));
 }
@@ -107,10 +111,10 @@ function buildStatisticsTableRows(stats) {
   if (!stats || typeof stats !== "object") return null;
   return [
     {
-      metric: "activeMovie",
-      total: stats.activeMovie?.total,
-      periodCount: stats.activeMovie?.periodCount,
-      growth: stats.activeMovie?.growth,
+      metric: "activeSeries",
+      total: stats.activeSeries?.total,
+      periodCount: stats.activeSeries?.periodCount,
+      growth: stats.activeSeries?.growth,
     },
     {
       metric: "totalTrailer",
@@ -131,45 +135,6 @@ function buildStatisticsTableRows(stats) {
       growth: stats.totalRevenue?.growth,
     },
   ];
-}
-
-function sanitizeFileStem(stem) {
-  const s = String(stem)
-    .replace(/[\\/:*?"<>|]+/g, "-")
-    .replace(/\s+/g, "-");
-  return s.slice(0, 120) || "export";
-}
-
-function downloadProductionViewPdf({ chartTitle, subtitle, metaLines, rows, fileStem }) {
-  const doc = new jsPDF();
-  let y = 16;
-  doc.setFontSize(14);
-  const titleLines = doc.splitTextToSize(chartTitle, 180);
-  doc.text(titleLines, 14, y);
-  y += 6 * titleLines.length + 4;
-  doc.setFontSize(10);
-  if (subtitle) {
-    const subLines = doc.splitTextToSize(subtitle, 180);
-    doc.text(subLines, 14, y);
-    y += 6 * subLines.length + 2;
-  }
-  (metaLines || []).forEach((line) => {
-    doc.text(line, 14, y);
-    y += 5;
-  });
-  y += 4;
-  doc.setFontSize(8);
-  (rows || []).forEach((row) => {
-    const line = `${row.period} | movies:${row.movies ?? 0} trailers:${row.trailers ?? 0} views:${row.views ?? 0} revenue:${row.revenue ?? 0}`;
-    const wrapped = doc.splitTextToSize(line, 180);
-    doc.text(wrapped, 14, y);
-    y += 4 * wrapped.length + 1;
-    if (y > 280) {
-      doc.addPage();
-      y = 16;
-    }
-  });
-  doc.save(`${EXPORT_FILE_BASE}-${sanitizeFileStem(fileStem)}.pdf`);
 }
 
 function downloadProductionViewExcel({ rows, statistics, sheetName, fileStem }) {
@@ -214,10 +179,12 @@ function ProductionBreakdownChart({
         <button
           type="button"
           onClick={() =>
-            downloadProductionViewPdf({
+            downloadReportPdf({
+              fileBase: EXPORT_FILE_BASE,
               chartTitle: title,
               subtitle,
               metaLines: exportMetaLines,
+              columns: PRODUCTION_BREAKDOWN_COLUMNS,
               rows: rowsForExport,
               fileStem,
             })
@@ -318,7 +285,7 @@ function ProductionBreakdownChart({
                 <Bar
                   dataKey="movies"
                   fill="#CA8A04"
-                  name="movies"
+                  name="series"
                   shape={(props) => (
                     <Custom3DBarWithWatermark
                       {...props}
@@ -604,41 +571,7 @@ const DramaManagementDashboard = () => {
             xAxisHeight={72}
           />
 
-          {/* <Card className="mb-6 backdrop-blur-md p-6 rounded-lg">
-            <h4 className="text-lg text-white font-semibold mb-3">
-              Production statistics (year scope)
-            </h4>
-            {yearLoading ? (
-              <div className="text-white">Loading statistics...</div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <MetricsCards
-                  value={yearStats?.activeMovie?.total?.toString() ?? "0"}
-                  label="Active movie"
-                  icons={growthIcon(yearStats?.activeMovie?.growth)}
-                  growth={yearStats?.activeMovie?.growth ?? "0%"}
-                />
-                <MetricsCards
-                  value={yearStats?.totalTrailer?.total?.toString() ?? "0"}
-                  label="Total trailer"
-                  icons={growthIcon(yearStats?.totalTrailer?.growth)}
-                  growth={yearStats?.totalTrailer?.growth ?? "0%"}
-                />
-                <MetricsCards
-                  value={yearStats?.totalView?.total?.toString() ?? "0"}
-                  label="Total views"
-                  icons={growthIcon(yearStats?.totalView?.growth)}
-                  growth={yearStats?.totalView?.growth ?? "0%"}
-                />
-                <MetricsCards
-                  value={yearStats?.totalRevenue?.total?.toString() ?? "0"}
-                  label="Total revenue"
-                  icons={growthIcon(yearStats?.totalRevenue?.growth)}
-                  growth={yearStats?.totalRevenue?.growth ?? "0%"}
-                />
-              </div>
-            )}
-          </Card> */}
+   
         </div>
       </div>
     </div>
