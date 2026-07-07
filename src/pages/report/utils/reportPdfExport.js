@@ -238,6 +238,7 @@ function drawTable(doc, columns, rows, startY, headerContext) {
   doc.setDrawColor(209, 213, 219);
   doc.setLineWidth(0.3);
   doc.rect(MARGIN, startY, tableWidth, y - startY);
+  return y;
 }
 
 export function downloadReportPdf({
@@ -253,6 +254,63 @@ export function downloadReportPdf({
   const headerContext = { chartTitle, subtitle, metaLines };
   const tableStartY = drawPageHeader(doc, headerContext, MARGIN);
   drawTable(doc, columns, sortRowsByPeriod(rows), tableStartY, headerContext);
+  doc.save(`${fileBase}-${sanitizeFileStem(fileStem)}.pdf`);
+}
+
+function drawSectionTitle(doc, title, y, headerContext) {
+  const ensureSpace = (needed) => {
+    if (y + needed <= PAGE_HEIGHT - BOTTOM_MARGIN) return;
+    doc.addPage();
+    y = drawPageHeader(doc, headerContext, MARGIN);
+  };
+
+  ensureSpace(16);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(17, 24, 39);
+  doc.text(asciiSafe(title), MARGIN, y);
+  y += 5;
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.2);
+  doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y);
+  y += 6;
+  return y;
+}
+
+function drawNoData(doc, y, headerContext) {
+  if (y > PAGE_HEIGHT - BOTTOM_MARGIN - 14) {
+    doc.addPage();
+    y = drawPageHeader(doc, headerContext, MARGIN);
+  }
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(107, 114, 128);
+  doc.text("No data", MARGIN, y);
+  return y + 10;
+}
+
+export function downloadReportPdfSections({
+  fileBase,
+  chartTitle,
+  subtitle,
+  metaLines,
+  sections,
+  fileStem,
+}) {
+  const doc = new jsPDF();
+  const headerContext = { chartTitle, subtitle, metaLines };
+  let y = drawPageHeader(doc, headerContext, MARGIN);
+
+  (sections || []).forEach((section) => {
+    y = drawSectionTitle(doc, section.title, y, headerContext);
+    const rows = section.sortRows ? sortRowsByPeriod(section.rows) : section.rows || [];
+    if (!rows.length) {
+      y = drawNoData(doc, y, headerContext);
+      return;
+    }
+    y = drawTable(doc, section.columns, rows, y, headerContext) + 10;
+  });
+
   doc.save(`${fileBase}-${sanitizeFileStem(fileStem)}.pdf`);
 }
 

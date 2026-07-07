@@ -1,11 +1,15 @@
 import { useMemo } from 'react';
 import { Video, Users, CreditCard, DollarSign, FileDown } from 'lucide-react';
-import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import StatsCard from '@/components/cards/StatsCard';
 import UserGrowthChart from '@/components/charts/UserGrowthChart';
 import TopContentChart from '@/components/charts/TopContentChart';
+import {
+  downloadReportPdfSections,
+  sanitizeFileStem,
+  sortRowsByPeriod,
+} from '../report/utils/reportPdfExport';
 import {
   useDashboardStatsQuery,
   useUserGrowthDataQuery,
@@ -14,13 +18,6 @@ import {
 
 const EXPORT_FILE_BASE = 'C&C Creepy Shorts Exhibition-overview';
 
-const sanitizeFileStem = (stem) => {
-  const s = String(stem)
-    .replace(/[\\/:*?"<>|]+/g, '-')
-    .replace(/\s+/g, '-');
-  return s.slice(0, 120) || 'export';
-};
-
 const buildSummaryRows = (stats) => [
   { Metric: 'Total Series', Value: stats?.totalMovies ?? 0 },
   { Metric: 'Total Users', Value: stats?.totalUsers ?? 0 },
@@ -28,57 +25,71 @@ const buildSummaryRows = (stats) => [
   { Metric: 'Total Revenue', Value: stats?.totalRevenue ?? 0 },
 ];
 
-const writePdfSection = (doc, title, lines, startY) => {
-  let y = startY;
-  if (y > 250) {
-    doc.addPage();
-    y = 16;
-  }
-
-  doc.setFontSize(11);
-  doc.text(title, 14, y);
-  y += 8;
-
-  doc.setFontSize(8);
-  (lines || []).forEach((line) => {
-    const wrapped = doc.splitTextToSize(String(line), 180);
-    doc.text(wrapped, 14, y);
-    y += 4 * wrapped.length + 1;
-    if (y > 280) {
-      doc.addPage();
-      y = 16;
-    }
-  });
-
-  return y + 6;
-};
-
 const downloadOverviewPdf = ({ summaryRows, userGrowthRows, topWatchRows, fileStem }) => {
-  const doc = new jsPDF();
-  let y = 16;
+  const summaryColumns = [
+    { header: 'Metric', key: 'Metric', width: 90, align: 'left' },
+    {
+      header: 'Value',
+      key: 'Value',
+      width: 80,
+      align: 'right',
+      format: (v, row) =>
+        row.Metric === 'Total Revenue'
+          ? `$${Number(v ?? 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+          : Number(v ?? 0).toLocaleString('en-US'),
+    },
+  ];
 
-  doc.setFontSize(14);
-  doc.text('Dashboard Overview Export', 14, y);
-  y += 10;
+  const growthColumns = [
+    { header: 'Month', key: 'Month', width: 90, align: 'left' },
+    {
+      header: 'Users',
+      key: 'Users',
+      width: 80,
+      align: 'right',
+      format: (v) => Number(v ?? 0).toLocaleString('en-US'),
+    },
+  ];
 
-  doc.setFontSize(10);
-  doc.text(`Exported: ${fileStem}`, 14, y);
-  y += 10;
+  const topWatchColumns = [
+    { header: 'Title', key: 'Title', width: 130, align: 'left' },
+    {
+      header: 'Views',
+      key: 'Views',
+      width: 40,
+      align: 'right',
+      format: (v) => Number(v ?? 0).toLocaleString('en-US'),
+    },
+  ];
 
-  const summaryLines = summaryRows.map((row) => `${row.Metric}: ${row.Value}`);
-  y = writePdfSection(doc, 'Summary Statistics', summaryLines, y);
+  const sortedGrowth = sortRowsByPeriod(
+    userGrowthRows.map((r) => ({ ...r, period: r.Month }))
+  ).map(({ period: _period, ...rest }) => rest);
 
-  const growthLines = userGrowthRows.length
-    ? userGrowthRows.map((row) => `${row.Month}: ${row.Users} users`)
-    : ['No user growth data'];
-  y = writePdfSection(doc, 'User Growth', growthLines, y);
+  const sortedTopWatch = [...(topWatchRows || [])].sort(
+    (a, b) => Number(b.Views ?? 0) - Number(a.Views ?? 0)
+  );
 
-  const topWatchLines = topWatchRows.length
-    ? topWatchRows.map((row) => `${row.Title}: ${row.Views} views`)
-    : ['No top watched content data'];
-  writePdfSection(doc, 'Top Watched Content', topWatchLines, y);
-
-  doc.save(`${EXPORT_FILE_BASE}-${sanitizeFileStem(fileStem)}.pdf`);
+  downloadReportPdfSections({
+    fileBase: EXPORT_FILE_BASE,
+    chartTitle: 'Dashboard Overview Export',
+    subtitle: `Exported: ${fileStem}`,
+    metaLines: [],
+    sections: [
+      { title: 'Summary Statistics', columns: summaryColumns, rows: summaryRows },
+      {
+        title: 'User Growth',
+        columns: growthColumns,
+        rows: sortedGrowth,
+      },
+      {
+        title: 'Top Watched Content',
+        columns: topWatchColumns,
+        rows: sortedTopWatch,
+      },
+    ],
+    fileStem,
+  });
 };
 
 const downloadOverviewExcel = ({ summaryRows, userGrowthRows, topWatchRows, fileStem }) => {
