@@ -157,7 +157,12 @@ export default function SubscriptionPackagesManagement() {
       setCurrentPackage({
         name: packageObj.name || "",
         description: packageObj.description || "",
-        price: packageObj.price?.toString() || "",
+        // Edit form shows original price (not discounted `price`)
+        price: (
+          packageObj.originalPrice ??
+          packageObj.price ??
+          ""
+        ).toString(),
         duration: normalizedDuration,
         paymentType: getPaymentTypeFromDuration(normalizedDuration),
         subscriptionType: "app",
