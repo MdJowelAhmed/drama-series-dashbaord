@@ -21,6 +21,7 @@ import * as XLSX from "xlsx";
 import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
 import { baseUrl } from "@/redux/base-url/baseUrlApi";
 import { downloadReportPdfSections } from "../report/utils/reportPdfExport";
+import { getErrorMessage } from "@/utils/errorHandler";
 
 // API Hooks
 import { useGetDramaByIdQuery } from "@/redux/feature/dramaManagement/dramaManagementApi";
@@ -575,7 +576,7 @@ const DramaDetails = () => {
         `Exported ${format.toUpperCase()} with ${allSeasons.length} season(s) and ${episodeRows.length} episode(s)`
       );
     } catch (error) {
-      toast.error(error?.message || "Failed to export series details");
+      toast.error(getErrorMessage(error, "Failed to export series details"));
     } finally {
       setExportingFormat(null);
     }
@@ -608,7 +609,7 @@ const DramaDetails = () => {
       setEditingSeason(null);
       refetchSeasons();
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to save season");
+      toast.error(getErrorMessage(error, "Failed to save season"));
     }
   };
 
@@ -630,7 +631,7 @@ const DramaDetails = () => {
       setItemToDelete(null);
       refetchSeasons();
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to delete season");
+      toast.error(getErrorMessage(error, "Failed to delete season"));
     }
   };
 
@@ -681,7 +682,7 @@ const DramaDetails = () => {
         refetchVideosCallback();
       }
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to delete episode");
+      toast.error(getErrorMessage(error, "Failed to delete episode"));
     }
   };
 

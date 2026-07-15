@@ -9,6 +9,7 @@ import {
   useDeletePackageMutation,
 } from "@/redux/feature/packageApi";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/utils/errorHandler";
 import DeleteConfirmationModal from "@/components/share/DeleteConfirmationModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -238,7 +239,7 @@ export default function SubscriptionPackagesManagement() {
     } catch (error) {
       console.error("Error saving package:", error);
       toast.error(
-        error?.data?.message || "Please check all fields and try again."
+        getErrorMessage(error, "Please check all fields and try again.")
       );
     }
   };
@@ -283,7 +284,7 @@ export default function SubscriptionPackagesManagement() {
     } catch (error) {
       console.error("Error deleting package:", error);
       toast.error(
-        error?.data?.message || "An error occurred while deleting the package."
+        getErrorMessage(error, "An error occurred while deleting the package.")
       );
     }
   };

@@ -31,11 +31,7 @@ import {
   useDeleteSubcategoryMutation,
   useGetSubcategoriesByCategoryQuery,
 } from '@/redux/feature/subcategoryApi';
-
-const getErrorMessage = (error, fallbackMessage) =>
-  error?.data?.message ||
-  error?.data?.error?.[0]?.message ||
-  fallbackMessage;
+import { getErrorMessage } from '@/utils/errorHandler';
 
 const isLibraryCategory = (category) =>
   (category?.name || '').trim().toLowerCase() === 'library';

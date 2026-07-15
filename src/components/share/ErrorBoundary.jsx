@@ -25,22 +25,42 @@ class ErrorBoundary extends Component {
     window.location.reload();
   };
 
+  handleGoHome = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.assign("/");
+  };
+
   render() {
     if (this.state.hasError) {
+      const message =
+        this.props.fallbackMessage ||
+        "An unexpected error occurred. Please try reloading the page.";
+
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
-          <h1 className="text-2xl font-semibold text-slate-800">
-            Something went wrong
-          </h1>
-          <p className="text-slate-500 max-w-md">
-            An unexpected error occurred. Please try reloading the page.
-          </p>
-          <button
-            onClick={this.handleReload}
-            className="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-          >
-            Reload Page
-          </button>
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center bg-slate-950 text-white">
+          <h1 className="text-2xl font-semibold">Something went wrong</h1>
+          <p className="text-white/70 max-w-md">{message}</p>
+          {import.meta.env.DEV && this.state.error?.message ? (
+            <pre className="max-w-xl overflow-auto rounded-md bg-white/10 p-3 text-left text-xs text-red-300">
+              {this.state.error.message}
+            </pre>
+          ) : null}
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={this.handleGoHome}
+              className="px-5 py-2.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+            >
+              Go Home
+            </button>
+            <button
+              type="button"
+              onClick={this.handleReload}
+              className="px-5 py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+            >
+              Reload Page
+            </button>
+          </div>
         </div>
       );
     }

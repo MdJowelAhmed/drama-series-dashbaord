@@ -6,6 +6,7 @@ import {
   Sheet,
   SheetContent,
 } from "@/components/ui/sheet";
+import ErrorBoundary from "@/components/share/ErrorBoundary";
 
 const LayoutWrapper = () => {
   // Sidebar width and Navbar height define kore nilam
@@ -55,7 +56,9 @@ const LayoutWrapper = () => {
           style={{ paddingTop: navbarHeight }}
         >
           <div className="h-full shadow-sm p-4 sm:p-6 lg:p-10 text-white">
-            <Outlet />
+            <ErrorBoundary fallbackMessage="This page failed to render. Try going home or reloading.">
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </main>
       </div>
