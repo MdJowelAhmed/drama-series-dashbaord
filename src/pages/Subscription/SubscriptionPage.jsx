@@ -45,6 +45,14 @@ const PAYMENT_TYPE_OPTIONS = [
   { value: "Weekly", label: "Weekly" },
 ];
 
+const getPaymentTypeFromDuration = (duration) => {
+  const value = String(duration || "").toLowerCase().trim();
+  if (value === "1 week") return "Weekly";
+  if (value === "1 year") return "Yearly";
+  // 1 month, 3 months, 6 months
+  return "Monthly";
+};
+
 // Membership types that can see discounts
 const MEMBERSHIP_OPTIONS = [
   { value: "all", label: "All Users" },
@@ -61,7 +69,7 @@ export default function SubscriptionPackagesManagement() {
     description: "",
     price: "",
     duration: "1 month",
-    paymentType: "Yearly",
+    paymentType: "Monthly",
     subscriptionType: "app",
     // New discount fields
     discountPercentage: "",
@@ -150,10 +158,7 @@ export default function SubscriptionPackagesManagement() {
         description: packageObj.description || "",
         price: packageObj.price?.toString() || "",
         duration: normalizedDuration,
-        paymentType:
-          packageObj.paymentType === "One-time"
-            ? "Yearly"
-            : packageObj.paymentType || "Yearly",
+        paymentType: getPaymentTypeFromDuration(normalizedDuration),
         subscriptionType: "app",
         // Handle discount fields with defaults
         discountPercentage: packageObj.discountPercentage?.toString() || packageObj.discount?.toString() || "",
@@ -173,7 +178,7 @@ export default function SubscriptionPackagesManagement() {
         description: "",
         price: "",
         duration: "1 month",
-        paymentType: "Yearly",
+        paymentType: "Monthly",
         subscriptionType: "app",
         discountPercentage: "",
         discountVisibleTo: "all",
@@ -194,7 +199,7 @@ export default function SubscriptionPackagesManagement() {
     }
 
     try {
-      // Format package data - send original price and discount percentage to backend
+      // Send price + discount; backend returns originalPrice / discounted price.
       const formattedPackage = {
         name: currentPackage.name,
         description: currentPackage.description,
@@ -244,7 +249,7 @@ export default function SubscriptionPackagesManagement() {
       description: "",
       price: "",
       duration: "1 month",
-      paymentType: "Yearly",
+      paymentType: "Monthly",
       subscriptionType: "app",
       discountPercentage: "",
       discountVisibleTo: "all",
@@ -328,11 +333,13 @@ export default function SubscriptionPackagesManagement() {
             </div>
           ) : (
             filteredPackages.map((pkg) => {
-              const hasDiscount = pkg.discount > 0;
-              const originalPrice = pkg.originalPrice || pkg.price;
-              const discountedPrice = hasDiscount
-                ? originalPrice * (1 - pkg.discount / 100)
-                : pkg.price;
+              // Backend sends ready values — no frontend calculation.
+              const discountedPrice = Number(pkg.price) || 0;
+              const originalPrice = Number(pkg.originalPrice);
+              const hasDiscount =
+                Number(pkg.discount) > 0 &&
+                Number.isFinite(originalPrice) &&
+                originalPrice > discountedPrice;
               const isGooglePackage =
                 Boolean(pkg.googleProductId) || pkg.isGoogle === true;
               const isApplePackage =
@@ -401,17 +408,15 @@ export default function SubscriptionPackagesManagement() {
                   <div className="mb-3 text-center">
                     {hasDiscount ? (
                       <div>
-                        {/* Original Price with strikethrough */}
                         <div className="text-2xl font-bold text-gray-400 line-through mb-1">
-                          ${originalPrice}
+                          ${originalPrice.toFixed(2)}
                         </div>
-                        {/* Discounted Price */}
                         <div className="text-5xl font-bold text-red-600">
                           ${discountedPrice.toFixed(2)}
                         </div>
                       </div>
                     ) : (
-                      <div className="text-6xl font-bold">${pkg.price}</div>
+                      <div className="text-6xl font-bold">${discountedPrice}</div>
                     )}
                   </div>
 
@@ -476,7 +481,11 @@ export default function SubscriptionPackagesManagement() {
                   <Select
                     value={currentPackage.duration}
                     onValueChange={(value) =>
-                      setCurrentPackage((prev) => ({ ...prev, duration: value }))
+                      setCurrentPackage((prev) => ({
+                        ...prev,
+                        duration: value,
+                        paymentType: getPaymentTypeFromDuration(value),
+                      }))
                     }
                   >
                     <SelectTrigger className="py-[22px] border border-white/50 ">
@@ -509,19 +518,16 @@ export default function SubscriptionPackagesManagement() {
                   />
                 </div>
 
-                {/* Payment Type */}
+                {/* Payment Type (auto from duration) */}
                 <div className="space-y-2">
                   <Label htmlFor="paymentType">
                     Payment Type <span className="text-red-500">*</span>
                   </Label>
                   <Select
                     value={currentPackage.paymentType}
-                    onValueChange={(value) =>
-                      setCurrentPackage((prev) => ({ ...prev, paymentType: value }))
-                    }
-
+                    disabled
                   >
-                    <SelectTrigger className="py-[22px] border border-white/50 ">
+                    <SelectTrigger className="py-[22px] border border-white/50 opacity-80">
                       <SelectValue placeholder="Select payment type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -532,6 +538,9 @@ export default function SubscriptionPackagesManagement() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-white/70">
+                    Auto-selected from duration (1 week → Weekly, months → Monthly, 1 year → Yearly).
+                  </p>
                 </div>
               </div>
 
@@ -573,8 +582,8 @@ export default function SubscriptionPackagesManagement() {
                     max="99"
                   />
                   <p className="text-xs ">
-                    Enter a discount percentage from 1-99. The final price will
-                    be calculated automatically.
+                    Enter a discount percentage from 1-99. Backend calculates
+                    original and discounted prices.
                   </p>
                 </div>
 
