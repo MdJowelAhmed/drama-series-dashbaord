@@ -13,8 +13,6 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   build: {
-    // Split heavy/third-party code into separate cacheable chunks so the
-    // initial JS payload stays small and vendor code is cached across deploys.
     rollupOptions: {
       output: {
         manualChunks: {
