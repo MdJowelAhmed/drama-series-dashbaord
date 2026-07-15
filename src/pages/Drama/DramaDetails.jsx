@@ -207,8 +207,8 @@ const downloadSeriesPdf = ({ drama, allSeasons, episodeRows, fileSlug, dateSlug 
   const toDateOnly = (value) => String(value ?? "").split(",")[0].trim();
 
   const seriesColumns = [
-    { header: "Field", key: "field", width: 70, align: "left" },
-    { header: "Value", key: "value", width: 110, align: "left" },
+    { header: "Field", key: "field", width: 55, align: "left" },
+    { header: "Value", key: "value", width: 125, align: "left", maxLines: 4 },
   ];
   const seriesTableRows = Object.entries(seriesRow).map(([field, value]) => {
     const isDateField = field === "Created Date" || field === "Updated Date";
@@ -219,17 +219,17 @@ const downloadSeriesPdf = ({ drama, allSeasons, episodeRows, fileSlug, dateSlug 
   });
 
   const seasonColumns = [
-    { header: "Season #", key: "Season Number", width: 22, align: "right" },
-    { header: "Title", key: "Title", width: 42, align: "left" },
-    { header: "Description", key: "Description", width: 58, align: "left" },
-    { header: "Created", key: "Created Date", width: 28, align: "left" },
+    { header: "Season #", key: "Season Number", width: 20, align: "right" },
+    { header: "Title", key: "Title", width: 35, align: "left", maxLines: 2 },
+    { header: "Description", key: "Description", width: 65, align: "left", maxLines: 4 },
+    { header: "Created", key: "Created Date", width: 30, align: "left" },
     { header: "Updated", key: "Updated Date", width: 30, align: "left" },
   ];
 
   const episodeColumns = [
     { header: "S#", key: "Season Number", width: 12, align: "right" },
     { header: "EP#", key: "Episode Number", width: 14, align: "right" },
-    { header: "Title", key: "Title", width: 48, align: "left" },
+    { header: "Title", key: "Title", width: 45, align: "left", maxLines: 2 },
     { header: "Duration", key: "Duration", width: 20, align: "left" },
     {
       header: "Views",
@@ -238,9 +238,9 @@ const downloadSeriesPdf = ({ drama, allSeasons, episodeRows, fileSlug, dateSlug 
       align: "right",
       format: (v) => Number(v ?? 0).toLocaleString("en-US"),
     },
-    { header: "Status", key: "Status", width: 22, align: "left" },
-    { header: "Created", key: "Created Date", width: 28, align: "left" },
-    { header: "Updated", key: "Updated Date", width: 28, align: "left" },
+    { header: "Status", key: "Status", width: 20, align: "left" },
+    { header: "Created", key: "Created Date", width: 26, align: "left" },
+    { header: "Updated", key: "Updated Date", width: 27, align: "left" },
   ];
 
   const normalizedSeasonRows = seasonRows.map((row) => ({

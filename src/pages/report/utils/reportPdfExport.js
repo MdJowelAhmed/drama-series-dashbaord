@@ -8,9 +8,12 @@ const BOTTOM_MARGIN = 18;
 const TABLE = {
   headerHeight: 9,
   rowHeight: 8,
+  lineHeight: 4.2,
+  maxLinesPerCell: 4,
   headerFontSize: 9,
   bodyFontSize: 9,
   cellPaddingX: 3,
+  cellPaddingY: 2.2,
 };
 
 const MONTH_SORT_INDEX = Object.fromEntries(
@@ -157,6 +160,37 @@ function drawPageHeader(doc, { chartTitle, subtitle, metaLines }, yStart) {
   return y;
 }
 
+function getCellText(col, row) {
+  const raw = col.getValue ? col.getValue(row) : row[col.key];
+  const text = col.format ? col.format(raw, row) : String(raw ?? "");
+  return asciiSafe(text);
+}
+
+function getWrappedCellLines(doc, col, row) {
+  const maxWidth = Math.max(8, col.width - TABLE.cellPaddingX * 2);
+  const maxLines = col.maxLines || TABLE.maxLinesPerCell;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(TABLE.bodyFontSize);
+  const wrapped = doc.splitTextToSize(getCellText(col, row), maxWidth);
+  if (wrapped.length <= maxLines) return wrapped;
+
+  const clamped = wrapped.slice(0, maxLines);
+  const last = String(clamped[maxLines - 1] || "").trimEnd();
+  clamped[maxLines - 1] = `${last.slice(0, Math.max(1, last.length - 3))}...`;
+  return clamped;
+}
+
+function getRowHeight(doc, columns, row) {
+  let maxLines = 1;
+  columns.forEach((col) => {
+    maxLines = Math.max(maxLines, getWrappedCellLines(doc, col, row).length);
+  });
+  return Math.max(
+    TABLE.rowHeight,
+    maxLines * TABLE.lineHeight + TABLE.cellPaddingY * 2
+  );
+}
+
 function drawTableHeader(doc, columns, y) {
   const tableWidth = columns.reduce((sum, col) => sum + col.width, 0);
 
@@ -173,7 +207,7 @@ function drawTableHeader(doc, columns, y) {
       col.align === "right"
         ? x + col.width - TABLE.cellPaddingX
         : x + TABLE.cellPaddingX;
-    doc.text(col.header, textX, y + 6, {
+    doc.text(asciiSafe(col.header), textX, y + 6, {
       align: col.align === "right" ? "right" : "left",
       maxWidth: col.width - TABLE.cellPaddingX * 2,
     });
@@ -183,12 +217,13 @@ function drawTableHeader(doc, columns, y) {
   return y + TABLE.headerHeight;
 }
 
-function drawTableRow(doc, columns, row, y, isAlt) {
+function drawTableRow(doc, columns, row, y, isAlt, rowHeight) {
   const tableWidth = columns.reduce((sum, col) => sum + col.width, 0);
+  const height = rowHeight || TABLE.rowHeight;
 
   if (isAlt) {
     doc.setFillColor(249, 250, 251);
-    doc.rect(MARGIN, y, tableWidth, TABLE.rowHeight, "F");
+    doc.rect(MARGIN, y, tableWidth, height, "F");
   }
 
   doc.setFont("helvetica", "normal");
@@ -197,47 +232,55 @@ function drawTableRow(doc, columns, row, y, isAlt) {
 
   let x = MARGIN;
   columns.forEach((col) => {
-    const raw = col.getValue ? col.getValue(row) : row[col.key];
-    const text = col.format ? col.format(raw, row) : String(raw ?? "");
+    const lines = getWrappedCellLines(doc, col, row);
     const textX =
       col.align === "right"
         ? x + col.width - TABLE.cellPaddingX
         : x + TABLE.cellPaddingX;
-    doc.text(text, textX, y + 5.5, {
-      align: col.align === "right" ? "right" : "left",
-      maxWidth: col.width - TABLE.cellPaddingX * 2,
+    lines.forEach((line, lineIndex) => {
+      doc.text(line, textX, y + TABLE.cellPaddingY + 3.2 + lineIndex * TABLE.lineHeight, {
+        align: col.align === "right" ? "right" : "left",
+      });
     });
     x += col.width;
   });
 
   doc.setDrawColor(229, 231, 235);
   doc.setLineWidth(0.15);
-  doc.line(MARGIN, y + TABLE.rowHeight, MARGIN + tableWidth, y + TABLE.rowHeight);
+  doc.line(MARGIN, y + height, MARGIN + tableWidth, y + height);
 
-  return y + TABLE.rowHeight;
+  return y + height;
 }
 
 function drawTable(doc, columns, rows, startY, headerContext) {
   let y = startY;
   const tableWidth = columns.reduce((sum, col) => sum + col.width, 0);
+  let segmentTop = startY;
+
+  const closeSegmentBorder = () => {
+    doc.setDrawColor(209, 213, 219);
+    doc.setLineWidth(0.3);
+    doc.rect(MARGIN, segmentTop, tableWidth, y - segmentTop);
+  };
 
   const ensureSpace = (needed) => {
     if (y + needed <= PAGE_HEIGHT - BOTTOM_MARGIN) return;
+    closeSegmentBorder();
     doc.addPage();
     y = drawPageHeader(doc, headerContext, MARGIN);
     y = drawTableHeader(doc, columns, y);
+    segmentTop = y - TABLE.headerHeight;
   };
 
   y = drawTableHeader(doc, columns, y);
 
   rows.forEach((row, index) => {
-    ensureSpace(TABLE.rowHeight);
-    y = drawTableRow(doc, columns, row, y, index % 2 === 1);
+    const rowHeight = getRowHeight(doc, columns, row);
+    ensureSpace(rowHeight);
+    y = drawTableRow(doc, columns, row, y, index % 2 === 1, rowHeight);
   });
 
-  doc.setDrawColor(209, 213, 219);
-  doc.setLineWidth(0.3);
-  doc.rect(MARGIN, startY, tableWidth, y - startY);
+  closeSegmentBorder();
   return y;
 }
 
