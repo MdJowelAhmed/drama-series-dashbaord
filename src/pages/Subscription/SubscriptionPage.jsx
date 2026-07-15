@@ -217,14 +217,16 @@ export default function SubscriptionPackagesManagement() {
           ? parseInt(currentPackage.discountPercentage, 10)
           : 0,
         discountVisibleTo: currentPackage.discountVisibleTo,
-        // App-specific fields - always required
-        isGoogle: currentPackage.isGoogle,
       };
 
-      if (currentPackage.isGoogle) {
-        formattedPackage.googleProductId = currentPackage.googleProductId;
-      } else {
-        formattedPackage.appleProductId = currentPackage.appleProductId;
+      // App configuration is only set on create — locked while editing.
+      if (editingPackageId === null) {
+        formattedPackage.isGoogle = currentPackage.isGoogle;
+        if (currentPackage.isGoogle) {
+          formattedPackage.googleProductId = currentPackage.googleProductId;
+        } else {
+          formattedPackage.appleProductId = currentPackage.appleProductId;
+        }
       }
 
       if (editingPackageId !== null) {
@@ -610,10 +612,15 @@ export default function SubscriptionPackagesManagement() {
               </div>
 
               {/* App Configuration */}
-              <div className="space-y-4 p-4 border rounded-md border-white/50">
+              <div className={`space-y-4 p-4 border rounded-md border-white/50 ${editingPackageId !== null ? "opacity-70" : ""}`}>
                 <h3 className="text-lg font-semibold ">
                   App Configuration
                 </h3>
+                {editingPackageId !== null ? (
+                  <p className="text-xs text-white/70">
+                    App configuration cannot be changed while editing.
+                  </p>
+                ) : null}
 
                 {/* Platform Selection */}
                 <div className="space-y-2">
@@ -621,36 +628,38 @@ export default function SubscriptionPackagesManagement() {
                     Platform <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex items-center gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className={`flex items-center gap-2 ${editingPackageId !== null ? "cursor-not-allowed" : "cursor-pointer"}`}>
                       <input
                         type="radio"
                         name="isGoogle"
                         checked={currentPackage.isGoogle === true}
+                        disabled={editingPackageId !== null}
                         onChange={() =>
                           setCurrentPackage((prev) => ({
                             ...prev,
                             isGoogle: true,
                           }))
                         }
-                        className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                        className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500 disabled:opacity-60"
                       />
                       <span className="text-sm ">
                         Google Play
                       </span>
                     </label>
 
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className={`flex items-center gap-2 ${editingPackageId !== null ? "cursor-not-allowed" : "cursor-pointer"}`}>
                       <input
                         type="radio"
                         name="isGoogle"
                         checked={currentPackage.isGoogle === false}
+                        disabled={editingPackageId !== null}
                         onChange={() =>
                           setCurrentPackage((prev) => ({
                             ...prev,
                             isGoogle: false,
                           }))
                         }
-                        className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                        className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500 disabled:opacity-60"
                       />
                       <span className="text-sm ">
                         Apple App Store
@@ -670,6 +679,7 @@ export default function SubscriptionPackagesManagement() {
                   <Input
                     id="productId"
                     type="text"
+                    disabled={editingPackageId !== null}
                     value={
                       currentPackage.isGoogle
                         ? currentPackage.googleProductId
