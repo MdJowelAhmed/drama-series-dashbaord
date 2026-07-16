@@ -858,10 +858,10 @@ const DramaDetails = () => {
 
         {seasons.length === 0 ? (
           <div className="bg-secondary backdrop-blur-sm rounded-3xl shadow-xl p-16 text-center border border-white/20">
-            <div className="text-slate-400 mb-4">
+            <div className="text-white mb-4">
               <Video className="h-20 w-20 mx-auto" />
             </div>
-            <p className="text-slate-600 text-lg font-medium">
+            <p className="text-white text-lg font-medium">
               No seasons found. Add a new season to get started!
             </p>
           </div>
