@@ -190,7 +190,7 @@ console.log("payload", payload);
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-white" />
       </div>
     );
   }
@@ -388,8 +388,8 @@ console.log("payload", payload);
                       onClick={() => togglePageAccess(page.value)}
                       className="gap-3 flex items-center p-2 rounded cursor-pointer transition-colors"
                     >
-                      {formData.pageAccess.includes(page.value) ? (
-                        <CheckSquare className="w-5 h-5 text-blue-600" />
+                      {formData?.pageAccess?.includes(page.value) ? (
+                        <CheckSquare className="w-5 h-5 text-white" />
                       ) : (
                         <Square className="w-5 h-5" />
                       )}
@@ -397,10 +397,10 @@ console.log("payload", payload);
                     </div>
                   ))}
                 </div>
-                {formData.pageAccess.length > 0 && (
+                {formData?.pageAccess?.length > 0 && (
                   <p className="text-xs text-white">
-                    {formData.pageAccess.length} page
-                    {formData.pageAccess.length !== 1 ? "s" : ""} selected
+                    {formData?.pageAccess?.length} page
+                    {formData?.pageAccess?.length !== 1 ? "s" : ""} selected
                   </p>
                 )}
               </div>

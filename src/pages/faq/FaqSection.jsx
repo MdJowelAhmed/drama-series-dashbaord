@@ -85,8 +85,8 @@ const FaqSection = () => {
         <div className="bg-white/30 backdrop-blur-lg rounded-xl shadow-sm border border-slate-200/50 overflow-hidden">
           {faqs.length === 0 ? (
             <div className="text-center py-16">
-              <HelpCircle className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-              <p className="text-slate-500 text-lg">
+              <HelpCircle className="w-16 h-16 mx-auto text-white mb-4" />
+              <p className="text-white text-lg">
                 No FAQs yet. Add your first FAQ!
               </p>
             </div>

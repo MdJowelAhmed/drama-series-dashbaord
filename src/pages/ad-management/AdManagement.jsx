@@ -308,8 +308,8 @@ const AdManagement = () => {
           </div>
         ) : ads.length === 0 ? (
           <div className="bg-secondary rounded-3xl shadow-xl p-16 text-center border border-white/20">
-            <Film className="h-20 w-20 mx-auto text-accent mb-4" />
-            <p className="text-white/70 text-lg font-medium">No ads found. Upload your first ad to get started!</p>
+            <Film className="h-20 w-20 mx-auto text-white mb-4" />
+            <p className="text-white text-lg font-medium">No ads found. Upload your first ad to get started!</p>
           </div>
         ) : (
           <>
