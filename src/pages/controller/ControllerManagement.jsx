@@ -393,12 +393,12 @@ console.log("payload", payload);
                       ) : (
                         <Square className="w-5 h-5" />
                       )}
-                      <span className="text-sm font-medium">{page.label}</span>
+                      <span className="text-sm font-medium text-white">{page.label}</span>
                     </div>
                   ))}
                 </div>
                 {formData.pageAccess.length > 0 && (
-                  <p className="text-xs">
+                  <p className="text-xs text-white">
                     {formData.pageAccess.length} page
                     {formData.pageAccess.length !== 1 ? "s" : ""} selected
                   </p>
@@ -409,6 +409,7 @@ console.log("payload", payload);
               <Button
                 type="button"
                 variant="outline"
+                className="text-white"
                 onClick={() => setIsModalOpen(false)}
               >
                 Cancel

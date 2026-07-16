@@ -44,7 +44,7 @@ const DeleteConfirmationModal = ({
         <AlertDialogFooter className="gap-2 mt-6">
           <AlertDialogCancel
             disabled={isLoading}
-            className=" border-none"
+            className=" border-none text-white"
           >
             {cancelButtonText}
           </AlertDialogCancel>

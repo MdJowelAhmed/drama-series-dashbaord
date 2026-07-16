@@ -213,7 +213,7 @@ const CommonFormModal = ({
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-[#FFFFFF3B] border-white/10">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-accent">{title}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-white">{title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -262,8 +262,8 @@ const CommonFormModal = ({
                     className={cn(
                       "mt-1 flex h-12 w-full items-center justify-between gap-2 rounded-md border border-white/40 bg-transparent px-3 text-sm shadow-sm outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
                       categoryIds.length === 0
-                        ? "text-accent/50"
-                        : "text-accent"
+                        ? "text-white"
+                        : "text-white"
                     )}
                   >
                     <span className="truncate text-left">
@@ -280,7 +280,7 @@ const CommonFormModal = ({
                   onTouchMove={(e) => e.stopPropagation()}
                   className={cn(
                     "z-[200] max-h-60 overflow-y-auto overscroll-contain",
-                    "border-white/20 bg-[#1a1a2e] p-1 text-accent shadow-xl"
+                    "border-white/20 bg-[#1a1a2e] p-1 text-white shadow-xl"
                   )}
                 >
                   {categories?.length ? (
@@ -292,13 +292,13 @@ const CommonFormModal = ({
                           handleCategoryToggle(cat._id, checked === true)
                         }
                         onSelect={(e) => e.preventDefault()}
-                        className="cursor-pointer text-accent focus:bg-white/10 focus:text-accent"
+                        className="cursor-pointer text-white focus:bg-white/10 focus:text-white"
                       >
                         {cat.name}
                       </DropdownMenuCheckboxItem>
                     ))
                   ) : (
-                    <p className="px-2 py-2 text-sm text-accent/60">
+                    <p className="px-2 py-2 text-sm text-white">
                       No categories available
                     </p>
                   )}
@@ -307,7 +307,7 @@ const CommonFormModal = ({
             </div>
             <div ref={subCategoryTriggerRef} className="relative w-full">
               <Label
-                className={cn(!isLibrarySelected && "text-accent/50")}
+                className={cn(!isLibrarySelected && "text-white")}
               >
                 Tags
               </Label>
@@ -333,10 +333,10 @@ const CommonFormModal = ({
                     className={cn(
                       "mt-1 flex h-12 w-full items-center justify-between gap-2 rounded-md border border-white/40 bg-transparent px-3 text-sm shadow-sm outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
                       !isLibrarySelected
-                        ? "cursor-not-allowed opacity-50 text-accent/50"
+                        ? "cursor-not-allowed opacity-50 text-white"
                         : subCategoryIds.length === 0
-                          ? "text-accent/50"
-                          : "text-accent"
+                          ? "text-white"
+                          : "text-white"
                     )}
                   >
                     <span className="truncate text-left">
@@ -355,7 +355,7 @@ const CommonFormModal = ({
                   onTouchMove={(e) => e.stopPropagation()}
                   className={cn(
                     "z-[200] max-h-60 overflow-y-auto overscroll-contain",
-                    "border-white/20 bg-[#1a1a2e] p-1 text-accent shadow-xl"
+                    "border-white/20 bg-[#1a1a2e] p-1 text-white shadow-xl"
                   )}
                 >
                   {availableSubcategories.length ? (
@@ -367,13 +367,13 @@ const CommonFormModal = ({
                           handleSubCategoryToggle(sub._id, checked === true)
                         }
                         onSelect={(e) => e.preventDefault()}
-                        className="cursor-pointer text-accent focus:bg-white/10 focus:text-accent"
+                        className="cursor-pointer text-white focus:bg-white/10 focus:text-white"
                       >
                         {sub.name}
                       </DropdownMenuCheckboxItem>
                     ))
                   ) : (
-                    <p className="px-2 py-2 text-sm text-accent/60">
+                    <p className="px-2 py-2 text-sm text-white">
                       {isFetchingSubcategories
                         ? "Loading…"
                         : "No subcategories available"}
@@ -520,7 +520,7 @@ const CommonFormModal = ({
           </div>
 
           <div className="flex gap-3 justify-end pt-4">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" className="text-white" onClick={onClose}>
               Cancel
             </Button>
             <Button

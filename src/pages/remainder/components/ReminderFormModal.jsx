@@ -249,7 +249,7 @@ const ReminderFormModal = ({
 
           {/* Footer Buttons */}
           <div className="flex gap-3 justify-end pt-4">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button variant="outline" className="text-white" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
             <Button onClick={handleSubmit} disabled={isLoading}>

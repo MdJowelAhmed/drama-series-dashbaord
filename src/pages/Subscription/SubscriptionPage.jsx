@@ -589,7 +589,7 @@ export default function SubscriptionPackagesManagement() {
                     min="0"
                     max="99"
                   />
-                  <p className="text-xs ">
+                  <p className="text-xs text-white">
                     Enter a discount percentage from 1-99. Backend calculates
                     original and discounted prices.
                   </p>
@@ -699,7 +699,7 @@ export default function SubscriptionPackagesManagement() {
                         : "e.g. com.app.basic"
                     }
                   />
-                  <p className="text-xs ">
+                  <p className="text-xs text-white">
                     This ID must match the product ID configured in{" "}
                     {currentPackage.isGoogle
                       ? "Google Play Console"
