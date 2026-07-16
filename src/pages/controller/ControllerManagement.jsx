@@ -299,7 +299,7 @@ console.log("payload", payload);
 
           {controllers.length === 0 && (
             <div className="text-center py-16">
-              <p className="text-slate-500 text-lg">
+              <p className="text-white text-lg">
                 No controllers yet. Add your first controller!
               </p>
             </div>

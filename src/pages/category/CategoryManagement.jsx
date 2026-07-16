@@ -484,6 +484,7 @@ export default function CategoryManager() {
             <Button
               type="button"
               variant="outline"
+              className="text-white"
               onClick={() => setIsModalOpen(false)}
             >
               Cancel

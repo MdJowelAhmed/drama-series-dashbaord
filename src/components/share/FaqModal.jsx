@@ -123,6 +123,7 @@ const FaqModal = ({ open, onOpenChange, editingFaq, onSuccess }) => {
           <Button
             type="button"
             variant="outline"
+            className="text-white"
             onClick={() => onOpenChange(false)}
           >
             Cancel

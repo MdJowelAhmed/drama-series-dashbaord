@@ -496,7 +496,7 @@ export default function SubscriptionPackagesManagement() {
                       }))
                     }
                   >
-                    <SelectTrigger className="py-[22px] border border-white/50 ">
+                    <SelectTrigger className="py-[22px] border border-white/50 text-white">
                       <SelectValue placeholder="Select duration" />
                     </SelectTrigger>
                     <SelectContent>
@@ -535,7 +535,7 @@ export default function SubscriptionPackagesManagement() {
                     value={currentPackage.paymentType}
                     disabled
                   >
-                    <SelectTrigger className="py-[22px] border border-white/50 opacity-80">
+                    <SelectTrigger className="py-[22px] border border-white/50 opacity-80 text-white">
                       <SelectValue placeholder="Select payment type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -613,7 +613,7 @@ export default function SubscriptionPackagesManagement() {
 
               {/* App Configuration */}
               <div className={`space-y-4 p-4 border rounded-md border-white/50 ${editingPackageId !== null ? "opacity-70" : ""}`}>
-                <h3 className="text-lg font-semibold ">
+                <h3 className="text-lg font-semibold text-white">
                   App Configuration
                 </h3>
                 {editingPackageId !== null ? (
@@ -642,7 +642,7 @@ export default function SubscriptionPackagesManagement() {
                         }
                         className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500 disabled:opacity-60"
                       />
-                      <span className="text-sm ">
+                      <span className="text-sm text-white">
                         Google Play
                       </span>
                     </label>
@@ -661,7 +661,7 @@ export default function SubscriptionPackagesManagement() {
                         }
                         className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500 disabled:opacity-60"
                       />
-                      <span className="text-sm ">
+                      <span className="text-sm text-white">
                         Apple App Store
                       </span>
                     </label>
@@ -714,6 +714,7 @@ export default function SubscriptionPackagesManagement() {
               <Button
                 type="button"
                 variant="outline"
+                className="text-white"
                 onClick={() => {
                   setShowPackageModal(false);
                   resetForm();
