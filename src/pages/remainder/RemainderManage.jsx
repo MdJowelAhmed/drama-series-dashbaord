@@ -237,11 +237,11 @@ const RemainderManage = () => {
                       <tr>
                         <td colSpan="6" className="text-center py-12">
                           <div className="flex flex-col items-center">
-                            <Bell className="h-16 w-16 text-slate-300 mb-4" />
-                            <p className="text-slate-600 text-lg">
+                            <Bell className="h-16 w-16 text-white mb-4" />
+                            <p className="text-white text-lg">
                               No reminders found
                             </p>
-                            <p className="text-slate-400 text-sm mt-1">
+                            <p className="text-white text-sm mt-1">
                               Create your first reminder to get started
                             </p>
                           </div>
