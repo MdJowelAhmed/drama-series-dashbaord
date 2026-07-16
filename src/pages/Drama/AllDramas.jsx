@@ -200,7 +200,7 @@ const AllDramas = () => {
 
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white" />
             <Input
               placeholder="Search series..."
               value={searchQuery}
@@ -215,7 +215,7 @@ const AllDramas = () => {
 
         {dramas.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-600">No series found</p>
+            <p className="text-white">No series found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
